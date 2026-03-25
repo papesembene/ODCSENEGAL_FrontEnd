@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "target": "ES6",
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/connect/page.tsx", "components/open-innovation/challenges-section.tsx", "components/open-innovation/experts-section.tsx", "components/open-innovation/presentation-section.tsx", "components/open-innovation/projects-section.tsx", "components/open-innovation/resources-section.tsx", "components/open-innovation/solutions-section.tsx", "app/about/page.jsx", "hooks/useAuth.js", "components/home/news-marquee.tsx", "app/profile/page.jsx"],
+  "exclude": ["node_modules"]
+}

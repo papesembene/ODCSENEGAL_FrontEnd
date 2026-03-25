@@ -1,0 +1,43 @@
+import { FiCamera } from 'react-icons/fi'
+
+const ProfileHeader = ({ user, onEditAvatar }) => {
+  return (
+    <div className="relative bg-gradient-to-r from-orange-400 to-orange-600 h-48">
+      <div className="absolute -bottom-16 left-8">
+        <div className="relative group">
+          <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow-lg">
+            {user.profile_picture ? (
+              <img 
+                src={user.profile_picture} 
+                alt="Profile" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-500 text-4xl">
+                {user.first_name?.charAt(0)}{user.last_name?.charAt(0)}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={onEditAvatar}
+            className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <FiCamera className="text-orange-500" />
+          </button>
+        </div>
+      </div>
+      <div className="absolute bottom-4 left-48">
+        <h1 className="text-2xl font-bold text-white">
+          {user.first_name} {user.last_name}
+        </h1>
+        <p className="text-orange-100">
+          {user.profile_type === 'student' && 'Étudiant'}
+          {user.profile_type === 'startup' && 'Startup'}
+          {user.profile_type === 'corporate' && 'Entreprise'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default ProfileHeader
