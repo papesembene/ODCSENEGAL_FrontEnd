@@ -71,6 +71,7 @@ const countryCodes = [
 ]
 
 export default function CandidaturePage() {
+  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   // Références pour le défilement vers les champs avec erreurs
   const formRef = useRef(null)
   const fieldRefs = useRef({})
@@ -761,8 +762,7 @@ export default function CandidaturePage() {
       if (field === "idNumber") setCheckingIdNumber(true)
 
       const response = await fetch(
-        `https://api.orangedigitalcenter.sn/api/candidature/check-unique?field=${field}&value=${encodeURIComponent(value)}`,
-
+        `${API_BASE_URL}/api/candidature/check-unique?field=${field}&value=${encodeURIComponent(value)}`,
       )
       const data = await response.json()
 
@@ -917,7 +917,7 @@ export default function CandidaturePage() {
       }
 
       //console.log("Tentative de connexion à:", "/api/candidatures/apply")
-      const response = await fetch("https://api.orangedigitalcenter.sn/api/candidature/apply", {
+      const response = await fetch(`${API_BASE_URL}/api/candidature/apply`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
