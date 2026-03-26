@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { countryCodes, formations, regions, getNationalitiesByLetter } from "./constants"
 import { getMonthsForFormation, validateField, validateIdNumber } from "./validation"
+import { buildNextFormData, clearFieldError, resetPhoneForCountryChange, sanitizeFieldValue } from "./input-helpers"
 
 export default function CandidaturePage() {
   const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
@@ -202,51 +203,13 @@ export default function CandidaturePage() {
     setSelectedCountry(country)
     setShowCountryDropdown(false)
 
-    // Réinitialiser le numéro de téléphone lors du changement de pays
-    setFormData((prev) => ({
-      ...prev,
-      phone: "",
-    }))
-
-    // Réinitialiser les erreurs de téléphone
-    setErrors((prev) => {
-      const newErrors = { ...prev }
-      delete newErrors.phone
-      return newErrors
-    })
-  }
-
-  // Fonction pour formater le numéro de téléphone selon le format du pays
-  const formatPhoneNumber = (phoneNumber) => {
-    if (!phoneNumber) return ""
-
-    // Exemple simple de formatage (peut être amélioré pour correspondre exactement au format)
-    let formatted = ""
-    let currentGroup = ""
-    const format = selectedCountry.format.split(" ")
-    let digitIndex = 0
-
-    for (let i = 0; i < format.length; i++) {
-      const groupLength = format[i].length
-      currentGroup = ""
-
-      for (let j = 0; j < groupLength; j++) {
-        if (digitIndex < phoneNumber.length) {
-          currentGroup += phoneNumber[digitIndex]
-          digitIndex++
-        }
-      }
-
-      if (currentGroup) {
-        formatted += currentGroup + (i < format.length - 1 ? " " : "")
-      }
-    }
-
-    return formatted
+    setFormData((prev) => resetPhoneForCountryChange(prev))
+    setErrors((prev) => clearFieldError(prev, "phone"))
   }
 
   const handleChange = async (e) => {
     const { name, value, type, checked } = e.target
+    let fieldValueForValidation = type === "checkbox" ? checked : value
 
     // Mise à jour des données du formulaire
     if (type === "checkbox") {
@@ -256,59 +219,8 @@ export default function CandidaturePage() {
       })
     } else {
       // Validation en temps réel pour les champs texte
-      let newValue = value
-
-      // Validation spécifique pour les champs de nom
-      if (name === "firstName" || name === "lastName") {
-        // Autoriser les caractères spéciaux mais pas les chiffres
-        newValue = value.replace(/[0-9]/g, "")
-      }
-
-      // Validation spécifique pour le lieu de naissance
-      if (name === "birthPlace") {
-        // Autoriser les chiffres sauf au début
-        if (/^\d/.test(value) && value.length === 1) {
-          newValue = ""
-        }
-      }
-
-      // Validation spécifique pour le téléphone
-      if (name === "phone") {
-        // Autoriser uniquement les chiffres
-        newValue = value.replace(/[^0-9]/g, "")
-
-        // Limiter au nombre de chiffres du pays sélectionné
-        if (newValue.length > selectedCountry.digits) {
-          newValue = newValue.slice(0, selectedCountry.digits)
-        }
-      }
-
-      // Validation spécifique pour le numéro d'identité (CNI uniquement)
-      if (name === "idNumber" && idType === "cni") {
-        // Autoriser uniquement les caractères alphanumériques pour la CNI
-        newValue = value.replace(/[^A-Za-z0-9]/g, "")
-        
-        // Limiter à 14 caractères maximum pour la CNI
-        if (newValue.length > 14) {
-          newValue = newValue.slice(0, 14)
-        }
-        // Note: La validation de minimum 13 caractères se fait dans validateIdNumber
-      }
-
-      // Si formation change, réinitialiser l'éducation
-      if (name === "formation") {
-        setFormData({
-          ...formData,
-          [name]: newValue,
-          education: "", // Réinitialiser l'éducation
-          currentStructure: "", // Réinitialiser la structure actuelle
-        })
-      } else {
-        setFormData({
-          ...formData,
-          [name]: newValue,
-        })
-      }
+      const newValue = sanitizeFieldValue({ name, value, selectedCountry, idType })
+      setFormData((prev) => buildNextFormData(prev, name, newValue))
 
       // Vérification en temps réel pour email et CNI/passeport
       if (name === "email" && newValue.length >= 3 && !checkingEmail) {
@@ -320,7 +232,7 @@ export default function CandidaturePage() {
 
     // Valider le champ si déjà touché
     if (touchedFields[name]) {
-      const error = validateField(name, type === "checkbox" ? checked : value, { idType, selectedCountry })
+      const error = validateField(name, fieldValueForValidation, { idType, selectedCountry })
       if (error) {
         setErrors((prev) => ({
           ...prev,
