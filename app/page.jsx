@@ -47,6 +47,7 @@ import { EventDetails } from "./startups/evenements/eventComponents/EventDetails
 import { useState, useEffect } from "react"
 
 export default function Home() {
+  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   const spaces = [
     {
       title: "Développement des Compétences Numériques",
@@ -130,7 +131,7 @@ export default function Home() {
     const fetchUpcomingEvents = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}api/events/upcoming`)
+        const response = await fetch(`${API_BASE_URL}/api/events/upcoming`)
         
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des événements')

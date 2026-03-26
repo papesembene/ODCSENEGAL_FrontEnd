@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, CheckCircle, Wifi, Coffee, Monitor, Users, Clock, Calendar, Check, AlertCircle } from 'lucide-react'
 
 export default function CoworkingPage() {
+  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   const spaces = [
     {
       id: 1,
@@ -163,7 +164,7 @@ export default function CoworkingPage() {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/resources/request-access", {
+      const res = await fetch(`${API_BASE_URL}/api/resources/request-access`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

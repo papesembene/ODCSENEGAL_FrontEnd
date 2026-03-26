@@ -28,6 +28,7 @@ import { EventDetails } from "./eventComponents/EventDetailsDialog";
 
 
 export default function EvenementsPage() {
+  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   const [showAddEvent, setShowAddEvent] = useState(false)
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -145,7 +146,7 @@ export default function EvenementsPage() {
         formData.append('image', newEvent.image);
       }
   
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}api/events/`, {
+      const response = await fetch(`${API_BASE_URL}/api/events/`, {
         method: 'POST',
         body: formData,
         // Note: Ne pas mettre le header 'Content-Type' pour FormData,
@@ -229,7 +230,7 @@ export default function EvenementsPage() {
     e.preventDefault()
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}api/events/${selectedEvent.id}/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/events/${selectedEvent.id}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -269,7 +270,7 @@ export default function EvenementsPage() {
     e.preventDefault()
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}api/newsletter/subscribe`, {
+      const response = await fetch(`${API_BASE_URL}/api/newsletter/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -330,8 +331,8 @@ export default function EvenementsPage() {
       try {
         setLoading(true)
         const [upcomingRes, pastRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}api/events/upcoming`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}api/events/past`)
+          fetch(`${API_BASE_URL}/api/events/upcoming`),
+          fetch(`${API_BASE_URL}/api/events/past`)
         ])
         
         if (!upcomingRes.ok || !pastRes.ok) {
@@ -510,7 +511,11 @@ export default function EvenementsPage() {
               .map((event) => (
             <Card key={`${event.id}-${event.title}`} className="overflow-hidden transition-all hover:shadow-lg">
               <div className="relative h-48">
-                <img src={`http://localhost:5000${event.image}`} alt="Image événement" className="w-full h-48 object-cover" />
+                <img
+                  src={event.image?.startsWith("http") ? event.image : `${API_BASE_URL}${event.image}`}
+                  alt="Image événement"
+                  className="w-full h-48 object-cover"
+                />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                   <Badge className={getCategoryColor(event.category)}>
                     {event.category}
