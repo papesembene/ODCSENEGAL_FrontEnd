@@ -5,70 +5,9 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Send, CheckCircle, ChevronDown, Search, AlertCircle} from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-
-// Liste des pays avec codes téléphoniques
-const countryCodes = [
-  // Afrique
-  { country: "Sénégal", abbr: "SN", code: "+221", format: "XX XXX XX XX", digits: 9, pattern: /^[7-9]\d{8}$/ },
-  { country: "Maroc", abbr: "MA", code: "+212", format: "XX XXX XXXX", digits: 9, pattern: /^[5-9]\d{8}$/ },
-  { country: "Côte d'Ivoire", abbr: "CI", code: "+225", format: "XX XXX XXXX", digits: 10, pattern: /^[0-9]\d{9}$/ },
-  { country: "Cameroun", abbr: "CM", code: "+237", format: "X XX XX XX XX", digits: 9, pattern: /^[2-9]\d{8}$/ },
-  { country: "Mali", abbr: "ML", code: "+223", format: "XX XX XX XX", digits: 8, pattern: /^[6-9]\d{7}$/ },
-  { country: "Guinée", abbr: "GN", code: "+224", format: "XXX XXX XXX", digits: 9, pattern: /^[6-9]\d{8}$/ },
-  { country: "Burkina Faso", abbr: "BF", code: "+226", format: "XX XX XX XX", digits: 8, pattern: /^[5-9]\d{7}$/ },
-  { country: "Bénin", abbr: "BJ", code: "+229", format: "XX XXX XXX", digits: 8, pattern: /^[5-9]\d{7}$/ },
-  { country: "Togo", abbr: "TG", code: "+228", format: "XX XXX XXX", digits: 8, pattern: /^[9]\d{7}$/ },
-  { country: "Niger", abbr: "NE", code: "+227", format: "XX XX XX XX", digits: 8, pattern: /^[8-9]\d{7}$/ },
-  { country: "Gabon", abbr: "GA", code: "+241", format: "X XX XX XX", digits: 8, pattern: /^[0-9]\d{7}$/ },
-  { country: "Congo", abbr: "CG", code: "+242", format: "XX XXX XXXX", digits: 9, pattern: /^[0-9]\d{8}$/ },
-  { country: "Algérie", abbr: "DZ", code: "+213", format: "XXX XX XX XX", digits: 9, pattern: /^[5-7]\d{8}$/ },
-  { country: "Tunisie", abbr: "TN", code: "+216", format: "XX XXX XXX", digits: 8, pattern: /^[2-9]\d{7}$/ },
-  { country: "Égypte", abbr: "EG", code: "+20", format: "XXX XXX XXXX", digits: 10, pattern: /^[1]\d{9}$/ },
-  { country: "Afrique du Sud", abbr: "ZA", code: "+27", format: "XX XXX XXXX", digits: 9, pattern: /^[6-8]\d{8}$/ },
-  { country: "Ghana", abbr: "GH", code: "+233", format: "XX XXX XXXX", digits: 9, pattern: /^[2-5]\d{8}$/ },
-  { country: "Kenya", abbr: "KE", code: "+254", format: "XXX XXX XXX", digits: 9, pattern: /^[7]\d{8}$/ },
-  { country: "Nigeria", abbr: "NG", code: "+234", format: "XXX XXX XXXX", digits: 10, pattern: /^[7-9]\d{9}$/ },
-
-  // Europe
-  { country: "France", abbr: "FR", code: "+33", format: "X XX XX XX XX", digits: 9, pattern: /^[1-9]\d{8}$/ },
-  { country: "Royaume-Uni", abbr: "GB", code: "+44", format: "XXXX XXXXXX", digits: 10, pattern: /^[1-9]\d{9}$/ },
-  { country: "Belgique", abbr: "BE", code: "+32", format: "XXX XX XX XX", digits: 9, pattern: /^[4-9]\d{8}$/ },
-  { country: "Suisse", abbr: "CH", code: "+41", format: "XX XXX XX XX", digits: 9, pattern: /^[1-9]\d{8}$/ },
-  { country: "Allemagne", abbr: "DE", code: "+49", format: "XXXX XXXXXX", digits: 10, pattern: /^[1-9]\d{9}$/ },
-  { country: "Espagne", abbr: "ES", code: "+34", format: "XXX XXX XXX", digits: 9, pattern: /^[6-9]\d{8}$/ },
-  { country: "Italie", abbr: "IT", code: "+39", format: "XXX XXX XXXX", digits: 10, pattern: /^[3]\d{9}$/ },
-  { country: "Portugal", abbr: "PT", code: "+351", format: "XXX XXX XXX", digits: 9, pattern: /^[9]\d{8}$/ },
-  { country: "Pays-Bas", abbr: "NL", code: "+31", format: "X XX XX XX XX", digits: 9, pattern: /^[6]\d{8}$/ },
-  { country: "Suède", abbr: "SE", code: "+46", format: "XX XXX XX XX", digits: 9, pattern: /^[7]\d{8}$/ },
-
-  // Amériques
-  { country: "États-Unis", abbr: "US", code: "+1", format: "XXX XXX XXXX", digits: 10, pattern: /^[2-9]\d{9}$/ },
-  { country: "Canada", abbr: "CA", code: "+1", format: "XXX XXX XXXX", digits: 10, pattern: /^[2-9]\d{9}$/ },
-  { country: "Mexique", abbr: "MX", code: "+52", format: "XXX XXX XXXX", digits: 10, pattern: /^[1-9]\d{9}$/ },
-  { country: "Brésil", abbr: "BR", code: "+55", format: "XX XXXX XXXX", digits: 10, pattern: /^[1-9]\d{9}$/ },
-  { country: "Argentine", abbr: "AR", code: "+54", format: "XX XXXX XXXX", digits: 10, pattern: /^[1-9]\d{9}$/ },
-  { country: "Colombie", abbr: "CO", code: "+57", format: "XXX XXX XXXX", digits: 10, pattern: /^[3]\d{9}$/ },
-
-  // Asie
-  { country: "Chine", abbr: "CN", code: "+86", format: "XXX XXXX XXXX", digits: 11, pattern: /^[1]\d{10}$/ },
-  { country: "Japon", abbr: "JP", code: "+81", format: "XX XXXX XXXX", digits: 10, pattern: /^[7-9]\d{9}$/ },
-  { country: "Corée du Sud", abbr: "KR", code: "+82", format: "XX XXXX XXXX", digits: 10, pattern: /^[1]\d{9}$/ },
-  { country: "Inde", abbr: "IN", code: "+91", format: "XXXX XXX XXX", digits: 10, pattern: /^[6-9]\d{9}$/ },
-  { country: "Indonésie", abbr: "ID", code: "+62", format: "XXX XXX XXXX", digits: 10, pattern: /^[8]\d{9}$/ },
-  { country: "Malaisie", abbr: "MY", code: "+60", format: "XX XXXX XXXX", digits: 10, pattern: /^[1]\d{9}$/ },
-  { country: "Singapour", abbr: "SG", code: "+65", format: "XXXX XXXX", digits: 8, pattern: /^[8-9]\d{7}$/ },
-  { country: "Thaïlande", abbr: "TH", code: "+66", format: "X XXXX XXXX", digits: 9, pattern: /^[6-9]\d{8}$/ },
-
-  // Moyen-Orient
-  { country: "Émirats arabes unis", abbr: "AE", code: "+971", format: "XX XXX XXXX", digits: 9, pattern: /^[5]\d{8}$/ },
-  { country: "Arabie saoudite", abbr: "SA", code: "+966", format: "XX XXX XXXX", digits: 9, pattern: /^[5]\d{8}$/ },
-  { country: "Qatar", abbr: "QA", code: "+974", format: "XXXX XXXX", digits: 8, pattern: /^[3-7]\d{7}$/ },
-  { country: "Israël", abbr: "IL", code: "+972", format: "XX XXX XXXX", digits: 9, pattern: /^[5]\d{8}$/ },
-
-  // Océanie
-  { country: "Australie", abbr: "AU", code: "+61", format: "XXX XXX XXX", digits: 9, pattern: /^[4]\d{8}$/ },
-  { country: "Nouvelle-Zélande", abbr: "NZ", code: "+64", format: "XX XXX XXXX", digits: 9, pattern: /^[2]\d{8}$/ },
-]
+import { countryCodes, formations, regions, getNationalitiesByLetter } from "./constants"
+import { getMonthsForFormation, validateField, validateIdNumber } from "./validation"
+import { buildNextFormData, clearFieldError, resetPhoneForCountryChange, sanitizeFieldValue } from "./input-helpers"
 
 export default function CandidaturePage() {
   const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
@@ -142,359 +81,8 @@ export default function CandidaturePage() {
     }
   }, [showCountryDropdown])
 
-  const formations = [
-    { id: "dev-web-mobile", name: "Développement Web & Mobile" },
-    { id: "referent-digital", name: "Référent Digital" },
-    { id: "dev-data", name: "Développeur Data" },
-    { id: "hackeuses", name: "Hackeuses (100% femmes)", femaleOnly: true },
-    { id: "aws-cloud", name: "AWS (Cloud Computing)" },
-    { id: "cyber-security", name: "Cyber security" },
-    { id: "intelligence-artificielle", name: "Intelligence Artificielle" },
-  ]
-
-  const regions = [
-    "Dakar",
-    "Diourbel",
-    "Fatick",
-    "Kaffrine",
-    "Kaolack",
-    "Kédougou",
-    "Kolda",
-    "Louga",
-    "Matam",
-    "Saint-Louis",
-    "Sédhiou",
-    "Tambacounda",
-    "Thiès",
-    "Ziguinchor",
-  ]
-
-  const nationalities = [
-    "Afghane",
-    "Albanaise",
-    "Algérienne",
-    "Allemande",
-    "Américaine",
-    "Andorrane",
-    "Angolaise",
-    "Antiguaise",
-    "Argentine",
-    "Arménienne",
-    "Australienne",
-    "Autrichienne",
-    "Azerbaïdjanaise",
-    "Bahaméenne",
-    "Bahreïnienne",
-    "Bangladaise",
-    "Barbadienne",
-    "Belge",
-    "Bélizienne",
-    "Béninoise",
-    "Bhoutanaise",
-    "Biélorusse",
-    "Birmane",
-    "Bissau-Guinéenne",
-    "Bolivienne",
-    "Bosnienne",
-    "Botswanaise",
-    "Brésilienne",
-    "Britannique",
-    "Brunéienne",
-    "Bulgare",
-    "Burkinabè",
-    "Burundaise",
-    "Cambodgienne",
-    "Camerounaise",
-    "Canadienne",
-    "Cap-verdienne",
-    "Centrafricaine",
-    "Chilienne",
-    "Chinoise",
-    "Chypriote",
-    "Colombienne",
-    "Comorienne",
-    "Congolaise (Congo-Brazzaville)",
-    "Congolaise (Congo-Kinshasa)",
-    "Coréenne du Nord",
-    "Coréenne du Sud",
-    "Costaricaine",
-    "Croate",
-    "Cubaine",
-    "Danoise",
-    "Djiboutienne",
-    "Dominicaine",
-    "Dominiquaise",
-    "Égyptienne",
-    "Émirienne",
-    "Équato-guinéenne",
-    "Équatorienne",
-    "Érythréenne",
-    "Espagnole",
-    "Estonienne",
-    "Eswatinienne",
-    "Éthiopienne",
-    "Fidjienne",
-    "Finlandaise",
-    "Française",
-    "Gabonaise",
-    "Gambienne",
-    "Géorgienne",
-    "Ghanéenne",
-    "Grecque",
-    "Grenadienne",
-    "Guatémaltèque",
-    "Guinéenne",
-    "Guyanienne",
-    "Haïtienne",
-    "Hondurienne",
-    "Hongroise",
-    "Indienne",
-    "Indonésienne",
-    "Irakienne",
-    "Iranienne",
-    "Irlandaise",
-    "Islandaise",
-    "Israélienne",
-    "Italienne",
-    "Ivoirienne",
-    "Jamaïcaine",
-    "Japonaise",
-    "Jordanienne",
-    "Kazakhstanaise",
-    "Kényane",
-    "Kirghize",
-    "Kiribatienne",
-    "Koweïtienne",
-    "Laotienne",
-    "Lesothane",
-    "Lettone",
-    "Libanaise",
-    "Libérienne",
-    "Libyenne",
-    "Liechtensteinoise",
-    "Lituanienne",
-    "Luxembourgeoise",
-    "Macédonienne",
-    "Malaisienne",
-    "Malawite",
-    "Maldivienne",
-    "Malienne",
-    "Maltaise",
-    "Marocaine",
-    "Marshallaise",
-    "Mauricienne",
-    "Mauritanienne",
-    "Mexicaine",
-    "Micronésienne",
-    "Moldave",
-    "Monégasque",
-    "Mongole",
-    "Monténégrine",
-    "Mozambicaine",
-    "Namibienne",
-    "Nauruane",
-    "Néerlandaise",
-    "Néo-Zélandaise",
-    "Népalaise",
-    "Nicaraguayenne",
-    "Nigériane",
-    "Nigérienne",
-    "Niuéenne",
-    "Nord-coréenne",
-    "Norvégienne",
-    "Omanaise",
-    "Ougandaise",
-    "Ouzbèke",
-    "Pakistanaise",
-    "Palaosienne",
-    "Palestinienne",
-    "Panaméenne",
-    "Papouasienne",
-    "Paraguayenne",
-    "Péruvienne",
-    "Philippine",
-    "Polonaise",
-    "Portugaise",
-    "Qatarienne",
-    "Roumaine",
-    "Russe",
-    "Rwandaise",
-    "Saint-Lucienne",
-    "Saint-Marinaise",
-    "Saint-Vincentaise",
-    "Salomonaise",
-    "Salvadorienne",
-    "Samoane",
-    "Santoméenne",
-    "Saoudienne",
-    "Sénégalaise",
-    "Serbe",
-    "Seychelloise",
-    "Sierra-Léonaise",
-    "Singapourienne",
-    "Slovaque",
-    "Slovène",
-    "Somalienne",
-    "Soudanaise",
-    "Sud-Africaine",
-    "Sud-Coréenne",
-    "Sud-Soudanaise",
-    "Suédoise",
-    "Suisse",
-    "Surinamaise",
-    "Syrienne",
-    "Tadjike",
-    "Tanzanienne",
-    "Tchadienne",
-    "Tchèque",
-    "Thaïlandaise",
-    "Timoraise",
-    "Togolaise",
-    "Tonguienne",
-    "Trinidadienne",
-    "Tunisienne",
-    "Turkmène",
-    "Turque",
-    "Tuvaluane",
-    "Ukrainienne",
-    "Uruguayenne",
-    "Vanuatuane",
-    "Vaticane",
-    "Vénézuélienne",
-    "Vietnamienne",
-    "Yéménite",
-    "Zambienne",
-    "Zimbabwéenne",
-  ]
-
-  // Organiser les nationalités par première lettre
-  const getNationalitiesByLetter = () => {
-    const nationalitiesByLetter = {}
-
-    nationalities.forEach((nationality) => {
-      const firstLetter = nationality.charAt(0).toUpperCase()
-      if (!nationalitiesByLetter[firstLetter]) {
-        nationalitiesByLetter[firstLetter] = []
-      }
-      nationalitiesByLetter[firstLetter].push(nationality)
-    })
-
-    // Trier les clés alphabétiquement
-    return Object.keys(nationalitiesByLetter)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = nationalitiesByLetter[key].sort((a, b) => a.localeCompare(b, "fr"))
-        return result
-      }, {})
-  }
-
   // Récupérer les nationalités organisées par lettre
   const nationalitiesByLetter = getNationalitiesByLetter()
-
-  const getMonthsForFormation = (formation) => {
-    if (formation === "cyber-security") return 3
-    if (formation === "intelligence-artificielle") return 4
-    if (["hackeuses", "aws-cloud"].includes(formation)) return 4
-    return 10
-  }
-
-  // Fonctions de validation
-  const validateName = (value) => {
-    if (!value.trim()) return "Ce champ est requis"
-    // Modification: Autoriser les caractères spéciaux (accents, tirets, apostrophes)
-    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(value)) return "Veuillez entrer un nom valide"
-    return null
-  }
-
-  const validateFirstName = (value) => {
-    if (!value.trim()) return "Ce champ est requis"
-    // Modification: Autoriser les caractères spéciaux (accents, tirets, apostrophes)
-    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(value)) return "Veuillez entrer un prénom valide"
-    // Vérification de la longueur minimale
-    return null
-  }
-
-  const validateEmail = (value) => {
-    if (!value.trim()) return "L'email est requis"
-    // Regex plus stricte pour l'email qui vérifie que le domaine a au moins 2 caractères après le point
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) return "Format d'email invalide"
-    return null
-  }
-
-  // Nouvelle fonction de validation du téléphone basée sur le pays sélectionné
-  const validatePhone = (value) => {
-    if (!value.trim()) return "Le numéro de téléphone est requis"
-
-    // Vérifier le nombre de chiffres
-    if (value.length !== selectedCountry.digits) {
-      return `Le numéro doit contenir exactement ${selectedCountry.digits} chiffres pour ${selectedCountry.country}`
-    }
-
-    // Vérifier le format selon le pattern du pays
-    if (!selectedCountry.pattern.test(value)) {
-      return `Format invalide pour un numéro ${selectedCountry.country}`
-    }
-
-    return null
-  }
-
-  const validateBirthPlace = (value) => {
-    if (!value.trim()) return "Le lieu de naissance est requis"
-    // Modification: Vérifier que le lieu ne commence pas par un chiffre
-    if (/^\d/.test(value)) return "Le lieu ne doit pas commencer par un chiffre"
-    return null
-  }
-
-  const validateIdNumber = (value) => {
-    if (!value.trim()) return "Le numéro est requis"
-
-    if (idType === "cni") {
-      // CNI: alphanumérique, minimum 13 caractères, maximum 14 caractères
-      if (!/^[A-Za-z0-9]{13,14}$/.test(value)) {
-        return "La CNI doit contenir entre 13 et 14 caractères alphanumériques"
-      }
-    } else if (idType === "passport") {
-      if (value.length < 8 || value.length > 9) return "Le passeport doit contenir 8 ou 9 caractères"
-    }
-
-    return null
-  }
-
-  // Validation d'un champ spécifique
-  const validateField = (name, value) => {
-    switch (name) {
-      case "firstName":
-        return validateFirstName(value)
-      case "lastName":
-        return validateName(value)
-      case "email":
-        return validateEmail(value)
-      case "phone":
-        return validatePhone(value)
-      case "birthPlace":
-        return validateBirthPlace(value)
-      case "birthDate":
-        return !value ? "La date de naissance est requise" : null
-      case "gender":
-        return !value ? "Le genre est requis" : null
-      case "idNumber":
-        return validateIdNumber(value)
-      case "nationality":
-        return !value ? "La nationalité est requise" : null
-      case "region":
-        return !value ? "La région de résidence est requise" : null
-      case "currentStructure":
-        return null // Plus d'obligation pour la structure actuelle
-      case "education":
-        return !value ? "Le niveau d'études est requis" : null
-      case "formation":
-        return !value ? "Veuillez sélectionner une formation" : null
-      case "isWorking":
-        return value === undefined ? "Veuillez répondre par oui ou non" : null
-      default:
-        return null
-    }
-  }
 
   // Marquer un champ comme touché et valider
   const markFieldAsTouched = (name) => {
@@ -504,7 +92,7 @@ export default function CandidaturePage() {
     }))
 
     // Valider le champ
-    const error = validateField(name, formData[name])
+    const error = validateField(name, formData[name], { idType, selectedCountry })
     if (error) {
       setErrors((prev) => ({
         ...prev,
@@ -543,7 +131,7 @@ export default function CandidaturePage() {
   // Effet pour valider le numéro d'identité en fonction du type sélectionné
   useEffect(() => {
     if (touchedFields.idNumber && formData.idNumber) {
-      const error = validateIdNumber(formData.idNumber)
+      const error = validateIdNumber(formData.idNumber, idType)
       if (error) {
         setErrors((prev) => ({
           ...prev,
@@ -615,51 +203,13 @@ export default function CandidaturePage() {
     setSelectedCountry(country)
     setShowCountryDropdown(false)
 
-    // Réinitialiser le numéro de téléphone lors du changement de pays
-    setFormData((prev) => ({
-      ...prev,
-      phone: "",
-    }))
-
-    // Réinitialiser les erreurs de téléphone
-    setErrors((prev) => {
-      const newErrors = { ...prev }
-      delete newErrors.phone
-      return newErrors
-    })
-  }
-
-  // Fonction pour formater le numéro de téléphone selon le format du pays
-  const formatPhoneNumber = (phoneNumber) => {
-    if (!phoneNumber) return ""
-
-    // Exemple simple de formatage (peut être amélioré pour correspondre exactement au format)
-    let formatted = ""
-    let currentGroup = ""
-    const format = selectedCountry.format.split(" ")
-    let digitIndex = 0
-
-    for (let i = 0; i < format.length; i++) {
-      const groupLength = format[i].length
-      currentGroup = ""
-
-      for (let j = 0; j < groupLength; j++) {
-        if (digitIndex < phoneNumber.length) {
-          currentGroup += phoneNumber[digitIndex]
-          digitIndex++
-        }
-      }
-
-      if (currentGroup) {
-        formatted += currentGroup + (i < format.length - 1 ? " " : "")
-      }
-    }
-
-    return formatted
+    setFormData((prev) => resetPhoneForCountryChange(prev))
+    setErrors((prev) => clearFieldError(prev, "phone"))
   }
 
   const handleChange = async (e) => {
     const { name, value, type, checked } = e.target
+    let fieldValueForValidation = type === "checkbox" ? checked : value
 
     // Mise à jour des données du formulaire
     if (type === "checkbox") {
@@ -669,59 +219,8 @@ export default function CandidaturePage() {
       })
     } else {
       // Validation en temps réel pour les champs texte
-      let newValue = value
-
-      // Validation spécifique pour les champs de nom
-      if (name === "firstName" || name === "lastName") {
-        // Autoriser les caractères spéciaux mais pas les chiffres
-        newValue = value.replace(/[0-9]/g, "")
-      }
-
-      // Validation spécifique pour le lieu de naissance
-      if (name === "birthPlace") {
-        // Autoriser les chiffres sauf au début
-        if (/^\d/.test(value) && value.length === 1) {
-          newValue = ""
-        }
-      }
-
-      // Validation spécifique pour le téléphone
-      if (name === "phone") {
-        // Autoriser uniquement les chiffres
-        newValue = value.replace(/[^0-9]/g, "")
-
-        // Limiter au nombre de chiffres du pays sélectionné
-        if (newValue.length > selectedCountry.digits) {
-          newValue = newValue.slice(0, selectedCountry.digits)
-        }
-      }
-
-      // Validation spécifique pour le numéro d'identité (CNI uniquement)
-      if (name === "idNumber" && idType === "cni") {
-        // Autoriser uniquement les caractères alphanumériques pour la CNI
-        newValue = value.replace(/[^A-Za-z0-9]/g, "")
-        
-        // Limiter à 14 caractères maximum pour la CNI
-        if (newValue.length > 14) {
-          newValue = newValue.slice(0, 14)
-        }
-        // Note: La validation de minimum 13 caractères se fait dans validateIdNumber
-      }
-
-      // Si formation change, réinitialiser l'éducation
-      if (name === "formation") {
-        setFormData({
-          ...formData,
-          [name]: newValue,
-          education: "", // Réinitialiser l'éducation
-          currentStructure: "", // Réinitialiser la structure actuelle
-        })
-      } else {
-        setFormData({
-          ...formData,
-          [name]: newValue,
-        })
-      }
+      const newValue = sanitizeFieldValue({ name, value, selectedCountry, idType })
+      setFormData((prev) => buildNextFormData(prev, name, newValue))
 
       // Vérification en temps réel pour email et CNI/passeport
       if (name === "email" && newValue.length >= 3 && !checkingEmail) {
@@ -733,7 +232,7 @@ export default function CandidaturePage() {
 
     // Valider le champ si déjà touché
     if (touchedFields[name]) {
-      const error = validateField(name, type === "checkbox" ? checked : value)
+      const error = validateField(name, fieldValueForValidation, { idType, selectedCountry })
       if (error) {
         setErrors((prev) => ({
           ...prev,
@@ -829,7 +328,7 @@ export default function CandidaturePage() {
 
     // Valider tous les champs
     for (const field in formData) {
-      const error = validateField(field, formData[field])
+      const error = validateField(field, formData[field], { idType, selectedCountry })
       if (error) newErrors[field] = error
     }
 
@@ -987,29 +486,45 @@ export default function CandidaturePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <Link href="/competences" className="text-[#ff7900] hover:text-[#e66f00] flex items-center">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour
-          </Link>
-          <h1 className="text-3xl font-bold mt-4 mb-2">Déposer ma candidature</h1>
-          <p className="text-gray-600">Remplissez le formulaire ci-dessous pour postuler à nos formations gratuites.</p>
-        </div>
+    <div className="bg-[linear-gradient(180deg,_#fff9f4_0%,_#ffffff_22%)]">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="mx-auto max-w-5xl space-y-6">
+          <div className="rounded-3xl border border-orange-100 bg-white p-6 shadow-sm md:p-8">
+            <Link href="/competences" className="inline-flex items-center text-sm font-medium text-[#ff7900] hover:text-[#e66f00]">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Retour
+            </Link>
+            <div className="mt-5">
+              <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">Déposer ma candidature</h1>
+              <p className="mt-3 text-base text-gray-600">
+                Complétez le formulaire ci-dessous pour postuler à une formation.
+              </p>
+            </div>
+          </div>
 
-        <div className="mb-6">
-          <Alert variant="destructive" className="bg-red-50 border-red-300">
+          <Alert variant="destructive" className="border-red-300 bg-red-50 shadow-sm">
             <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertTitle className="text-red-800 font-bold">Attention - une double inscription entraîne une exclusion immédiate.</AlertTitle>
+            <AlertTitle className="text-red-800 font-bold">
+              Attention - une double inscription entraîne une exclusion immédiate.
+            </AlertTitle>
             <AlertDescription className="text-red-700">
-            Chaque candidat ne peut s’inscrire qu’une seule fois. Toute tentative de double candidature sera automatiquement détectée et éliminera votre dossier sans possibilité de recours. Vérifiez attentivement vos informations avant de valider votre inscription.            </AlertDescription>
+              Chaque candidat ne peut s’inscrire qu’une seule fois. Toute tentative de double candidature sera
+              automatiquement détectée et éliminera votre dossier sans possibilité de recours. Vérifiez
+              attentivement vos informations avant de valider votre inscription.
+            </AlertDescription>
           </Alert>
-        </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
-          <form onSubmit={handleSubmit} ref={formRef}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-lg md:p-8">
+            <form onSubmit={handleSubmit} ref={formRef} className="space-y-8">
+              <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 md:p-6">
+                <div className="mb-5">
+                  <h2 className="text-xl font-semibold text-gray-900">1. Identité et contact</h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Renseignez vos informations personnelles et votre pièce d&apos;identité.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
                   Prénom <span className="text-red-500">*</span>
@@ -1075,7 +590,7 @@ export default function CandidaturePage() {
               </div>
 
               {/* Champ téléphone avec sélecteur de pays */}
-              <div>
+              <div className="xl:col-span-2">
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                   Téléphone <span className="text-red-500">*</span>
                 </label>
@@ -1232,7 +747,7 @@ export default function CandidaturePage() {
                     setTouchedFields((prev) => ({ ...prev, idType: true }))
                     if (touchedFields.idNumber) {
                       // Revalider le numéro d'identité si le type change
-                      const error = validateIdNumber(formData.idNumber)
+                      const error = validateIdNumber(formData.idNumber, idType)
                       if (error) {
                         setErrors((prev) => ({ ...prev, idNumber: error }))
                       } else {
@@ -1479,13 +994,23 @@ export default function CandidaturePage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff7900]"
                 />
               </div>
-            </div>
+                </div>
+              </section>
 
-            <div className="mb-6">
+              <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm md:p-6">
+                <div className="mb-5">
+                  <h2 className="text-xl font-semibold text-gray-900">2. Disponibilités</h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Indiquez votre situation actuelle et votre disponibilité pour la formation.
+                  </p>
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-2">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 As-tu des notions en informatique ? <span className="text-red-500">*</span>
               </label>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {/* Option "Oui" */}
                 <label className="inline-flex items-center">
                   <input
@@ -1520,14 +1045,14 @@ export default function CandidaturePage() {
               )}
             </div>
 
-            <div className="mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <label
                 className="block text-sm font-medium text-gray-700 mb-2"
                 ref={(el) => (fieldRefs.current.isWorking = el)}
               >
                 Travaillez-vous dans une entreprise actuellement?<span className="text-red-500">*</span>
               </label>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
@@ -1585,7 +1110,7 @@ export default function CandidaturePage() {
               )}
             </div>
 
-            <div className="mb-6">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:col-span-2">
               <label
                 className="block text-sm font-medium text-gray-700 mb-2"
                 ref={(el) => (fieldRefs.current.isAvailable = el)}
@@ -1593,7 +1118,7 @@ export default function CandidaturePage() {
                 Es-tu disponible pour te concentrer exclusivement à la formation pendant quelques mois ?{" "}
                 <span className="text-red-500">*</span>
               </label>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {/* Option "Oui" */}
                 <label className="inline-flex items-center">
                   <input
@@ -1635,8 +1160,18 @@ export default function CandidaturePage() {
               </div>
               {errors.isAvailable && <p className="text-red-500 text-xs mt-1">{errors.isAvailable}</p>}
             </div>
+                </div>
+              </section>
 
-            <div className="mb-8">
+              <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 md:p-6">
+                <div className="mb-5">
+                  <h2 className="text-xl font-semibold text-gray-900">3. Validation</h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Vérifiez les informations saisies avant d&apos;envoyer votre candidature.
+                  </p>
+                </div>
+
+            <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4">
               <label className="flex items-start" ref={(el) => (fieldRefs.current.acceptTerms = el)}>
                 <input
                   type="checkbox"
@@ -1661,7 +1196,7 @@ export default function CandidaturePage() {
             <div className="flex justify-end">
               <Button
                 type="submit"
-                className="bg-[#ff7900] hover:bg-[#e66f00] flex items-center"
+                className="flex w-full items-center justify-center bg-[#ff7900] hover:bg-[#e66f00] md:w-auto"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -1676,7 +1211,9 @@ export default function CandidaturePage() {
                 )}
               </Button>
             </div>
-          </form>
+              </section>
+            </form>
+          </div>
         </div>
       </div>
     </div>
