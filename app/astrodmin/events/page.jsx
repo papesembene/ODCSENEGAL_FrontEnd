@@ -55,7 +55,7 @@ export default function EventsManagementPage() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
   useEffect(() => {
-    const authenticated = localStorage.getItem("admin_authenticated") === "true"
+    const authenticated = !!localStorage.getItem("admin_token")
     
     if (!authenticated) {
       router.push("/astrodmin")
@@ -534,4 +534,3 @@ export default function EventsManagementPage() {
     </div>
   )
 }
-

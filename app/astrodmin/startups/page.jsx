@@ -50,7 +50,7 @@ export default function AdminStartupsPage() {
 
   useEffect(() => {
     // Vérifier l'authentification
-    const authenticated = localStorage.getItem("admin_authenticated") === "true"
+    const authenticated = !!localStorage.getItem("admin_token")
     const type = localStorage.getItem("admin_type")
 
     setIsAuthenticated(authenticated)

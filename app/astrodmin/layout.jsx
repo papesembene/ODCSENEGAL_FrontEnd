@@ -38,7 +38,7 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     // Vérifier l'authentification
     const checkAuth = () => {
-      const authenticated = localStorage.getItem("admin_authenticated") === "true"
+      const authenticated = !!localStorage.getItem("admin_token")
       const type = localStorage.getItem("admin_type")
       const email = localStorage.getItem("admin_email")
       
@@ -72,9 +72,10 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = () => {
     // Supprimer les informations d'authentification du localStorage
-    localStorage.removeItem("admin_authenticated")
+    localStorage.removeItem("admin_token")
     localStorage.removeItem("admin_type")
     localStorage.removeItem("admin_email")
+    localStorage.removeItem("admin_user")
 
     // Rediriger vers la page de connexion
     router.push("/astrodmin")
