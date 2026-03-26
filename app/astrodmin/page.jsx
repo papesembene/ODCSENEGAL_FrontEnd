@@ -21,7 +21,7 @@ export default function AdminLogin() {
 
   useEffect(() => {
     // Vérifier si l'utilisateur est déjà authentifié
-    const isAuthenticated = localStorage.getItem("admin_authenticated") === "true"
+    const isAuthenticated = !!localStorage.getItem("admin_token")
     if (isAuthenticated) {
       router.push("/astrodmin/dashboard")
     }
@@ -105,7 +105,6 @@ export default function AdminLogin() {
       }
 
       // Stocker le token JWT et les informations utilisateur
-      localStorage.setItem("admin_authenticated", "true")
       localStorage.setItem("admin_token", data.token)
       localStorage.setItem("admin_email", data.user.email)
       localStorage.setItem("admin_type", data.user.admin_type || "startups")

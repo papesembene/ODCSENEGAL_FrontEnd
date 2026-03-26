@@ -52,7 +52,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // Vérifier l'authentification
-    const authenticated = localStorage.getItem("admin_authenticated") === "true"
+    const authenticated = !!localStorage.getItem("admin_token")
     const type = localStorage.getItem("admin_type")
     const email = localStorage.getItem("admin_email")
 

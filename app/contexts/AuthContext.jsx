@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     error: null
   })
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
 
   // Initial auth check
   useEffect(() => {
