@@ -140,7 +140,7 @@ export default function CompetencesAdminDashboard() {
 
   // Vérifier l'authentification
   useEffect(() => {
-    const authenticated = localStorage.getItem("admin_authenticated") === "true"
+    const authenticated = !!localStorage.getItem("admin_token")
     const adminType = localStorage.getItem("admin_type")
 
     // Permettre l'accès aux admins compétences et super_admin
