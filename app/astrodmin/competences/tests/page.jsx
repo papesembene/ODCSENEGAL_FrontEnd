@@ -68,11 +68,38 @@ import {
   UsersIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-
-const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"]
-const OUTLOOK_DEEPLINK_URL = "https://outlook.office.com/mail/deeplink/compose"
-const OUTLOOK_BCC_CHUNK_SIZE = 80
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+import {
+  API_BASE_URL,
+  CANDIDATES_LIST,
+  COLORS,
+  EMAIL_REGEX,
+  FORMATIONS,
+  OUTLOOK_BCC_CHUNK_SIZE,
+  OUTLOOK_DEEPLINK_URL,
+} from "./constants"
+import {
+  buildAdminStats,
+  buildGroupedResults,
+  buildQuestionEditorState,
+  buildQuestionPayload,
+  buildResultsCsvContent,
+  buildScoreDistributionData,
+  buildStatusDistributionData,
+  calculateResultPoints,
+  calculateResultScorePercentage,
+  createInitialEmailData,
+  createInitialGroup,
+  createInitialInvitationDetails,
+  createInitialQuestion,
+  createInitialTest,
+  getTestUrl,
+  isNotSelectedStatus,
+  isPendingStatus,
+  isSelectedStatus,
+  parseImportedResultsCsv,
+  parseQuestionsCsv,
+  validateQuestionBeforeSave,
+} from "./helpers"
 
 export default function TestsManagementPage() {
   const router = useRouter()
@@ -123,16 +150,7 @@ export default function TestsManagementPage() {
   const [groupsItemsPerPage, setGroupsItemsPerPage] = useState(20)
   const [resultsPage, setResultsPage] = useState(1)
   const [resultsItemsPerPage, setResultsItemsPerPage] = useState(20)
-  const [newGroup, setNewGroup] = useState({
-    name: "",
-    formation: "",
-    test_id: "",
-    test_date: "",
-    test_time: "",
-    duration: 60,
-    location: "",
-    instructions: "",
-  })
+  const [newGroup, setNewGroup] = useState(createInitialGroup)
   const [groupFormationFilter, setGroupFormationFilter] = useState("all")
   const [showGroupCandidatesDialog, setShowGroupCandidatesDialog] = useState(false)
   const [selectedGroupForView, setSelectedGroupForView] = useState(null)
@@ -140,14 +158,7 @@ export default function TestsManagementPage() {
   const [loadingGroupCandidates, setLoadingGroupCandidates] = useState(false)
   const [showSendInvitationDialog, setShowSendInvitationDialog] = useState(false)
   const [selectedGroupForInvitation, setSelectedGroupForInvitation] = useState(null)
-  const [invitationDetails, setInvitationDetails] = useState({
-    test_id: "",
-    test_date: "",
-    test_time: "",
-    duration: 60,
-    location: "En ligne",
-    instructions: "",
-  })
+  const [invitationDetails, setInvitationDetails] = useState(createInitialInvitationDetails)
   const [sendingInvitations, setSendingInvitations] = useState(false)
   const [testViolations, setTestViolations] = useState({}) // {resultId: violations}
   const [showViolationsDialog, setShowViolationsDialog] = useState(false)
@@ -164,101 +175,21 @@ export default function TestsManagementPage() {
   const [resultToDelete, setResultToDelete] = useState(null)
 
   // Formulaire de création de test
-  const [newTest, setNewTest] = useState({
-    title: "",
-    referentiel: "",
-    duration: 60,
-    scheduledDate: "",
-    scheduledTime: "",
-    totalQuestions: 0,
-    passingScore: 70,
-    candidatesGroup: "",
-    description: "",
-    questions: [],
-  })
+  const [newTest, setNewTest] = useState(createInitialTest)
 
   // Gestion des questions
-  const [currentQuestion, setCurrentQuestion] = useState({
-    question: "",
-    type: "qcm_simple", // qcm_simple, qcm_multiple, texte_libre
-    options: ["", "", "", ""],
-    correctAnswer: null, // Pour QCM simple
-    correctAnswers: [], // Pour QCM multiple
-    score: 5,
-    image: null, // URL ou base64 de l'image
-    imageFile: null, // Fichier image
-  })
+  const [currentQuestion, setCurrentQuestion] = useState(createInitialQuestion)
 
   const [editingQuestionIndex, setEditingQuestionIndex] = useState(null)
   const [showImportQuestionsDialog, setShowImportQuestionsDialog] = useState(false)
   const [showImportResultsDialog, setShowImportResultsDialog] = useState(false)
 
-  // Formations disponibles (alignées avec la base de données)
-  const FORMATIONS = [
-    "dev-web-mobile",
-    "dev-data",
-    "hackeuses",
-    "aws-cloud",
-    "referent-digital",
-    "cyber-security",
-    "intelligence-artificielle",
-  ]
-
   // Email data et gestion de groupes
-  const [emailData, setEmailData] = useState({
-    type: "invitation",
-    customMessage: "",
-    selectedCandidates: [],
-    timeSlot: "", // Nouveau créneau horaire
-  })
+  const [emailData, setEmailData] = useState(createInitialEmailData)
 
   const [showCandidateSelection, setShowCandidateSelection] = useState(false)
 
-  // Liste mockée de candidats (à remplacer par une vraie API)
-  const [candidatesList] = useState([
-    {
-      id: 1,
-      name: "Amadou Diallo",
-      email: "amadou.diallo@gmail.com",
-      phone: "+221771234567",
-      referentiel: "Développement Web",
-    },
-    {
-      id: 2,
-      name: "Fatou Sall",
-      email: "fatou.sall@gmail.com",
-      phone: "+221772234567",
-      referentiel: "Développement Web",
-    },
-    {
-      id: 3,
-      name: "Moussa Kane",
-      email: "moussa.kane@gmail.com",
-      phone: "+221773234567",
-      referentiel: "Développement Web",
-    },
-    { id: 4, name: "Aïssatou Ba", email: "aissatou.ba@gmail.com", phone: "+221774234567", referentiel: "Data Science" },
-    { id: 5, name: "Omar Ndiaye", email: "omar.ndiaye@gmail.com", phone: "+221775234567", referentiel: "Data Science" },
-    { id: 6, name: "Mariama Diop", email: "mariama.diop@gmail.com", phone: "+221776234567", referentiel: "Hackeuse" },
-    { id: 7, name: "Ibrahima Sy", email: "ibrahima.sy@gmail.com", phone: "+221777234567", referentiel: "AWS Cloud" },
-    {
-      id: 8,
-      name: "Khady Faye",
-      email: "khady.faye@gmail.com",
-      phone: "+221778234567",
-      referentiel: "Développement Web",
-    },
-    {
-      id: 9,
-      name: "Abdoulaye Sarr",
-      email: "abdoulaye.sarr@gmail.com",
-      phone: "+221779234567",
-      referentiel: "Data Science",
-    },
-    { id: 10, name: "Ndeye Fall", email: "ndeye.fall@gmail.com", phone: "+221770234567", referentiel: "Design UX/UI" },
-  ])
-
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  const candidatesList = CANDIDATES_LIST
 
   useEffect(() => {
     // Vérifier l'authentification
@@ -401,35 +332,16 @@ export default function TestsManagementPage() {
   }
 
   const handleAddQuestion = () => {
-    // Validation
-    if (!currentQuestion.question.trim()) {
-      toast.error("Veuillez saisir la question")
+    const validationError = validateQuestionBeforeSave(currentQuestion)
+    if (validationError) {
+      toast.error(validationError)
       return
     }
 
-    if (currentQuestion.type !== "texte_libre") {
-      const filledOptions = currentQuestion.options.filter((opt) => opt.trim() !== "")
-      if (filledOptions.length < 2) {
-        toast.error("Veuillez saisir au moins 2 options de réponse")
-        return
-      }
-
-      if (currentQuestion.type === "qcm_simple" && currentQuestion.correctAnswer === null) {
-        toast.error("Veuillez sélectionner la bonne réponse")
-        return
-      }
-
-      if (currentQuestion.type === "qcm_multiple" && currentQuestion.correctAnswers.length === 0) {
-        toast.error("Veuillez sélectionner au moins une bonne réponse")
-        return
-      }
-    }
-
-    const questionData = {
-      id: `q${newTest.questions.length + 1}`,
-      ...currentQuestion,
-      options: currentQuestion.type === "texte_libre" ? [] : currentQuestion.options.filter((opt) => opt.trim() !== ""),
-    }
+    const questionData = buildQuestionPayload(
+      currentQuestion,
+      editingQuestionIndex !== null ? editingQuestionIndex : newTest.questions.length,
+    )
 
     if (editingQuestionIndex !== null) {
       // Modification
@@ -445,29 +357,12 @@ export default function TestsManagementPage() {
     }
 
     // Réinitialiser le formulaire de question
-    setCurrentQuestion({
-      question: "",
-      type: "qcm_simple",
-      options: ["", "", "", ""],
-      correctAnswer: null,
-      correctAnswers: [],
-      score: 5,
-    })
+    setCurrentQuestion(createInitialQuestion())
   }
 
   const handleEditQuestion = (index) => {
     const questionToEdit = newTest.questions[index]
-    // S'assurer que toutes les propriétés sont bien copiées, y compris les valeurs par défaut
-    setCurrentQuestion({
-      question: questionToEdit.question || "",
-      type: questionToEdit.type || "qcm_simple",
-      options: questionToEdit.options ? [...questionToEdit.options] : ["", "", "", ""],
-      correctAnswer: questionToEdit.correctAnswer !== undefined ? questionToEdit.correctAnswer : null,
-      correctAnswers: questionToEdit.correctAnswers ? [...questionToEdit.correctAnswers] : [],
-      score: questionToEdit.score || 5,
-      image: questionToEdit.image || null,
-      imageFile: questionToEdit.imageFile || null,
-    })
+    setCurrentQuestion(buildQuestionEditorState(questionToEdit))
     setEditingQuestionIndex(index)
     
     // Scroll automatique vers le formulaire d'édition après un court délai pour laisser le DOM se mettre à jour
@@ -486,16 +381,7 @@ export default function TestsManagementPage() {
   }
 
   const handleCancelEditQuestion = () => {
-    setCurrentQuestion({
-      question: "",
-      type: "qcm_simple",
-      options: ["", "", "", ""],
-      correctAnswer: null,
-      correctAnswers: [],
-      score: 5,
-      image: null,
-      imageFile: null,
-    })
+    setCurrentQuestion(createInitialQuestion())
     setEditingQuestionIndex(null)
   }
 
@@ -544,49 +430,7 @@ export default function TestsManagementPage() {
     reader.onload = (e) => {
       try {
         const content = e.target.result
-        const lines = content.split('\n').slice(1) // Ignorer l'en-tête
-        const importedQuestions = []
-        lines.forEach((line, index) => {
-          if (!line.trim()) return
-          const parts = line.split(';').map(p => p.trim())
-          if (parts.length < 6) return
-          // DEBUG: Afficher les données brutes
-          console.log(`Ligne ${index}:`, parts)
-          console.log(`CorrectAnswer brut: "${parts[6]}"`)
-          // Créer l'objet question
-          const question = {
-            id: `q${newTest.questions.length + importedQuestions.length + 1}`,
-            question: parts[0],
-            type: parts[1] || "qcm_simple",
-            options: [parts[2], parts[3], parts[4], parts[5]].filter(o => o && o !== ''),
-            score: parseInt(parts[7]) || 5
-          }
-          // Gestion des réponses correctes
-          if (parts[1] === "qcm_simple") {
-            question.correctAnswer = parseInt(parts[6])
-            question.correctAnswers = []
-            console.log(`qcm_simple: correctAnswer = ${question.correctAnswer}`)
-          } else if (parts[1] === "qcm_multiple") {
-            question.correctAnswer = null
-            // IMPORTANT: Vérifier si parts[6] existe et n'est pas vide
-            if (parts[6] && parts[6].trim() !== '') {
-              question.correctAnswers = parts[6]  
-                .split(',')
-                .map(n => parseInt(n.trim()))
-                .filter(n => !isNaN(n)) // Filtrer les NaN
-            } else {
-              question.correctAnswers = []
-            }
-            console.log(`qcm_multiple: correctAnswers = ${JSON.stringify(question.correctAnswers)}`)
-          } else {
-            // Par défaut
-            question.correctAnswer = null
-            question.correctAnswers = []
-          }
-          importedQuestions.push(question)
-          console.log("Question finale:", question)
-        })
-        console.log("Toutes les questions importées:", importedQuestions)
+        const importedQuestions = parseQuestionsCsv(content, newTest.questions.length)
         setNewTest({
           ...newTest,
           questions: [...newTest.questions, ...importedQuestions]
@@ -619,34 +463,7 @@ export default function TestsManagementPage() {
         // Nom,Email,Téléphone,TestID,Score,Statut,Date
 
         const content = e.target.result
-        const lines = content.split("\n").slice(1)
-
-        const importedResults = []
-        lines.forEach((line) => {
-          if (!line.trim()) return
-
-          const parts = line.split(",").map((p) => p.trim())
-          if (parts.length < 7) return
-
-          const result = {
-            id: `result_imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            testId: parts[3],
-            testTitle: "Test importé",
-            candidate: {
-              name: parts[0],
-              email: parts[1],
-              phone: parts[2],
-            },
-            score: Number.parseInt(parts[4]),
-            status: parts[5].toLowerCase(),
-            referentiel: "Import manuel",
-            completedAt: parts[6],
-            submittedDate: new Date(parts[6]).toLocaleDateString("fr-FR"),
-            submittedTime: new Date(parts[6]).toLocaleTimeString("fr-FR"),
-          }
-
-          importedResults.push(result)
-        })
+        const importedResults = parseImportedResultsCsv(content)
 
         // Envoyer les résultats via l'API MongoDB
         let successCount = 0
@@ -691,37 +508,7 @@ export default function TestsManagementPage() {
   const handleExportResults = (format) => {
     try {
       if (format === "csv") {
-        // Créer le CSV
-        const headers = ["Nom", "Email", "Téléphone", "Test", "Référentiel", "Score", "Statut", "Date", "Heure"]
-        const rows = testResults.map((result) => [
-          result.candidate?.name || result.candidateName || "",
-          result.candidate?.email || result.candidateEmail || "",
-          result.candidate?.phone || result.candidatePhone || "",
-          result.testTitle || "",
-          result.referentiel || "",
-          result.score || 0,
-          result.status === "admis" || result.status === "selected"
-            ? "Passe en entretien"
-            : result.status === "rejeté" || result.status === "not_selected"
-              ? "Rejeté"
-              : "En attente",
-          result.submittedDate || new Date(result.completedAt).toLocaleDateString("fr-FR"),
-          result.submittedTime || new Date(result.completedAt).toLocaleTimeString("fr-FR"),
-        ])
-
-        // Échapper les virgules et guillemets dans les valeurs
-        const escapeCsvValue = (value) => {
-          const stringValue = String(value)
-          if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
-            return `"${stringValue.replace(/"/g, '""')}"`
-          }
-          return stringValue
-        }
-
-        const csvContent = [
-          headers.map(escapeCsvValue).join(","),
-          ...rows.map((row) => row.map(escapeCsvValue).join(",")),
-        ].join("\r\n")
+        const csvContent = buildResultsCsvContent(testResults)
 
         // Ajouter le BOM UTF-8 pour Excel
         const BOM = "\uFEFF"
@@ -827,28 +614,8 @@ export default function TestsManagementPage() {
       fetchTests()
 
       // Réinitialiser le formulaire
-      setNewTest({
-        title: "",
-        referentiel: "",
-        duration: 60,
-        scheduledDate: "",
-        scheduledTime: "",
-        totalQuestions: 0,
-        passingScore: 70,
-        candidatesGroup: "",
-        description: "",
-        questions: [],
-      })
-      setCurrentQuestion({
-        question: "",
-        type: "qcm_simple",
-        options: ["", "", "", ""],
-        correctAnswer: null,
-        correctAnswers: [],
-        score: 5,
-        image: null,
-        imageFile: null,
-      })
+      setNewTest(createInitialTest())
+      setCurrentQuestion(createInitialQuestion())
     } catch (error) {
       toast.error("Erreur lors de la création du test")
       console.error(error)
@@ -1154,16 +921,7 @@ export default function TestsManagementPage() {
         fetchTestGroups()
 
         // Réinitialiser le formulaire
-        setNewGroup({
-          name: "",
-          formation: "",
-          test_id: "",
-          test_date: "",
-          test_time: "",
-          duration: 60,
-          location: "",
-          instructions: "",
-        })
+        setNewGroup(createInitialGroup())
         setSelectedCandidatesForGroup([])
       } else {
         toast.error(result.error || "Erreur lors de la création du groupe")
@@ -1179,9 +937,8 @@ export default function TestsManagementPage() {
 
     // Pré-remplir le formulaire avec les données actuelles du groupe
     setInvitationDetails({
+      ...createInitialInvitationDetails(),
       test_id: group.test_id || "",
-      test_date: "",
-      test_time: "",
       duration: group.duration || 60,
       location: group.location || "En ligne",
       instructions: group.instructions || "",
@@ -1413,83 +1170,12 @@ export default function TestsManagementPage() {
   }
 
   const calculateTotalScore = () => {
-    if (!selectedResult || !selectedResult.answers) return selectedResult?.score || 0
-
-    let totalScore = 0
-    let totalPossible = 0
-
-    // Score automatique des questions
-    const test = testsData.find((t) => t.id === selectedResult.testId)
-    if (test && test.questions) {
-      test.questions.forEach((q, idx) => {
-        totalPossible += q.score
-
-        if (q.type === "texte_libre") {
-          // Utiliser la note manuelle si disponible
-          totalScore += manualGrades[`q${idx}`] || 0
-        } else {
-          // Score automatique pour QCM
-          const answer = selectedResult.answers[idx]
-          if (q.type === "qcm_simple") {
-            if (answer === q.correctAnswer) totalScore += q.score
-          } else if (q.type === "qcm_multiple") {
-            const correctAnswers = q.correctAnswers.sort().join(",")
-            const userAnswers = (answer || []).sort().join(",")
-            if (correctAnswers === userAnswers) totalScore += q.score
-          }
-        }
-      })
-    }
-
-    return totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0
+    return calculateResultScorePercentage(selectedResult, testsData, manualGrades)
   }
 
   // Fonction pour calculer les points réels obtenus par un résultat
   const calculatePoints = (result) => {
-    if (!result || !result.answers) {
-      // Si pas de réponses, estimer à partir du score en pourcentage
-      const test = testsData.find((t) => t.id === result?.testId)
-      if (test && test.questions) {
-        const totalPossible = test.questions.reduce((sum, q) => sum + (q.score || 0), 0)
-        const scorePercent = result?.score || 0
-        return {
-          obtained: Math.round((scorePercent * totalPossible) / 100),
-          total: totalPossible
-        }
-      }
-      return { obtained: 0, total: 0 }
-    }
-
-    let totalScore = 0
-    let totalPossible = 0
-
-    const test = testsData.find((t) => t.id === result.testId)
-    if (test && test.questions) {
-      test.questions.forEach((q, idx) => {
-        totalPossible += q.score || 0
-
-        if (q.type === "texte_libre") {
-          // Utiliser la note manuelle si disponible
-          const manualGrade = result.manualGrades?.[`q${idx}`] || result.manualGrades?.[idx]
-          totalScore += manualGrade || 0
-        } else {
-          // Score automatique pour QCM
-          const answer = result.answers[idx]
-          if (q.type === "qcm_simple") {
-            if (answer === q.correctAnswer) totalScore += q.score || 0
-          } else if (q.type === "qcm_multiple") {
-            const correctAnswers = (q.correctAnswers || []).sort().join(",")
-            const userAnswers = ((answer || []).sort().join(","))
-            if (correctAnswers === userAnswers) totalScore += q.score || 0
-          }
-        }
-      })
-    }
-
-    return {
-      obtained: Math.round(totalScore),
-      total: totalPossible
-    }
+    return calculateResultPoints(result, testsData)
   }
 
   const handleSendEmails = async () => {
@@ -1535,12 +1221,7 @@ export default function TestsManagementPage() {
       setShowEmailDialog(false)
 
       // Réinitialiser le formulaire d'email
-      setEmailData({
-        type: "invitation",
-        customMessage: "",
-        selectedCandidates: [],
-        timeSlot: "",
-      })
+      setEmailData(createInitialEmailData())
     } catch (error) {
       console.error("Erreur lors de l'envoi des emails:", error)
       // Afficher quand même le message de succès (simulation)
@@ -1556,13 +1237,6 @@ export default function TestsManagementPage() {
     // Simulation d'upload
     toast.success(`Fichier ${file.name} téléchargé avec succès`)
     setShowUploadDialog(false)
-  }
-
-  const getTestUrl = (testId) => {
-    if (typeof window !== "undefined") {
-      return `${window.location.origin}/test/${testId}`
-    }
-    return `/test/${testId}`
   }
 
   const handleCopyTestLink = (testId) => {
@@ -1618,89 +1292,15 @@ export default function TestsManagementPage() {
     return matchesReferentiel && matchesStatus
   })
 
-  // Regrouper les résultats par formation et par groupe
-  const groupedResults = () => {
-    const grouped = {}
+  const groupedResults = () => buildGroupedResults(filteredResults, testsData, testGroups)
 
-    filteredResults.forEach((result) => {
-      const formation = result.referentiel || "Non spécifié"
+  const isSelected = isSelectedStatus
+  const isNotSelected = isNotSelectedStatus
+  const isPending = isPendingStatus
 
-      if (!grouped[formation]) {
-        grouped[formation] = {
-          formation: formation,
-          totalResults: 0,
-          admis: 0,
-          rejected: 0,
-          pending: 0,
-          groups: {},
-        }
-      }
-
-      grouped[formation].totalResults++
-
-      // Compter par statut
-      if (result.status === "admis") grouped[formation].admis++
-      else if (result.status === "rejeté") grouped[formation].rejected++
-      else grouped[formation].pending++
-
-      // Grouper par groupe de test (via testId)
-      const test = testsData.find((t) => t.id === result.testId)
-      const groupId = test?.candidatesGroup || "Aucun groupe"
-      const group = testGroups.find((g) => g.id === groupId)
-      const groupName = group?.name || groupId
-
-      if (!grouped[formation].groups[groupName]) {
-        grouped[formation].groups[groupName] = {
-          groupName: groupName,
-          groupId: groupId,
-          results: [],
-          admis: 0,
-          rejected: 0,
-          pending: 0,
-        }
-      }
-
-      grouped[formation].groups[groupName].results.push(result)
-
-      if (result.status === "admis") grouped[formation].groups[groupName].admis++
-      else if (result.status === "rejeté") grouped[formation].groups[groupName].rejected++
-      else grouped[formation].groups[groupName].pending++
-    })
-
-    return Object.values(grouped)
-  }
-
-  // Statistiques (compatible avec les deux formats de statut)
-  const isSelected = (status) => status === "selected" || status === "admis"
-  const isNotSelected = (status) => status === "not_selected" || status === "rejeté"
-  const isPending = (status) =>
-    status === "pending" || status === "en_attente" || (!isSelected(status) && !isNotSelected(status))
-
-  // Combiner les statistiques : tests depuis testsData, résultats depuis l'API
-  const stats = {
-    totalTests: testsData.length,
-    activeTests: testsData.filter((t) => t.status === "active").length,
-    completedTests: testsData.filter((t) => t.status === "completed").length,
-    totalCandidates: statistics?.total || testResults.length,
-    selectedCandidates: statistics?.admis || testResults.filter((r) => isSelected(r.status)).length,
-    averageScore: Math.round(statistics?.average_score || 0),
-    passRate: Math.round(statistics?.pass_rate || 0),
-  }
-
-  // Données pour les graphiques
-  const scoreDistributionData = [
-    { range: "0-20", count: testResults.filter((r) => (r.score || 0) < 20).length },
-    { range: "20-40", count: testResults.filter((r) => (r.score || 0) >= 20 && (r.score || 0) < 40).length },
-    { range: "40-60", count: testResults.filter((r) => (r.score || 0) >= 40 && (r.score || 0) < 60).length },
-    { range: "60-80", count: testResults.filter((r) => (r.score || 0) >= 60 && (r.score || 0) < 80).length },
-    { range: "80-100", count: testResults.filter((r) => (r.score || 0) >= 80).length },
-  ]
-
-  const statusDistributionData = [
-    { name: "Passe en entretien", value: testResults.filter((r) => isSelected(r.status)).length, color: "#10B981" },
-    { name: "Rejetés", value: testResults.filter((r) => isNotSelected(r.status)).length, color: "#EF4444" },
-    { name: "En attente", value: testResults.filter((r) => isPending(r.status)).length, color: "#F59E0B" },
-  ]
+  const stats = buildAdminStats(testsData, testResults, statistics)
+  const scoreDistributionData = buildScoreDistributionData(testResults)
+  const statusDistributionData = buildStatusDistributionData(testResults)
 
   if (!isAuthenticated || loading) {
     return (
