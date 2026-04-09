@@ -23,6 +23,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ArrowRight, ArrowLeft, Upload, Check, AlertCircle, FileText, X, Lightbulb, Clock, Users, Rocket } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  ALLOWED_EXTENSIONS,
+  ALLOWED_FILE_TYPES,
+  countryCodes,
+  diplomas,
+  legalForms,
+  regionsData,
+  roles,
+  sectors,
+} from "./constants"
 
 
 export default function OrangeFabCandidaturePage() {
@@ -79,174 +89,6 @@ export default function OrangeFabCandidaturePage() {
     acceptTerms: false,
     otherLegalForm: "",
   })
-
-  // Indicatifs téléphoniques des pays
-  const countryCodes = [
-    { code: "+221", country: "Sénégal", flag: "🇸🇳" },
-    { code: "+33", country: "France", flag: "🇫🇷" },
-    { code: "+1", country: "États-Unis", flag: "🇺🇸" },
-    { code: "+44", country: "Royaume-Uni", flag: "🇬🇧" },
-    { code: "+49", country: "Allemagne", flag: "🇩🇪" },
-    { code: "+34", country: "Espagne", flag: "🇪🇸" },
-    { code: "+39", country: "Italie", flag: "🇮🇹" },
-    { code: "+212", country: "Maroc", flag: "🇲🇦" },
-    { code: "+213", country: "Algérie", flag: "🇩🇿" },
-    { code: "+216", country: "Tunisie", flag: "🇹🇳" },
-    { code: "+225", country: "Côte d'Ivoire", flag: "🇨🇮" },
-    { code: "+226", country: "Burkina Faso", flag: "🇧🇫" },
-    { code: "+227", country: "Niger", flag: "🇳🇪" },
-    { code: "+228", country: "Togo", flag: "🇹🇬" },
-    { code: "+229", country: "Bénin", flag: "🇧🇯" },
-    { code: "+230", country: "Maurice", flag: "🇲🇺" },
-    { code: "+231", country: "Libéria", flag: "🇱🇷" },
-    { code: "+232", country: "Sierra Leone", flag: "🇸🇱" },
-    { code: "+233", country: "Ghana", flag: "🇬🇭" },
-    { code: "+234", country: "Nigéria", flag: "🇳🇬" },
-    { code: "+235", country: "Tchad", flag: "🇹🇩" },
-    { code: "+236", country: "République Centrafricaine", flag: "🇨🇫" },
-    { code: "+237", country: "Cameroun", flag: "🇨🇲" },
-    { code: "+238", country: "Cap-Vert", flag: "🇨🇻" },
-    { code: "+239", country: "São Tomé-et-Príncipe", flag: "🇸🇹" },
-    { code: "+240", country: "Guinée équatoriale", flag: "🇬🇶" },
-    { code: "+241", country: "Gabon", flag: "🇬🇦" },
-    { code: "+242", country: "République du Congo", flag: "🇨🇬" },
-    { code: "+243", country: "République démocratique du Congo", flag: "🇨🇩" },
-    { code: "+244", country: "Angola", flag: "🇦🇴" },
-    { code: "+245", country: "Guinée-Bissau", flag: "🇬🇼" },
-    { code: "+246", country: "Territoire britannique de l'océan Indien", flag: "🇮🇴" },
-    { code: "+248", country: "Seychelles", flag: "🇸🇨" },
-    { code: "+249", country: "Soudan", flag: "🇸🇩" },
-    { code: "+250", country: "Rwanda", flag: "🇷🇼" },
-    { code: "+251", country: "Éthiopie", flag: "🇪🇹" },
-    { code: "+252", country: "Somalie", flag: "🇸🇴" },
-    { code: "+253", country: "Djibouti", flag: "🇩🇯" },
-    { code: "+254", country: "Kenya", flag: "🇰🇪" },
-    { code: "+255", country: "Tanzanie", flag: "🇹🇿" },
-    { code: "+256", country: "Ouganda", flag: "🇺🇬" },
-    { code: "+257", country: "Burundi", flag: "🇧🇮" },
-    { code: "+258", country: "Mozambique", flag: "🇲🇿" },
-    { code: "+260", country: "Zambie", flag: "🇿🇲" },
-    { code: "+261", country: "Madagascar", flag: "🇲🇬" },
-    { code: "+262", country: "Mayotte", flag: "🇾🇹" },
-    { code: "+263", country: "Zimbabwe", flag: "🇿🇼" },
-    { code: "+264", country: "Namibie", flag: "🇳🇦" },
-    { code: "+265", country: "Malawi", flag: "🇲🇼" },
-    { code: "+266", country: "Lesotho", flag: "🇱🇸" },
-    { code: "+267", country: "Botswana", flag: "🇧🇼" },
-    { code: "+268", country: "Eswatini", flag: "🇸🇿" },
-    { code: "+269", country: "Comores", flag: "🇰🇲" },
-    { code: "+27", country: "Afrique du Sud", flag: "🇿🇦" },
-    { code: "+91", country: "Inde", flag: "🇮🇳" },
-    { code: "+86", country: "Chine", flag: "🇨🇳" },
-    { code: "+81", country: "Japon", flag: "🇯🇵" },
-    { code: "+82", country: "Corée du Sud", flag: "🇰🇷" },
-    { code: "+55", country: "Brésil", flag: "🇧🇷" },
-    { code: "+52", country: "Mexique", flag: "🇲🇽" },
-    { code: "+61", country: "Australie", flag: "🇦🇺" },
-    { code: "+7", country: "Russie", flag: "🇷🇺" },
-  ].sort((a, b) => a.country.localeCompare(b.country))
-
-  // Régions et départements du Sénégal
-  const regionsData = {
-    Dakar: ["Dakar", "Guédiawaye", "Pikine", "Rufisque", "Keur Massar"],
-    Thiès: ["Thiès", "Mbour", "Tivaouane"],
-    "Saint-Louis": ["Saint-Louis", "Dagana", "Podor"],
-    Diourbel: ["Diourbel", "Bambey", "Mbacké"],
-    Louga: ["Louga", "Kébémer", "Linguère"],
-    Tambacounda: ["Tambacounda", "Bakel", "Goudiry", "Koumpentoum"],
-    Kaolack: ["Kaolack", "Guinguinéo", "Nioro du Rip"],
-    Ziguinchor: ["Ziguinchor", "Bignona", "Oussouye"],
-    Fatick: ["Fatick", "Foundiougne", "Gossas"],
-    Kolda: ["Kolda", "Médina Yoro Foulah", "Vélingara"],
-    Matam: ["Matam", "Kanel", "Ranérou"],
-    Kaffrine: ["Kaffrine", "Birkelane", "Koungheul", "Malem-Hodar"],
-    Kédougou: ["Kédougou", "Salémata", "Saraya"],
-    Sédhiou: ["Sédhiou", "Bounkiling", "Goudomp"],
-  }
-
-  // Types de fichiers autorisés
-  const ALLOWED_FILE_TYPES = {
-    // Images
-    "image/png": ".png",
-    "image/jpeg": ".jpg, .jpeg",
-    "image/jpg": ".jpg",
-    "image/gif": ".gif",
-    "image/bmp": ".bmp",
-    "image/webp": ".webp",
-    // Documents Word
-    "application/msword": ".doc",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-    // PowerPoint
-    "application/vnd.ms-powerpoint": ".ppt",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
-    // PDF
-    "application/pdf": ".pdf",
-  }
-
-  const ALLOWED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".doc", ".docx", ".ppt", ".pptx", ".pdf"]
-
-  // Secteurs d'activité identiques à Startup Lab
-  const sectors = [
-    { value: "agriculture", label: "Agriculture" },
-    { value: "education", label: "Éducation" },
-    { value: "energy", label: "Énergie" },
-    { value: "environment", label: "Environnement" },
-    { value: "finance", label: "Finance" },
-    { value: "health", label: "Santé" },
-    { value: "logistics", label: "Logistique" },
-    { value: "retail", label: "Commerce" },
-    { value: "technology", label: "Informatique" },
-    { value: "fintech", label: "Fintech" },
-    { value: "artificial_intelligence", label: "Intelligence artificielle" },
-    { value: "iot", label: "Internet des objets (IOT)" },
-    { value: "digital_transformation", label: "Transformation Numérique des PME/TPE" },
-    { value: "cybersecurity", label: "Cybersécurité & Protection des Données" },
-    { value: "green_tech", label: "Technologies Vertes et Développement Durable" },
-    { value: "cloud_computing", label: "Cloud Computing" },
-    { value: "smart_cities", label: "Smart Cities & Territoires Connectés" },
-    { value: "blockchain", label: "BlockChain et Cryptomonnaie" },
-    { value: "digital_education", label: "Formation & Éducation Numérique" },
-    { value: "edtech", label: "Edtech" },
-    { value: "agritech", label: "Agritech" },
-    { value: "healthtech", label: "Healthtech (e-santé)" },
-    { value: "ecommerce", label: "E-commerce" },
-    { value: "other", label: "Autre" },
-  ];
-
-  // Rôles disponibles (changé de "functions" à "roles")
-  const roles = [
-    { value: "CEO", label: "CEO" },
-    { value: "CTO", label: "CTO" },
-    { value: "CMO", label: "CMO" },
-    { value: "CFO", label: "CFO" },
-    { value: "Co-fondateur", label: "Co-fondateur" },
-    { value: "Directeur Technique", label: "Directeur Technique" },
-    { value: "Directeur Commercial", label: "Directeur Commercial" },
-    { value: "Autre", label: "Autre" },
-  ]
-
-  // Diplômes disponibles
-  const diplomas = [
-    { value: "baccalaureat", label: "Baccalauréat" },
-    { value: "bts", label: "BTS" },
-    { value: "dut", label: "DUT" },
-    { value: "licence", label: "Licence" },
-    { value: "master", label: "Master" },
-    { value: "doctorat", label: "Doctorat" },
-    { value: "autre", label: "Autre" },
-  ]
-
-  // Formes juridiques disponibles
-  const legalForms = [
-    { value: "SAS", label: "SAS" },
-    { value: "SA", label: "SA" },
-    { value: "SARL", label: "SARL" },
-    { value: "SUARL", label: "SUARL" },
-    { value: "EI", label: "Entreprise Individuelle" },
-    { value: "GIE", label: "GIE" },
-    { value: "Autre", label: "Autre" },
-  ]
-
   // Fonction de validation de type de fichier
   const validateFileType = (file) => {
     const fileExtension = "." + file.name.split(".").pop().toLowerCase()
