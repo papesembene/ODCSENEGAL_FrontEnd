@@ -24,8 +24,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { ArrowRight, ArrowLeft, Upload, Check, AlertCircle, FileText, X, Lightbulb, Clock, Users, Rocket } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
-  ALLOWED_EXTENSIONS,
-  ALLOWED_FILE_TYPES,
   countryCodes,
   diplomas,
   legalForms,
@@ -33,6 +31,21 @@ import {
   roles,
   sectors,
 } from "./constants"
+import {
+  buildInputFormData,
+  buildSelectFormData,
+  clearFieldError,
+  handlePhoneInput,
+  sanitizeOrangeFabFieldValue,
+} from "./input-helpers"
+import {
+  validateFieldRealtime as validateOrangeFabFieldRealtime,
+  validateFileType,
+  validateRequiredFieldOnBlur as validateOrangeFabRequiredFieldOnBlur,
+  validateStep1 as validateOrangeFabStep1,
+  validateStep2 as validateOrangeFabStep2,
+  validateStep3 as validateOrangeFabStep3,
+} from "./validation"
 
 
 export default function OrangeFabCandidaturePage() {
@@ -89,202 +102,11 @@ export default function OrangeFabCandidaturePage() {
     acceptTerms: false,
     otherLegalForm: "",
   })
-  // Fonction de validation de type de fichier
-  const validateFileType = (file) => {
-    const fileExtension = "." + file.name.split(".").pop().toLowerCase()
-    const isValidType =
-      Object.keys(ALLOWED_FILE_TYPES).includes(file.type) || ALLOWED_EXTENSIONS.includes(fileExtension)
-    return isValidType
-  }
-
-  // Fonction de validation d'email
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  // Fonction pour filtrer les caractères non-numériques du téléphone
-  const handlePhoneInput = (e) => {
-    const allowedKeys = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight"]
-    if (allowedKeys.includes(e.key) || (e.key >= "0" && e.key <= "9")) {
-      return true
-    }
-    e.preventDefault()
-    return false
-  }
-
-  // Fonction pour nettoyer la valeur du téléphone
-  const cleanPhoneValue = (value) => {
-    return value.replace(/[^0-9]/g, "")
-  }
-
-  // Fonction de validation en temps réel pour un champ spécifique
-  const validateFieldRealtime = useCallback(
-    (name, value) => {
-      const errors = {}
-
-      switch (name) {
-        case "firstName":
-          if (!value.trim()) errors[name] = "Le prénom est obligatoire"
-          break
-
-        case "lastName":
-          if (!value.trim()) errors[name] = "Le nom est obligatoire"
-          break
-
-        case "email":
-          if (!value.trim()) {
-            errors[name] = "L'email est obligatoire"
-          } else if (!validateEmail(value)) {
-            errors[name] = "Veuillez saisir une adresse email valide (ex: nom@domaine.com)"
-          }
-          break
-
-        case "emailAlternate":
-          if (value.trim()) {
-            if (!validateEmail(value)) {
-              errors[name] = "Veuillez saisir une adresse email valide"
-            } else if (value === formData.email) {
-              errors[name] = "L'email alternatif doit être différent de l'email principal"
-            }
-          }
-          break
-
-        case "phone":
-          if (!value.trim()) {
-            errors[name] = "Le téléphone est obligatoire"
-          } else if (value.length < 8) {
-            errors[name] = "Le téléphone doit contenir au moins 8 chiffres"
-          }
-          break
-
-        case "region":
-          if (!value.trim()) errors[name] = "La région est obligatoire"
-          break
-
-        case "department":
-          if (!value.trim()) errors[name] = "Le département est obligatoire"
-          break
-
-        case "otherRole": 
-          if (formData.role === "Autre" && !value.trim()) {
-            errors[name] = "Veuillez préciser votre rôle"
-          }
-          break
-
-        case "otherDiploma":
-          if (formData.diploma === "autre" && !value.trim()) {
-            errors[name] = "Veuillez préciser votre diplôme"
-          }
-          break
-
-        case "companyName":
-          if (!value.trim()) errors[name] = "Le nom de l'entreprise est obligatoire"
-          break
-
-        case "ninea": 
-          if (!value.trim()) errors[name] = "Le NINEA ou régie de commerce est obligatoire"
-          break
-
-        case "employees":
-          if (!value.trim()) errors[name] = "Le nombre d'employés est obligatoire"
-          break
-
-        case "creationDate":
-          if (!value.trim()) {
-            errors[name] = "La date de création est obligatoire"
-          } else {
-            const creationDate = new Date(value)
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
-            if (creationDate > today) {
-              errors[name] = "La date de création ne peut pas dépasser la date du jour."
-            }
-          }
-          break
-
-        case "raisedAmount":
-          if (formData.raisedFunds === "Oui" && !value.trim()) {
-            errors[name] = "Le montant levé est obligatoire"
-          }
-          break
-
-        case "otherSector":
-          if (formData.sector === "other" && !value.trim()) {
-            errors[name] = "Veuillez préciser votre secteur d'activité"
-          }
-          break
-
-        case "otherLegalForm":
-          if (formData.legalForm === "Autre" && !value.trim()) {
-            errors[name] = "Veuillez préciser la forme juridique"
-          }
-          break
-
-        case "productName":
-          if (!value.trim()) errors[name] = "Le nom du produit/service est obligatoire"
-          break
-
-        case "productDescription":
-          if (!value.trim()) errors[name] = "La description du produit/service est obligatoire"
-          break
-
-        case "activityDescription":
-          if (!value.trim()) errors[name] = "La description de l'activité est obligatoire"
-          break
-
-        default:
-          break
-      }
-
-      return errors
-    },
-    [formData.email, formData.role, formData.diploma, formData.sector, formData.legalForm, formData.raisedFunds],
-  )
-
-  // Fonction pour valider les champs obligatoires vides (au blur)
-  const validateRequiredFieldOnBlur = useCallback(
-    (name, value) => {
-      const requiredFields = [
-        // Étape 1
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        // Étape 2
-        "companyName",
-        "ninea",
-        "employees",
-        "creationDate",
-        // Étape 3
-        "productName",
-        "productDescription",
-        "activityDescription",
-      ]
-
-      // Ajouter les champs conditionnels
-      if (formData.raisedFunds === "Oui") {
-        requiredFields.push("raisedAmount")
-      }
-
-      if (requiredFields.includes(name) && !value.trim()) {
-        const fieldErrors = validateFieldRealtime(name, value)
-        if (fieldErrors[name]) {
-          setRealtimeErrors((prev) => ({
-            ...prev,
-            [name]: fieldErrors[name],
-          }))
-        }
-      }
-    },
-    [validateFieldRealtime, formData.raisedFunds],
-  )
-
   // Debounce pour la validation en temps réel
   const debouncedValidation = useCallback(
     (name, value) => {
       const timeoutId = setTimeout(() => {
-        const fieldErrors = validateFieldRealtime(name, value)
+        const fieldErrors = validateOrangeFabFieldRealtime(name, value, formData)
 
         setRealtimeErrors((prev) => {
           const newErrors = { ...prev }
@@ -303,7 +125,7 @@ export default function OrangeFabCandidaturePage() {
 
       return timeoutId
     },
-    [validateFieldRealtime],
+    [formData],
   )
 
   // Stocker les timeouts pour pouvoir les annuler
@@ -311,22 +133,9 @@ export default function OrangeFabCandidaturePage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    let processedValue = value
+    const processedValue = sanitizeOrangeFabFieldValue(name, value)
 
-    // Nettoyer la valeur du téléphone
-    if (name === "phone") {
-      processedValue = cleanPhoneValue(value)
-    }
-
-    // Validation capital, revenue et raisedAmount - seulement des chiffres
-    if (name === "capital" || name === "revenue" || name === "raisedAmount") {
-      processedValue = value.replace(/\D/g, "")
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : processedValue,
-    }))
+    setFormData((prev) => buildInputFormData(prev, { name, type, checked, value: processedValue }))
 
     // Reset validation errors when user changes input
     if (name === "email") setEmailExists(false)
@@ -334,20 +143,12 @@ export default function OrangeFabCandidaturePage() {
 
     // Clear validation errors for this field (validation au clic)
     if (validationErrors[name]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+      setValidationErrors((prev) => clearFieldError(prev, name))
     }
 
     // Clear realtime errors for this field immediately
     if (realtimeErrors[name]) {
-      setRealtimeErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+      setRealtimeErrors((prev) => clearFieldError(prev, name))
     }
 
     // Annuler le timeout précédent pour ce champ
@@ -368,7 +169,13 @@ export default function OrangeFabCandidaturePage() {
   // Fonction pour gérer le blur (perte de focus)
   const handleBlur = (e) => {
     const { name, value } = e.target
-    validateRequiredFieldOnBlur(name, value)
+    const fieldErrors = validateOrangeFabRequiredFieldOnBlur(name, value, formData)
+    if (fieldErrors[name]) {
+      setRealtimeErrors((prev) => ({
+        ...prev,
+        [name]: fieldErrors[name],
+      }))
+    }
   }
 
   // Vérification d'email avec l'API
@@ -472,35 +279,21 @@ export default function OrangeFabCandidaturePage() {
   }
 
   const handleSelectChange = (name, value) => {
-    setFormData((prev) => {
-      // Reset department if region changes
-      if (name === "region") {
-        return { ...prev, region: value, department: "" }
-      }
-      return { ...prev, [name]: value }
-    })
+    setFormData((prev) => buildSelectFormData(prev, name, value))
 
     // Clear validation error for this field
     if (validationErrors[name]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+      setValidationErrors((prev) => clearFieldError(prev, name))
     }
 
     // Clear realtime error for this field
     if (realtimeErrors[name]) {
-      setRealtimeErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+      setRealtimeErrors((prev) => clearFieldError(prev, name))
     }
 
     // Validation en temps réel pour les selects
     setTimeout(() => {
-      const fieldErrors = validateFieldRealtime(name, value)
+      const fieldErrors = validateOrangeFabFieldRealtime(name, value, formData)
       if (fieldErrors[name]) {
         setRealtimeErrors((prev) => ({
           ...prev,
@@ -518,20 +311,12 @@ export default function OrangeFabCandidaturePage() {
 
     // Clear validation error for this field
     if (validationErrors[name]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+      setValidationErrors((prev) => clearFieldError(prev, name))
     }
 
     // Clear realtime error for this field
     if (realtimeErrors[name]) {
-      setRealtimeErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
+      setRealtimeErrors((prev) => clearFieldError(prev, name))
     }
   }
 
@@ -542,132 +327,19 @@ export default function OrangeFabCandidaturePage() {
 
   // Validation des étapes - se déclenche uniquement au clic sur "Suivant" (CONSERVÉE)
   const validateStep1 = () => {
-    const errors = {}
-
-    // Champs obligatoires
-    if (!formData.firstName.trim()) errors.firstName = "Le prénom est obligatoire"
-    if (!formData.lastName.trim()) errors.lastName = "Le nom est obligatoire"
-    if (!formData.role.trim()) errors.role = "Le rôle est obligatoire" 
-    if (!formData.email.trim()) errors.email = "L'email est obligatoire"
-    if (!formData.phone.trim()) errors.phone = "Le téléphone est obligatoire"
-    if (!formData.region.trim()) errors.region = "La région est obligatoire"
-    if (!formData.department.trim()) errors.department = "Le département est obligatoire"
-    if (!formData.diploma.trim()) errors.diploma = "Le diplôme est obligatoire"
-    if (!formData.cv) errors.cv = "Le CV est obligatoire"
-
-    // Validation format email
-    if (formData.email.trim() && !validateEmail(formData.email)) {
-      errors.email = "Veuillez saisir une adresse email valide (ex: nom@domaine.com)"
-    }
-
-    // Validation email alternatif
-    if (formData.emailAlternate.trim()) {
-      if (!validateEmail(formData.emailAlternate)) {
-        errors.emailAlternate = "Veuillez saisir une adresse email valide"
-      } else if (formData.emailAlternate === formData.email) {
-        errors.emailAlternate = "L'email alternatif doit être différent de l'email principal"
-      }
-    }
-
-    // Validation téléphone
-    if (formData.phone.trim() && formData.phone.length < 8) {
-      errors.phone = "Le téléphone doit contenir au moins 8 chiffres"
-    }
-
-    // Champs conditionnels
-    if (formData.role === "Autre" && !formData.otherRole.trim()) {
-      errors.otherRole = "Veuillez préciser votre rôle" 
-    }
-
-    if (formData.diploma === "autre" && !formData.otherDiploma.trim()) {
-      errors.otherDiploma = "Veuillez préciser votre diplôme"
-    }
-
-    // Vérifications API
-    if (emailExists) {
-      errors.email = "Cet email a déjà été utilisé pour une candidature"
-    }
-
-    if (phoneExists) {
-      errors.phone = "Ce numéro de téléphone a déjà été utilisé pour une candidature"
-    }
-
+    const errors = validateOrangeFabStep1(formData, { emailExists, phoneExists })
     setValidationErrors(errors)
     return Object.keys(errors).length === 0 && !emailCheckLoading && !phoneCheckLoading
   }
 
-  // Modifier la fonction validateStep2 pour ajouter la validation de la date de création (CONSERVÉE)
   const validateStep2 = () => {
-    const errors = {}
-
-    // Champs obligatoires
-    if (!formData.companyName.trim()) errors.companyName = "Le nom de l'entreprise est obligatoire"
-    if (!formData.ninea.trim()) errors.ninea = "Le NINEA ou régie de commerce est obligatoire" // Maintenant obligatoire
-    if (!formData.sector.trim()) errors.sector = "Le secteur d'activité est obligatoire"
-    if (!formData.businessModel.trim()) errors.businessModel = "Le modèle d'affaire est obligatoire"
-    if (!formData.creationDate.trim()) errors.creationDate = "La date de création est obligatoire"
-    if (!formData.legalForm.trim()) errors.legalForm = "La forme juridique est obligatoire"
-    if (!formData.employees.trim()) errors.employees = "Le nombre d'employés est obligatoire"
-    if (!formData.raisedFunds.trim()) errors.raisedFunds = "Veuillez indiquer si vous avez levé des fonds"
-    if (!formData.pitchDeck) errors.pitchDeck = "Le document de présentation est obligatoire"
-
-    // Validation du montant levé si "Oui" est sélectionné
-    if (formData.raisedFunds === "Oui" && !formData.raisedAmount.trim()) {
-      errors.raisedAmount = "Le montant levé est obligatoire"
-    }
-
-    // Validation de la date de création (pas dans le futur)
-    if (formData.creationDate) {
-      const creationDate = new Date(formData.creationDate)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0) // Réinitialiser l'heure pour comparer uniquement les dates
-
-      if (creationDate > today) {
-        errors.creationDate = "La date de création ne peut pas dépasser la date du jour."
-      }
-    }
-
-    // Champs conditionnels
-    if (formData.sector === "other" && !formData.otherSector.trim()) {
-      errors.otherSector = "Veuillez préciser votre secteur d'activité"
-    }
-
-    if (formData.legalForm === "Autre" && !formData.otherLegalForm.trim()) {
-      errors.otherLegalForm = "Veuillez préciser la forme juridique"
-    }
-
+    const errors = validateOrangeFabStep2(formData)
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
 
   const validateStep3 = () => {
-    const errors = {}
-
-    // Champs obligatoires avec messages d'erreur spécifiques
-    if (!formData.productName.trim()) {
-      errors.productName = "Le nom du produit/service est obligatoire"
-    }
-
-    if (!formData.productDescription.trim()) {
-      errors.productDescription = "La description du produit/service est obligatoire"
-    }
-
-    if (!formData.activityDescription.trim()) {
-      errors.activityDescription = "La description de l'activité est obligatoire"
-    }
-
-    if (!formData.hasWorkingProduct.trim()) {
-      errors.hasWorkingProduct = "Veuillez indiquer si vous avez un produit fonctionnel"
-    }
-
-    if (!hasReadRegulation) {
-      errors.regulation = "Vous devez lire le règlement de participation"
-    }
-
-    if (!formData.acceptTerms) {
-      errors.acceptTerms = "Vous devez accepter les conditions d'utilisation"
-    }
-
+    const errors = validateOrangeFabStep3(formData, { hasReadRegulation })
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
