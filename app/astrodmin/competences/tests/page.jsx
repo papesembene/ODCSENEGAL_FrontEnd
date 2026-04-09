@@ -25,23 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-} from "recharts"
 import {
   FileText,
   Plus,
@@ -58,14 +42,10 @@ import {
   Mail,
   AlertCircle,
   RefreshCw,
-  Search,
   LinkIcon,
-  ExternalLink,
   Copy,
-  LayoutGrid,
   List,
   GraduationCap,
-  UsersIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -100,13 +80,11 @@ import {
   parseQuestionsCsv,
   validateQuestionBeforeSave,
 } from "./helpers"
-import {
-  ConfirmationDialog,
-  GroupStatusBadge,
-  PageSizeSelector,
-  PaginationControls,
-  ResultStatusBadge,
-} from "./components"
+import { ConfirmationDialog } from "./components"
+import { OverviewTab } from "./overview-tab"
+import { TestsTab } from "./tests-tab"
+import { GroupsTab } from "./groups-tab"
+import { ResultsTab } from "./results-tab"
 
 export default function TestsManagementPage() {
   const router = useRouter()
@@ -1340,881 +1318,76 @@ export default function TestsManagementPage() {
             Résultats
           </TabsTrigger>
         </TabsList>
+        <OverviewTab
+          stats={stats}
+          testResults={testResults}
+          fetchResults={fetchResults}
+          refreshing={refreshing}
+          scoreDistributionData={scoreDistributionData}
+          statusDistributionData={statusDistributionData}
+          setShowUploadDialog={setShowUploadDialog}
+          setShowEmailDialog={setShowEmailDialog}
+          setShowResultsDialog={setShowResultsDialog}
+          testsData={testsData}
+          handleCopyTestLink={handleCopyTestLink}
+          handleOpenTest={handleOpenTest}
+        />
 
-        {/* Vue d'ensemble */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Tests</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalTests}</div>
-                <p className="text-xs text-muted-foreground">{stats.activeTests} actif(s)</p>
-              </CardContent>
-            </Card>
+        <TestsTab
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          testsItemsPerPage={testsItemsPerPage}
+          setTestsItemsPerPage={setTestsItemsPerPage}
+          setTestsPage={setTestsPage}
+          testsPage={testsPage}
+          filteredTests={filteredTests}
+          handleCopyTestLink={handleCopyTestLink}
+          handleOpenTest={handleOpenTest}
+          handleEditTest={handleEditTest}
+          handleDeleteTestClick={handleDeleteTestClick}
+        />
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Candidats testés</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalCandidates}</div>
-                <p className="text-xs text-muted-foreground">{stats.selectedCandidates} sélectionné(s)</p>
-              </CardContent>
-            </Card>
+        <GroupsTab
+          testGroups={testGroups}
+          groupFormationFilter={groupFormationFilter}
+          setGroupFormationFilter={setGroupFormationFilter}
+          groupsItemsPerPage={groupsItemsPerPage}
+          setGroupsItemsPerPage={setGroupsItemsPerPage}
+          groupsPage={groupsPage}
+          setGroupsPage={setGroupsPage}
+          setShowCreateGroupDialog={setShowCreateGroupDialog}
+          handleViewGroupCandidates={handleViewGroupCandidates}
+          handleOpenInvitationDialog={handleOpenInvitationDialog}
+          handleDeleteGroupClick={handleDeleteGroupClick}
+        />
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Score moyen</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.averageScore}%</div>
-                <Progress value={stats.averageScore} className="mt-2" />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Taux de réussite</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.passRate}%</div>
-                <Progress value={stats.passRate} className="mt-2" />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Alerte de synchronisation */}
-          {testResults.length > 0 && (
-            <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-              <RefreshCw className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="flex items-center justify-between">
-                <div>
-                  <strong className="text-blue-900 dark:text-blue-100">Synchronisation active</strong>
-                  <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                    Les tests effectués par les candidats s'affichent automatiquement ici.
-                    {testResults.length} résultat{testResults.length > 1 ? "s" : ""} disponible
-                    {testResults.length > 1 ? "s" : ""}.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchResults}
-                  className="ml-4 border-blue-300 text-blue-700 hover:bg-blue-100 bg-transparent"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Actualiser
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribution des scores</CardTitle>
-                <CardDescription>Répartition des candidats par tranche de score</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={scoreDistributionData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="range" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="count" fill="#FF6384" name="Candidats" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Répartition par statut</CardTitle>
-                <CardDescription>État des candidatures après les tests</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={statusDistributionData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {statusDistributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions rapides</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => setShowUploadDialog(true)}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Importer un test (CSV/Excel)
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => setShowEmailDialog(true)}
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Envoyer des invitations
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => setShowResultsDialog(true)}
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Consulter les résultats
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Accès rapide aux tests</CardTitle>
-                <CardDescription>Liens directs vers les tests candidats</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {testsData.slice(0, 3).map((test) => (
-                    <div
-                      key={test.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{test.title}</p>
-                        <p className="text-xs text-muted-foreground">{test.referentiel}</p>
-                      </div>
-                      <div className="flex space-x-1 ml-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyTestLink(test.id)}
-                          title="Copier le lien"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenTest(test.id)}
-                          title="Ouvrir le test"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {testsData.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">Aucun test disponible</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Liste des tests */}
-        <TabsContent value="tests" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <CardTitle>Liste des tests</CardTitle>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher..."
-                    className="pl-8 w-full sm:w-64"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Contrôles de pagination */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                <PageSizeSelector
-                  value={testsItemsPerPage}
-                  onChange={(value) => {
-                    setTestsItemsPerPage(value)
-                    setTestsPage(1)
-                  }}
-                />
-                <div className="text-sm text-muted-foreground">{filteredTests.length} test(s) au total</div>
-              </div>
-
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Titre</TableHead>
-                      <TableHead>Référentiel</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Durée</TableHead>
-                      <TableHead>Questions</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTests.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
-                          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground">Aucun test trouvé</p>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredTests
-                        .slice((testsPage - 1) * testsItemsPerPage, testsPage * testsItemsPerPage)
-                        .map((test) => (
-                          <TableRow key={test.id}>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{test.title}</div>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    <LinkIcon className="h-3 w-3 mr-1" />
-                                    /test/{test.id}
-                                  </Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 px-2"
-                                    onClick={() => handleCopyTestLink(test.id)}
-                                    title="Copier le lien"
-                                  >
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 px-2"
-                                    onClick={() => handleOpenTest(test.id)}
-                                    title="Ouvrir dans un nouvel onglet"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>{test.referentiel}</TableCell>
-                            <TableCell>
-                              {test.scheduledDate} à {test.scheduledTime}
-                            </TableCell>
-                            <TableCell>{test.duration} min</TableCell>
-                            <TableCell>{test.totalQuestions || test.questions?.length || 0}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditTest(test)}
-                                  title="Modifier"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteTestClick(test)}
-                                  title="Supprimer"
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Pagination en bas */}
-              <PaginationControls
-                page={testsPage}
-                itemsPerPage={testsItemsPerPage}
-                totalItems={filteredTests.length}
-                itemLabel="tests"
-                onPageChange={setTestsPage}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Groupes de tests */}
-        <TabsContent value="groups" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Groupes de tests</CardTitle>
-                  <CardDescription>Créez des groupes de candidats pour les tests en ligne</CardDescription>
-                </div>
-                <Button onClick={() => setShowCreateGroupDialog(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Créer un groupe
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Filtre */}
-              <div className="mb-4">
-                <Select value={groupFormationFilter} onValueChange={setGroupFormationFilter}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Formation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les formations</SelectItem>
-                    <SelectItem value="Dev Web">Dev Web</SelectItem>
-                    <SelectItem value="Data">Data</SelectItem>
-                    <SelectItem value="Hackeuse">Hackeuse</SelectItem>
-                    <SelectItem value="AWS">AWS</SelectItem>
-                    <SelectItem value="Design UX/UI">Design UX/UI</SelectItem>
-                    <SelectItem value="Cyber security">Cyber security</SelectItem>
-                    <SelectItem value="Intelligence Artificielle">Intelligence Artificielle</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Pagination groupes */}
-              {(() => {
-                const filteredGroups = testGroups.filter(
-                  (group) => groupFormationFilter === "all" || group.formation === groupFormationFilter,
-                )
-                return (
-                  <>
-                    <div className="flex items-center justify-between mb-4">
-                      <PageSizeSelector
-                        value={groupsItemsPerPage}
-                        onChange={(value) => {
-                          setGroupsItemsPerPage(value)
-                          setGroupsPage(1)
-                        }}
-                      />
-                      <div className="text-sm text-muted-foreground">{filteredGroups.length} groupe(s) au total</div>
-                    </div>
-
-                    {/* Liste des groupes */}
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Nom du groupe</TableHead>
-                            <TableHead>Formation</TableHead>
-                            <TableHead>Date du test</TableHead>
-                            <TableHead>Candidats</TableHead>
-                            <TableHead>Statut</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredGroups.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8">
-                                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                                <p className="text-muted-foreground">Aucun groupe créé</p>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                  Créez un groupe pour organiser vos tests
-                                </p>
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            filteredGroups
-                              .slice((groupsPage - 1) * groupsItemsPerPage, groupsPage * groupsItemsPerPage)
-                              .map((group) => (
-                                <TableRow key={group.id}>
-                                  <TableCell className="font-medium">{group.name}</TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline">{group.formation}</Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    {new Date(group.test_date).toLocaleString("fr-FR", {
-                                      dateStyle: "short",
-                                      timeStyle: "short",
-                                    })}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center space-x-2">
-                                      <Users className="h-4 w-4 text-muted-foreground" />
-                                      <span>{group.candidate_count} candidat(s)</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell><GroupStatusBadge status={group.status} /></TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex justify-end space-x-2">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleViewGroupCandidates(group)}
-                                        title="Voir les candidats"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </Button>
-                                      {group.status === "pending" && (
-                                        <Button
-                                          size="sm"
-                                          variant="default"
-                                          onClick={() => handleOpenInvitationDialog(group)}
-                                        >
-                                          <Mail className="mr-2 h-4 w-4" />
-                                          Envoyer invitations
-                                        </Button>
-                                      )}
-                                      {group.status === "scheduled" && group.email_sent && (
-                                        <GroupStatusBadge status={group.status} emailSent={group.email_sent} />
-                                      )}
-                                      <Button size="sm" variant="ghost" onClick={() => handleDeleteGroupClick(group)}>
-                                        <Trash className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    {/* Pagination bas */}
-                    <PaginationControls
-                      page={groupsPage}
-                      itemsPerPage={groupsItemsPerPage}
-                      totalItems={filteredGroups.length}
-                      itemLabel="groupes"
-                      onPageChange={setGroupsPage}
-                    />
-                  </>
-                )
-              })()}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Résultats */}
-        <TabsContent value="results" className="space-y-6">
-          <Card>
-            <CardHeader className="flex flex-col space-y-4">
-              <div className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Résultats des tests</CardTitle>
-                  <CardDescription>
-                    Consultez et gérez les résultats des candidats ({testResults.length} résultat
-                    {testResults.length > 1 ? "s" : ""})
-                  </CardDescription>
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowImportResultsDialog(true)}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Importer
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleExportResults("csv")}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Exporter
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={fetchResults} disabled={refreshing}>
-                    <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-                    Actualiser
-                  </Button>
-                </div>
-              </div>
-
-              {/* Toggle Vue + Filtres */}
-              <div className="flex flex-row justify-between items-center gap-2">
-                <div className="flex flex-row gap-2">
-                  <Select value={resultsReferentielFilter} onValueChange={setResultsReferentielFilter}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Formation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes les formations</SelectItem>
-                      {FORMATIONS.map((formation) => (
-                        <SelectItem key={formation} value={formation}>
-                          {formation}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={resultsStatusFilter} onValueChange={setResultsStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      <SelectItem value="admis">Passe en entretien</SelectItem>
-                      <SelectItem value="rejeté">Rejeté</SelectItem>
-                      <SelectItem value="en_attente">En attente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Toggle de vue */}
-                <div className="flex items-center space-x-2 border rounded-md p-1">
-                  <Button
-                    variant={resultsView === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setResultsView("list")}
-                  >
-                    <List className="h-4 w-4 mr-2" />
-                    Liste
-                  </Button>
-                  <Button
-                    variant={resultsView === "grouped" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setResultsView("grouped")}
-                  >
-                    <LayoutGrid className="h-4 w-4 mr-2" />
-                    Par Formation/Groupe
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Vue Liste */}
-              {resultsView === "list" && (
-                <>
-                  {/* Pagination résultats */}
-                  <div className="flex items-center justify-between mb-4">
-                    <PageSizeSelector
-                      value={resultsItemsPerPage}
-                      onChange={(value) => {
-                        setResultsItemsPerPage(value)
-                        setResultsPage(1)
-                      }}
-                    />
-                    <div className="text-sm text-muted-foreground">{filteredResults.length} résultat(s) au total</div>
-                  </div>
-
-                  <div className="rounded-md border overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[50px]">
-                            <Checkbox
-                              checked={selectedResults.length === filteredResults.length && filteredResults.length > 0}
-                              onCheckedChange={handleSelectAllResults}
-                            />
-                          </TableHead>
-                          <TableHead>Nom</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Test</TableHead>
-                          <TableHead>Score</TableHead>
-                          <TableHead>Points</TableHead>
-                          <TableHead>Statut</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Infractions</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredResults.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={10} className="text-center py-8">
-                              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                              <p className="text-muted-foreground">
-                                {testResults.length === 0
-                                  ? "Aucun résultat disponible"
-                                  : "Aucun résultat ne correspond aux filtres"}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-2">
-                                {testResults.length === 0
-                                  ? "Les résultats des tests effectués par les candidats apparaîtront ici"
-                                  : "Essayez de modifier les filtres pour voir plus de résultats"}
-                              </p>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          filteredResults
-                            .slice((resultsPage - 1) * resultsItemsPerPage, resultsPage * resultsItemsPerPage)
-                            .map((result) => {
-                              // Gérer les deux formats de données (ancien et nouveau)
-                              const candidateName = result.candidate?.name || result.candidateName || "N/A"
-                              const candidateEmail = result.candidate?.email || result.candidateEmail || "N/A"
-                              const score = result.score || 0
-                              const status = result.status || "pending"
-
-                              // Calculer les points réels
-                              const points = calculatePoints(result)
-
-                              // Mapper les statuts du nouveau format vers l'ancien
-                              const displayStatus =
-                                status === "admis" ? "selected" : status === "rejeté" ? "not_selected" : status
-
-                              return (
-                                <TableRow key={result.id}>
-                                  <TableCell className="w-12">
-                                    <Checkbox
-                                      checked={selectedResults.includes(result.id)}
-                                      onCheckedChange={() => handleSelectResult(result.id)}
-                                    />
-                                  </TableCell>
-                                  <TableCell className="font-medium">{candidateName}</TableCell>
-                                  <TableCell className="text-sm">{candidateEmail}</TableCell>
-                                  <TableCell className="text-sm">{result.testTitle}</TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center space-x-2">
-                                      <span className="font-semibold">{points.obtained}/{points.total} pts</span>
-                                      <Progress value={points.total > 0 ? (points.obtained / points.total) * 100 : 0} className="w-16" />
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <span className="font-medium text-sm">
-                                      {points.obtained}/{points.total}
-                                    </span>
-                                  </TableCell>
-                                  <TableCell><ResultStatusBadge status={displayStatus} /></TableCell>
-                                  <TableCell className="text-sm">
-                                    {result.submittedDate || new Date(result.completedAt).toLocaleDateString("fr-FR")}
-                                  </TableCell>
-                                  <TableCell>{getViolationSeverityBadge(testViolations[result.id])}</TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex justify-end space-x-1">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleViewDetails(result)}
-                                        title="Voir les réponses détaillées"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </Button>
-                                      {testViolations[result.id] &&
-                                        testViolations[result.id].violations?.length > 0 && (
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleViewViolations(result)}
-                                            title="Voir les infractions"
-                                            className="border-orange-300 text-orange-700 hover:bg-orange-50"
-                                          >
-                                            <AlertCircle className="h-4 w-4" />
-                                          </Button>
-                                        )}
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              )
-                            })
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {/* Pagination bas */}
-                  <PaginationControls
-                    page={resultsPage}
-                    itemsPerPage={resultsItemsPerPage}
-                    totalItems={filteredResults.length}
-                    itemLabel="résultats"
-                    onPageChange={setResultsPage}
-                  />
-                </>
-              )}
-
-              {/* Vue Groupée par Formation et Groupe */}
-              {resultsView === "grouped" && (
-                <div className="space-y-6">
-                  {groupedResults().length === 0 ? (
-                    <div className="text-center py-12">
-                      <LayoutGrid className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Aucun résultat à afficher</h3>
-                      <p className="text-muted-foreground">
-                        {testResults.length === 0
-                          ? "Les résultats des tests apparaîtront ici groupés par formation"
-                          : "Aucun résultat ne correspond aux filtres sélectionnés"}
-                      </p>
-                    </div>
-                  ) : (
-                    groupedResults().map((formationGroup, idx) => (
-                      <Card key={idx} className="border-2">
-                        <CardHeader className="bg-gradient-to-r from-orange-50 to-purple-50 dark:from-gray-800 dark:to-gray-700">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className="p-2 bg-orange-500 rounded-lg">
-                                <GraduationCap className="h-6 w-6 text-white" />
-                              </div>
-                              <div>
-                                <CardTitle className="text-xl">{formationGroup.formation}</CardTitle>
-                                <CardDescription className="text-sm mt-1">
-                                  {formationGroup.totalResults} résultat{formationGroup.totalResults > 1 ? "s" : ""} •{" "}
-                                  {Object.keys(formationGroup.groups).length} groupe
-                                  {Object.keys(formationGroup.groups).length > 1 ? "s" : ""}
-                                </CardDescription>
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                {formationGroup.admis} Passe en entretien
-                              </Badge>
-                              <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                {formationGroup.rejected} Rejetés
-                              </Badge>
-                              {formationGroup.pending > 0 && (
-                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {formationGroup.pending} En attente
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                          <div className="space-y-4">
-                            {Object.values(formationGroup.groups).map((group, groupIdx) => (
-                              <Card key={groupIdx} className="border">
-                                <CardHeader className="pb-3">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                      <UsersIcon className="h-5 w-5 text-orange-500" />
-                                      <CardTitle className="text-base">{group.groupName}</CardTitle>
-                                      <Badge variant="outline">
-                                        {group.results.length} candidat{group.results.length > 1 ? "s" : ""}
-                                      </Badge>
-                                    </div>
-                                    <div className="flex space-x-2">
-                                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20">
-                                        {group.admis} ✓
-                                      </Badge>
-                                      <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20">
-                                        {group.rejected} ✗
-                                      </Badge>
-                                      {group.pending > 0 && (
-                                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20">
-                                          {group.pending} ⏱
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CardHeader>
-                                <CardContent>
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Nom</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Score</TableHead>
-                                        <TableHead>Points</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Violations</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {group.results.map((result) => {
-                                        const candidateName = result.candidate?.name || result.candidateName || "N/A"
-                                        const candidateEmail = result.candidate?.email || result.candidateEmail || "N/A"
-                                        const score = result.score || 0
-                                        const status = result.status || "pending"
-
-                                        // Calculer les points réels
-                                        const points = calculatePoints(result)
-
-                                        const displayStatus =
-                                          status === "admis"
-                                            ? "selected"
-                                            : status === "rejeté"
-                                              ? "not_selected"
-                                              : status
-
-                                        return (
-                                          <TableRow key={result.id}>
-                                            <TableCell className="font-medium">{candidateName}</TableCell>
-                                            <TableCell className="text-sm">{candidateEmail}</TableCell>
-                                            <TableCell>
-                                              <div className="flex items-center space-x-2">
-                                                <span className="font-semibold">{points.obtained}/{points.total} pts</span>
-                                                <Progress value={points.total > 0 ? (points.obtained / points.total) * 100 : 0} className="w-16" />
-                                              </div>
-                                            </TableCell>
-                                            <TableCell>
-                                              <span className="font-medium text-sm">
-                                                {points.obtained}/{points.total}
-                                              </span>
-                                            </TableCell>
-                                            <TableCell><ResultStatusBadge status={displayStatus} /></TableCell>
-                                            <TableCell className="text-sm">
-                                              {result.submittedDate ||
-                                                new Date(result.completedAt).toLocaleDateString("fr-FR")}
-                                            </TableCell>
-                                            <TableCell>{getViolationSeverityBadge(testViolations[result.id])}</TableCell>
-                                            <TableCell className="text-right">
-                                              <div className="flex justify-end space-x-1">
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  onClick={() => handleViewDetails(result)}
-                                                  title="Voir les réponses détaillées"
-                                                >
-                                                  <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {testViolations[result.id] &&
-                                                  testViolations[result.id].violations?.length > 0 && (
-                                                    <Button
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() => handleViewViolations(result)}
-                                                      title="Voir les infractions"
-                                                      className="border-orange-300 text-orange-700 hover:bg-orange-50"
-                                                    >
-                                                      <AlertCircle className="h-4 w-4" />
-                                                    </Button>
-                                                  )}
-                                              </div>
-                                            </TableCell>
-                                          </TableRow>
-                                        )
-                                      })}
-                                    </TableBody>
-                                  </Table>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <ResultsTab
+          testResults={testResults}
+          refreshing={refreshing}
+          setShowImportResultsDialog={setShowImportResultsDialog}
+          handleExportResults={handleExportResults}
+          fetchResults={fetchResults}
+          resultsReferentielFilter={resultsReferentielFilter}
+          setResultsReferentielFilter={setResultsReferentielFilter}
+          resultsStatusFilter={resultsStatusFilter}
+          setResultsStatusFilter={setResultsStatusFilter}
+          resultsView={resultsView}
+          setResultsView={setResultsView}
+          resultsItemsPerPage={resultsItemsPerPage}
+          setResultsItemsPerPage={setResultsItemsPerPage}
+          resultsPage={resultsPage}
+          setResultsPage={setResultsPage}
+          filteredResults={filteredResults}
+          selectedResults={selectedResults}
+          handleSelectAllResults={handleSelectAllResults}
+          handleSelectResult={handleSelectResult}
+          calculatePoints={calculatePoints}
+          getViolationSeverityBadge={getViolationSeverityBadge}
+          testViolations={testViolations}
+          handleViewDetails={handleViewDetails}
+          handleViewViolations={handleViewViolations}
+          groupedResults={groupedResults}
+        />
 
       </Tabs>
 
