@@ -35,21 +35,31 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  ALLOWED_EXTENSIONS,
-  ALLOWED_FILE_TYPES,
   API_BASE_URL,
   COUNTRY_CODES,
   DIPLOMAS,
   FILE_FORMATS_HELP_TEXT,
   FILE_INPUT_ACCEPT,
-  FILE_SIZE_ERROR_MESSAGE,
-  FILE_TYPE_ERROR_MESSAGE,
   LEGAL_FORMS,
-  MAX_FILE_SIZE,
   REGIONS_DATA,
   ROLES,
   SECTORS,
 } from "./constants"
+import {
+  handlePhoneInput,
+  mergeErrors,
+  omitError,
+  processInputValue,
+  updateFormDataValue,
+} from "./input-helpers"
+import {
+  getRequiredBlurFields,
+  validateFieldRealtime as runRealtimeFieldValidation,
+  validateFile,
+  validateStep1,
+  validateStep2,
+  validateStep3,
+} from "./validation"
 
 export default function StartupCandidaturePage() {
   const [step, setStep] = useState(1)
@@ -106,130 +116,9 @@ export default function StartupCandidaturePage() {
     acceptTerms: false,
   })
 
-  // Fonction de validation de type de fichier
-  const validateFileType = (file) => {
-    const fileExtension = "." + file.name.split(".").pop().toLowerCase()
-    const isValidType =
-      Object.keys(ALLOWED_FILE_TYPES).includes(file.type) || ALLOWED_EXTENSIONS.includes(fileExtension)
-    return isValidType
-  }
-
-  // Fonction de validation d'email
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  // Fonction pour filtrer les caractères non-numériques du téléphone
-  const handlePhoneInput = (e) => {
-    const allowedKeys = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight"]
-    if (allowedKeys.includes(e.key) || (e.key >= "0" && e.key <= "9")) {
-      return true
-    }
-    e.preventDefault()
-    return false
-  }
-
-  // Fonction pour nettoyer la valeur du téléphone
-  const cleanPhoneValue = (value) => {
-    return value.replace(/[^0-9]/g, "")
-  }
-
-  // Fonction de validation en temps réel
   const validateFieldRealtime = useCallback(
     (name, value) => {
-      const errors = {}
-
-      switch (name) {
-        case "firstName":
-          if (!value.trim()) errors[name] = "Le prénom est obligatoire"
-          break
-        case "lastName":
-          if (!value.trim()) errors[name] = "Le nom est obligatoire"
-          break
-        case "email":
-          if (!value.trim()) {
-            errors[name] = "L'email est obligatoire"
-          } else if (!validateEmail(value)) {
-            errors[name] = "Veuillez saisir une adresse email valide (ex: nom@domaine.com)"
-          }
-          break
-        case "emailAlternate":
-          if (value.trim()) {
-            if (!validateEmail(value)) {
-              errors[name] = "Veuillez saisir une adresse email valide"
-            } else if (value === formData.email) {
-              errors[name] = "L'email alternatif doit être différent de l'email principal"
-            }
-          }
-          break
-        case "phone":
-          if (!value.trim()) {
-            errors[name] = "Le téléphone est obligatoire"
-          } else if (value.length < 8) {
-            errors[name] = "Le téléphone doit contenir au moins 8 chiffres"
-          }
-          break
-        case "otherRole":
-          if (formData.role === "Autre" && !value.trim()) {
-            errors[name] = "Veuillez préciser votre rôle"
-          }
-          break
-        case "otherDiploma":
-          if (formData.diploma === "autre" && !value.trim()) {
-            errors[name] = "Veuillez préciser votre diplôme"
-          }
-          break
-        case "companyName":
-          if (!value.trim()) errors[name] = "Le nom de l'entreprise est obligatoire"
-          break
-        case "ninea":
-          if (!value.trim()) errors[name] = "Le NINEA ou régie de commerce est obligatoire"
-          break
-        case "employees":
-          if (!value.trim()) errors[name] = "Le nombre d'employés est obligatoire"
-          break
-        case "creationDate":
-          if (!value.trim()) {
-            errors[name] = "La date de création est obligatoire"
-          } else {
-            const creationDate = new Date(value)
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
-            if (creationDate > today) {
-              errors[name] = "La date de création ne peut pas dépasser la date du jour."
-            }
-          }
-          break
-        case "raisedAmount":
-          if (formData.raisedFunds === "Oui" && !value.trim()) {
-            errors[name] = "Le montant levé est obligatoire"
-          }
-          break
-        case "otherSector":
-          if (formData.sector === "other" && !value.trim()) {
-            errors[name] = "Veuillez préciser votre secteur d'activité"
-          }
-          break
-        case "otherLegalForm":
-          if (formData.legalForm === "Autre" && !value.trim()) {
-            errors[name] = "Veuillez préciser la forme juridique"
-          }
-          break
-        case "productName":
-          if (!value.trim()) errors[name] = "Le nom du produit/service est obligatoire"
-          break
-        case "productDescription":
-          if (!value.trim()) errors[name] = "La description du produit/service est obligatoire"
-          break
-        case "activityDescription":
-          if (!value.trim()) errors[name] = "La description de l'activité est obligatoire"
-          break
-        default:
-          break
-      }
-
-      return errors
+      return runRealtimeFieldValidation(name, value, formData)
     },
     [formData.email, formData.role, formData.diploma, formData.sector, formData.legalForm, formData.raisedFunds],
   )
@@ -256,47 +145,17 @@ export default function StartupCandidaturePage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    let processedValue = value
+    const processedValue = processInputValue({ name, value, type, checked })
 
-    // Nettoyer la valeur du téléphone
-    if (name === "phone") {
-      processedValue = cleanPhoneValue(value)
-    }
-
-    // Validation pour les champs numériques
-    if (name === "capital" || name === "revenue" || name === "raisedAmount") {
-      processedValue = value.replace(/\D/g, "")
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : processedValue,
-    }))
-
-    // Reset des erreurs de région/département si on change la région
-    if (name === "region") {
-      setFormData((prev) => ({ ...prev, department: "" }))
-    }
+    setFormData((prev) => updateFormDataValue(prev, name, processedValue))
 
     // Reset validation errors
     if (name === "email") setEmailExists(false)
     if (name === "phone") setPhoneExists(false)
 
-    if (validationErrors[name]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
+    setValidationErrors((prev) => omitError(prev, name))
 
-    if (realtimeErrors[name]) {
-      setRealtimeErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
+    setRealtimeErrors((prev) => omitError(prev, name))
 
     // Validation en temps réel avec debounce
     if (type !== "checkbox" && type !== "file") {
@@ -313,23 +172,7 @@ export default function StartupCandidaturePage() {
 
   const handleBlur = (e) => {
     const { name, value } = e.target
-    const requiredFields = [
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "companyName",
-      "ninea",
-      "employees",
-      "creationDate",
-      "productName",
-      "productDescription",
-      "activityDescription",
-    ]
-
-    if (formData.raisedFunds === "Oui") {
-      requiredFields.push("raisedAmount")
-    }
+    const requiredFields = getRequiredBlurFields(formData)
 
     if (requiredFields.includes(name) && !value.trim()) {
       const fieldErrors = validateFieldRealtime(name, value)
@@ -405,210 +248,70 @@ export default function StartupCandidaturePage() {
     const { name, files } = e.target
     if (files && files[0]) {
       const file = files[0]
+      const fileError = validateFile(file)
 
-      // Validation du type de fichier
-      if (!validateFileType(file)) {
+      if (fileError) {
         setValidationErrors((prev) => ({
           ...prev,
-          [name]: FILE_TYPE_ERROR_MESSAGE,
+          [name]: fileError,
         }))
         return
       }
 
-      if (file.size > MAX_FILE_SIZE) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          [name]: FILE_SIZE_ERROR_MESSAGE,
-        }))
-        return
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        [name]: file,
-      }))
-
-      if (validationErrors[name]) {
-        setValidationErrors((prev) => {
-          const newErrors = { ...prev }
-          delete newErrors[name]
-          return newErrors
-        })
-      }
+      setFormData((prev) => updateFormDataValue(prev, name, file))
+      setValidationErrors((prev) => omitError(prev, name))
     }
   }
 
   const handleSelectChange = (name, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-
-    // Reset des erreurs de département si on change la région
-    if (name === "region") {
-      setFormData((prev) => ({ ...prev, department: "" }))
-    }
-
-    if (validationErrors[name]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
-
-    if (realtimeErrors[name]) {
-      setRealtimeErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
+    setFormData((prev) => updateFormDataValue(prev, name, value))
+    setValidationErrors((prev) => omitError(prev, name))
+    setRealtimeErrors((prev) => omitError(prev, name))
   }
 
   const handleRadioChange = (name, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-
-    if (validationErrors[name]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
+    setFormData((prev) => updateFormDataValue(prev, name, value))
+    setValidationErrors((prev) => omitError(prev, name))
   }
 
   // Fonction pour combiner les erreurs
   const getAllErrors = () => {
-    return { ...realtimeErrors, ...validationErrors }
+    return mergeErrors(realtimeErrors, validationErrors)
   }
 
   // Validation des étapes
-  const validateStep1 = () => {
-    const errors = {}
-
-    if (!formData.firstName.trim()) errors.firstName = "Le prénom est obligatoire"
-    if (!formData.lastName.trim()) errors.lastName = "Le nom est obligatoire"
-    if (!formData.role.trim()) errors.role = "Le rôle est obligatoire"
-    if (!formData.email.trim()) errors.email = "L'email est obligatoire"
-    if (!formData.phone.trim()) errors.phone = "Le téléphone est obligatoire"
-    if (!formData.region.trim()) errors.region = "La région est obligatoire"
-    if (!formData.department.trim()) errors.department = "Le département est obligatoire"
-    if (!formData.diploma.trim()) errors.diploma = "Le diplôme est obligatoire"
-    if (!formData.cv) errors.cv = "Le CV est obligatoire"
-
-    if (formData.email.trim() && !validateEmail(formData.email)) {
-      errors.email = "Veuillez saisir une adresse email valide (ex: nom@domaine.com)"
-    }
-
-    if (formData.emailAlternate.trim()) {
-      if (!validateEmail(formData.emailAlternate)) {
-        errors.emailAlternate = "Veuillez saisir une adresse email valide"
-      } else if (formData.emailAlternate === formData.email) {
-        errors.emailAlternate = "L'email alternatif doit être différent de l'email principal"
-      }
-    }
-
-    if (formData.phone.trim() && formData.phone.length < 8) {
-      errors.phone = "Le téléphone doit contenir au moins 8 chiffres"
-    }
-
-    if (formData.role === "Autre" && !formData.otherRole.trim()) {
-      errors.otherRole = "Veuillez préciser votre rôle"
-    }
-
-    if (formData.diploma === "autre" && !formData.otherDiploma.trim()) {
-      errors.otherDiploma = "Veuillez préciser votre diplôme"
-    }
-
-    if (emailExists) {
-      errors.email = "Cet email a déjà été utilisé pour une candidature"
-    }
-
-    if (phoneExists) {
-      errors.phone = "Ce numéro de téléphone a déjà été utilisé pour une candidature"
-    }
-
+  const runStep1Validation = () => {
+    const { errors, isValid } = validateStep1({
+      formData,
+      emailExists,
+      phoneExists,
+      emailCheckLoading,
+      phoneCheckLoading,
+    })
     setValidationErrors(errors)
-    return Object.keys(errors).length === 0 && !emailCheckLoading && !phoneCheckLoading
+    return isValid
   }
 
-  const validateStep2 = () => {
-    const errors = {}
-
-    if (!formData.companyName.trim()) errors.companyName = "Le nom de l'entreprise est obligatoire"
-    if (!formData.ninea.trim()) errors.ninea = "Le NINEA ou régie de commerce est obligatoire"
-    if (!formData.sector.trim()) errors.sector = "Le secteur d'activité est obligatoire"
-    if (!formData.businessModel.trim()) errors.businessModel = "Le modèle d'affaire est obligatoire"
-    if (!formData.creationDate.trim()) errors.creationDate = "La date de création est obligatoire"
-    if (!formData.legalForm.trim()) errors.legalForm = "La forme juridique est obligatoire"
-    if (!formData.employees.trim()) errors.employees = "Le nombre d'employés est obligatoire"
-    if (!formData.raisedFunds.trim()) errors.raisedFunds = "Veuillez indiquer si vous avez levé des fonds"
-    if (!formData.pitchDeck) errors.pitchDeck = "Le document de présentation est obligatoire"
-
-    if (formData.raisedFunds === "Oui" && !formData.raisedAmount.trim()) {
-      errors.raisedAmount = "Le montant levé est obligatoire"
-    }
-
-    if (formData.creationDate) {
-      const creationDate = new Date(formData.creationDate)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (creationDate > today) {
-        errors.creationDate = "La date de création ne peut pas dépasser la date du jour."
-      }
-    }
-
-    if (formData.sector === "other" && !formData.otherSector.trim()) {
-      errors.otherSector = "Veuillez préciser votre secteur d'activité"
-    }
-
-    if (formData.legalForm === "Autre" && !formData.otherLegalForm.trim()) {
-      errors.otherLegalForm = "Veuillez préciser la forme juridique"
-    }
-
+  const runStep2Validation = () => {
+    const { errors, isValid } = validateStep2(formData)
     setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    return isValid
   }
 
-  const validateStep3 = () => {
-    const errors = {}
-
-    if (!formData.productName.trim()) {
-      errors.productName = "Le nom du produit/service est obligatoire"
-    }
-
-    if (!formData.productDescription.trim()) {
-      errors.productDescription = "La description du produit/service est obligatoire"
-    }
-
-    if (!formData.activityDescription.trim()) {
-      errors.activityDescription = "La description de l'activité est obligatoire"
-    }
-
-    if (!formData.hasWorkingProduct.trim()) {
-      errors.hasWorkingProduct = "Veuillez indiquer si vous avez un produit fonctionnel"
-    }
-
-    if (!formData.acceptTerms) {
-      errors.acceptTerms = "Vous devez accepter les conditions d'utilisation"
-    }
-
+  const runStep3Validation = () => {
+    const { errors, isValid } = validateStep3(formData)
     setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    return isValid
   }
 
   const getStepValidation = (step) => {
     switch (step) {
       case 1:
-        return validateStep1()
+        return runStep1Validation()
       case 2:
-        return validateStep2()
+        return runStep2Validation()
       case 3:
-        return validateStep3()
+        return runStep3Validation()
       default:
         return false
     }
@@ -653,7 +356,7 @@ export default function StartupCandidaturePage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!validateStep3()) {
+    if (!runStep3Validation()) {
       scrollToFirstError()
       return
     }
