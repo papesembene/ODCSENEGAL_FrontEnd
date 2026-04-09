@@ -15,6 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowRight, ArrowLeft, Upload, AlertCircle, FileText, Lightbulb } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
+  checkOrangeFabEmailExists,
+  checkOrangeFabPhoneExists,
+  submitOrangeFabApplication,
+} from "@/lib/public-api"
+import {
   countryCodes,
   diplomas,
   legalForms,
@@ -23,6 +28,7 @@ import {
   sectors,
 } from "./constants"
 import {
+  buildApplicationFormData,
   buildInputFormData,
   buildSelectFormData,
   clearFieldError,
@@ -31,7 +37,7 @@ import {
 } from "./input-helpers"
 import {
   validateFieldRealtime as validateOrangeFabFieldRealtime,
-  validateFileType,
+  validateFile,
   validateRequiredFieldOnBlur as validateOrangeFabRequiredFieldOnBlur,
   validateStep1 as validateOrangeFabStep1,
   validateStep2 as validateOrangeFabStep2,
@@ -182,13 +188,8 @@ export default function OrangeFabCandidaturePage() {
 
       setEmailCheckLoading(true)
       try {
-        //const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orangefab/check-email?email=${encodeURIComponent(formData.email)}`)
-
-        if (response.ok) {
-          const data = await response.json()
-          setEmailExists(data.exists)
-        }
+        const data = await checkOrangeFabEmailExists(formData.email)
+        setEmailExists(data.exists)
       } catch (error) {
         console.error("Error checking email:", error)
       } finally {
@@ -212,14 +213,9 @@ export default function OrangeFabCandidaturePage() {
 
       setPhoneCheckLoading(true)
       try {
-        //const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
         const fullPhone = formData.phoneCountry + formData.phone
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orangefab/check-phone?phone=${encodeURIComponent(fullPhone)}`)
-
-        if (response.ok) {
-          const data = await response.json()
-          setPhoneExists(data.exists)
-        }
+        const data = await checkOrangeFabPhoneExists(fullPhone)
+        setPhoneExists(data.exists)
       } catch (error) {
         console.error("Error checking phone:", error)
       } finally {
@@ -240,22 +236,12 @@ export default function OrangeFabCandidaturePage() {
     const { name, files } = e.target
     if (files && files[0]) {
       const file = files[0]
-      const maxSize = 128 * 1024 * 1024 
+      const fileError = validateFile(file)
 
-      // Validation du type de fichier
-      if (!validateFileType(file)) {
+      if (fileError) {
         setValidationErrors((prev) => ({
           ...prev,
-          [name]:
-            "Type de fichier non autorisé. Formats acceptés : Images (PNG, JPG, JPEG, GIF, BMP, WEBP), Documents Word (DOC, DOCX), PowerPoint (PPT, PPTX), PDF",
-        }))
-        return
-      }
-
-      if (file.size > maxSize) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          [name]: "Le fichier est trop volumineux. Taille maximale : 128MB",
+          [name]: fileError,
         }))
         return
       }
@@ -409,33 +395,8 @@ export default function OrangeFabCandidaturePage() {
     setIsSubmitting(true)
 
     try {
-      const form = new FormData()
-
-      // Ajouter tous les champs au FormData
-      Object.keys(formData).forEach((key) => {
-        if (key !== "cv" && key !== "pitchDeck") {
-          form.append(key, formData[key])
-        }
-      })
-
-      // Ajouter le téléphone complet avec indicatif
-      form.append("fullPhone", formData.phoneCountry + formData.phone)
-
-      // Ajouter les fichiers
-      if (formData.cv) form.append("cv", formData.cv)
-      if (formData.pitchDeck) form.append("pitch_deck", formData.pitchDeck)
-
-      //const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orangefab/`, {
-        method: "POST",
-        body: form,
-      })
-
-      if (!response.ok) {
-        const err = await response.json()
-        alert(`Erreur : ${err.error || "Échec de la soumission."}`)
-        return
-      }
+      const form = buildApplicationFormData(formData)
+      await submitOrangeFabApplication(form)
 
       setIsSubmitted(true)
     } catch (error) {

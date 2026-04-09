@@ -108,6 +108,13 @@ export const ALLOWED_EXTENSIONS = [
   ".pdf",
 ]
 
+export const MAX_FILE_SIZE = 128 * 1024 * 1024
+
+export const FILE_TYPE_ERROR_MESSAGE =
+  "Type de fichier non autorisé. Formats acceptés : Images (PNG, JPG, JPEG, GIF, BMP, WEBP), Documents Word (DOC, DOCX), PowerPoint (PPT, PPTX), PDF"
+
+export const FILE_SIZE_ERROR_MESSAGE = "Le fichier est trop volumineux. Taille maximale : 128MB"
+
 export const sectors = [
   { value: "agriculture", label: "Agriculture" },
   { value: "education", label: "Éducation" },

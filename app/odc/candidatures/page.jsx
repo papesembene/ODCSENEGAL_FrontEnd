@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Send, CheckCircle, ChevronDown, Search, AlertCircle} from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { checkUniqueCandidatureField, submitOdcCandidature } from "@/lib/public-api"
 import { countryCodes, formations, regions, getNationalitiesByLetter } from "./constants"
 import { getMonthsForFormation, validateField, validateIdNumber } from "./validation"
 import { buildNextFormData, clearFieldError, resetPhoneForCountryChange, sanitizeFieldValue } from "./input-helpers"
 
 export default function CandidaturePage() {
-  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   // Références pour le défilement vers les champs avec erreurs
   const formRef = useRef(null)
   const fieldRefs = useRef({})
@@ -260,10 +260,7 @@ export default function CandidaturePage() {
       if (field === "email") setCheckingEmail(true)
       if (field === "idNumber") setCheckingIdNumber(true)
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/candidature/check-unique?field=${field}&value=${encodeURIComponent(value)}`,
-      )
-      const data = await response.json()
+      const data = await checkUniqueCandidatureField(field, value)
 
       if (field === "email") {
         setEmailExists(data.exists)
@@ -416,20 +413,7 @@ export default function CandidaturePage() {
       }
 
       //console.log("Tentative de connexion à:", "/api/candidatures/apply")
-      const response = await fetch(`${API_BASE_URL}/api/candidature/apply`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(candidatureData),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Erreur lors de la soumission")
-      }
-
-      const result = await response.json()
+      await submitOdcCandidature(candidatureData)
       setIsSubmitted(true)
 
       // Réinitialiser le formulaire

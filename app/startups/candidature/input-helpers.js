@@ -1,61 +1,33 @@
-export const allowedPhoneKeys = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight"]
-
-export const isNumericField = (name) => {
-  return name === "capital" || name === "revenue" || name === "raisedAmount"
-}
-
-export const handlePhoneInput = (event) => {
-  if (allowedPhoneKeys.includes(event.key) || (event.key >= "0" && event.key <= "9")) {
-    return true
-  }
-
-  event.preventDefault()
-  return false
-}
-
-export const cleanPhoneValue = (value) => {
-  return value.replace(/[^0-9]/g, "")
-}
+import {
+  buildInputFormData,
+  buildMultipartApplicationFormData,
+  buildSelectFormData,
+  clearFieldError,
+  handlePhoneInput,
+  mergeErrors,
+  normalizeSharedFieldValue,
+} from "./shared-form-utils"
 
 export const processInputValue = ({ name, value, type, checked }) => {
   if (type === "checkbox") {
     return checked
   }
 
-  if (name === "phone") {
-    return cleanPhoneValue(value)
-  }
-
-  if (isNumericField(name)) {
-    return value.replace(/\D/g, "")
-  }
-
-  return value
+  return normalizeSharedFieldValue(name, value)
 }
 
 export const updateFormDataValue = (prev, name, value) => {
-  const nextFormData = {
-    ...prev,
-    [name]: value,
-  }
-
   if (name === "region") {
-    nextFormData.department = ""
+    return buildSelectFormData(prev, name, value)
   }
 
-  return nextFormData
+  return buildInputFormData(prev, { name, type: "text", checked: false, value })
 }
 
-export const omitError = (errors, name) => {
-  if (!errors[name]) {
-    return errors
-  }
+export const omitError = clearFieldError
 
-  const nextErrors = { ...errors }
-  delete nextErrors[name]
-  return nextErrors
+export const buildApplicationFormData = (formData) => {
+  return buildMultipartApplicationFormData(formData, { program: "startup_lab" })
 }
 
-export const mergeErrors = (realtimeErrors, validationErrors) => {
-  return { ...realtimeErrors, ...validationErrors }
-}
+export { handlePhoneInput, mergeErrors }
