@@ -100,6 +100,13 @@ import {
   parseQuestionsCsv,
   validateQuestionBeforeSave,
 } from "./helpers"
+import {
+  ConfirmationDialog,
+  GroupStatusBadge,
+  PageSizeSelector,
+  PaginationControls,
+  ResultStatusBadge,
+} from "./components"
 
 export default function TestsManagementPage() {
   const router = useRouter()
@@ -1256,24 +1263,6 @@ export default function TestsManagementPage() {
     window.open(url, "_blank")
   }
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      active: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      scheduled: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-      completed: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-      draft: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
-    }
-
-    const labels = {
-      active: "Actif",
-      scheduled: "Programmé",
-      completed: "Terminé",
-      draft: "Brouillon",
-    }
-
-    return <Badge className={styles[status] || styles.draft}>{labels[status] || status}</Badge>
-  }
-
   const filteredTests = testsData.filter((test) => {
     const matchesSearch =
       searchTerm === "" ||
@@ -1577,28 +1566,13 @@ export default function TestsManagementPage() {
             <CardContent>
               {/* Contrôles de pagination */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Afficher</span>
-                  <Select
-                    value={testsItemsPerPage.toString()}
-                    onValueChange={(value) => {
-                      setTestsItemsPerPage(Number.parseInt(value))
-                      setTestsPage(1)
-                    }}
-                  >
-                    <SelectTrigger className="w-[80px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="30">30</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-sm text-muted-foreground">par page</span>
-                </div>
+                <PageSizeSelector
+                  value={testsItemsPerPage}
+                  onChange={(value) => {
+                    setTestsItemsPerPage(value)
+                    setTestsPage(1)
+                  }}
+                />
                 <div className="text-sm text-muted-foreground">{filteredTests.length} test(s) au total</div>
               </div>
 
@@ -1690,55 +1664,13 @@ export default function TestsManagementPage() {
               </div>
 
               {/* Pagination en bas */}
-              {filteredTests.length > 0 && (
-                <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-muted-foreground">
-                    Affichage de {Math.min((testsPage - 1) * testsItemsPerPage + 1, filteredTests.length)} à{" "}
-                    {Math.min(testsPage * testsItemsPerPage, filteredTests.length)} sur {filteredTests.length} tests
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTestsPage((prev) => Math.max(1, prev - 1))}
-                      disabled={testsPage === 1}
-                    >
-                      Précédent
-                    </Button>
-                    <div className="flex gap-1">
-                      {Array.from({ length: Math.ceil(filteredTests.length / testsItemsPerPage) }, (_, i) => i + 1)
-                        .filter((page) => {
-                          const totalPages = Math.ceil(filteredTests.length / testsItemsPerPage)
-                          if (totalPages <= 7) return true
-                          if (page === 1 || page === totalPages) return true
-                          if (Math.abs(page - testsPage) <= 1) return true
-                          return false
-                        })
-                        .map((page, idx) => (
-                          <Button
-                            key={idx}
-                            variant={testsPage === page ? "default" : "outline"}
-                            size="sm"
-                            className="w-8 h-8 p-0"
-                            onClick={() => setTestsPage(page)}
-                          >
-                            {page}
-                          </Button>
-                        ))}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setTestsPage((prev) => Math.min(Math.ceil(filteredTests.length / testsItemsPerPage), prev + 1))
-                      }
-                      disabled={testsPage >= Math.ceil(filteredTests.length / testsItemsPerPage)}
-                    >
-                      Suivant
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <PaginationControls
+                page={testsPage}
+                itemsPerPage={testsItemsPerPage}
+                totalItems={filteredTests.length}
+                itemLabel="tests"
+                onPageChange={setTestsPage}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1786,28 +1718,13 @@ export default function TestsManagementPage() {
                 return (
                   <>
                     <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Afficher</span>
-                        <Select
-                          value={groupsItemsPerPage.toString()}
-                          onValueChange={(value) => {
-                            setGroupsItemsPerPage(Number.parseInt(value))
-                            setGroupsPage(1)
-                          }}
-                        >
-                          <SelectTrigger className="w-[80px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="10">10</SelectItem>
-                            <SelectItem value="20">20</SelectItem>
-                            <SelectItem value="30">30</SelectItem>
-                            <SelectItem value="50">50</SelectItem>
-                            <SelectItem value="100">100</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <span className="text-sm text-muted-foreground">par page</span>
-                      </div>
+                      <PageSizeSelector
+                        value={groupsItemsPerPage}
+                        onChange={(value) => {
+                          setGroupsItemsPerPage(value)
+                          setGroupsPage(1)
+                        }}
+                      />
                       <div className="text-sm text-muted-foreground">{filteredGroups.length} groupe(s) au total</div>
                     </div>
 
@@ -1856,12 +1773,7 @@ export default function TestsManagementPage() {
                                       <span>{group.candidate_count} candidat(s)</span>
                                     </div>
                                   </TableCell>
-                                  <TableCell>
-                                    {group.status === "pending" && <Badge variant="secondary">En attente</Badge>}
-                                    {group.status === "scheduled" && <Badge className="bg-blue-500">Planifié</Badge>}
-                                    {group.status === "completed" && <Badge className="bg-green-500">Terminé</Badge>}
-                                    {group.status === "cancelled" && <Badge variant="destructive">Annulé</Badge>}
-                                  </TableCell>
+                                  <TableCell><GroupStatusBadge status={group.status} /></TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex justify-end space-x-2">
                                       <Button
@@ -1883,10 +1795,7 @@ export default function TestsManagementPage() {
                                         </Button>
                                       )}
                                       {group.status === "scheduled" && group.email_sent && (
-                                        <Badge variant="outline" className="mr-2">
-                                          <CheckCircle className="h-3 w-3 mr-1" />
-                                          Envoyé le {new Date(group.email_sent).toLocaleDateString("fr-FR")}
-                                        </Badge>
+                                        <GroupStatusBadge status={group.status} emailSent={group.email_sent} />
                                       )}
                                       <Button size="sm" variant="ghost" onClick={() => handleDeleteGroupClick(group)}>
                                         <Trash className="h-4 w-4" />
@@ -1901,61 +1810,13 @@ export default function TestsManagementPage() {
                     </div>
 
                     {/* Pagination bas */}
-                    {filteredGroups.length > 0 && (
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="text-sm text-muted-foreground">
-                          Affichage de {Math.min((groupsPage - 1) * groupsItemsPerPage + 1, filteredGroups.length)} à{" "}
-                          {Math.min(groupsPage * groupsItemsPerPage, filteredGroups.length)} sur {filteredGroups.length}{" "}
-                          groupes
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setGroupsPage((prev) => Math.max(1, prev - 1))}
-                            disabled={groupsPage === 1}
-                          >
-                            Précédent
-                          </Button>
-                          <div className="flex gap-1">
-                            {Array.from(
-                              { length: Math.ceil(filteredGroups.length / groupsItemsPerPage) },
-                              (_, i) => i + 1,
-                            )
-                              .filter((page) => {
-                                const totalPages = Math.ceil(filteredGroups.length / groupsItemsPerPage)
-                                if (totalPages <= 7) return true
-                                if (page === 1 || page === totalPages) return true
-                                if (Math.abs(page - groupsPage) <= 1) return true
-                                return false
-                              })
-                              .map((page, idx) => (
-                                <Button
-                                  key={idx}
-                                  variant={groupsPage === page ? "default" : "outline"}
-                                  size="sm"
-                                  className="w-8 h-8 p-0"
-                                  onClick={() => setGroupsPage(page)}
-                                >
-                                  {page}
-                                </Button>
-                              ))}
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setGroupsPage((prev) =>
-                                Math.min(Math.ceil(filteredGroups.length / groupsItemsPerPage), prev + 1),
-                              )
-                            }
-                            disabled={groupsPage >= Math.ceil(filteredGroups.length / groupsItemsPerPage)}
-                          >
-                            Suivant
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <PaginationControls
+                      page={groupsPage}
+                      itemsPerPage={groupsItemsPerPage}
+                      totalItems={filteredGroups.length}
+                      itemLabel="groupes"
+                      onPageChange={setGroupsPage}
+                    />
                   </>
                 )
               })()}
@@ -2048,28 +1909,13 @@ export default function TestsManagementPage() {
                 <>
                   {/* Pagination résultats */}
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Afficher</span>
-                      <Select
-                        value={resultsItemsPerPage.toString()}
-                        onValueChange={(value) => {
-                          setResultsItemsPerPage(Number.parseInt(value))
-                          setResultsPage(1)
-                        }}
-                      >
-                        <SelectTrigger className="w-[80px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="30">30</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                          <SelectItem value="100">100</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <span className="text-sm text-muted-foreground">par page</span>
-                    </div>
+                    <PageSizeSelector
+                      value={resultsItemsPerPage}
+                      onChange={(value) => {
+                        setResultsItemsPerPage(value)
+                        setResultsPage(1)
+                      }}
+                    />
                     <div className="text-sm text-muted-foreground">{filteredResults.length} résultat(s) au total</div>
                   </div>
 
@@ -2150,26 +1996,7 @@ export default function TestsManagementPage() {
                                       {points.obtained}/{points.total}
                                     </span>
                                   </TableCell>
-                                  <TableCell>
-                                    {displayStatus === "selected" && (
-                                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                                        <CheckCircle className="h-3 w-3 mr-1" />
-                                        Passe en entretien
-                                      </Badge>
-                                    )}
-                                    {displayStatus === "not_selected" && (
-                                      <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                                        <XCircle className="h-3 w-3 mr-1" />
-                                        Rejeté
-                                      </Badge>
-                                    )}
-                                    {displayStatus !== "selected" && displayStatus !== "not_selected" && (
-                                      <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        En attente
-                                      </Badge>
-                                    )}
-                                  </TableCell>
+                                  <TableCell><ResultStatusBadge status={displayStatus} /></TableCell>
                                   <TableCell className="text-sm">
                                     {result.submittedDate || new Date(result.completedAt).toLocaleDateString("fr-FR")}
                                   </TableCell>
@@ -2207,61 +2034,13 @@ export default function TestsManagementPage() {
                   </div>
 
                   {/* Pagination bas */}
-                  {filteredResults.length > 0 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-muted-foreground">
-                        Affichage de {Math.min((resultsPage - 1) * resultsItemsPerPage + 1, filteredResults.length)} à{" "}
-                        {Math.min(resultsPage * resultsItemsPerPage, filteredResults.length)} sur{" "}
-                        {filteredResults.length} résultats
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setResultsPage((prev) => Math.max(1, prev - 1))}
-                          disabled={resultsPage === 1}
-                        >
-                          Précédent
-                        </Button>
-                        <div className="flex gap-1">
-                          {Array.from(
-                            { length: Math.ceil(filteredResults.length / resultsItemsPerPage) },
-                            (_, i) => i + 1,
-                          )
-                            .filter((page) => {
-                              const totalPages = Math.ceil(filteredResults.length / resultsItemsPerPage)
-                              if (totalPages <= 7) return true
-                              if (page === 1 || page === totalPages) return true
-                              if (Math.abs(page - resultsPage) <= 1) return true
-                              return false
-                            })
-                            .map((page, idx) => (
-                              <Button
-                                key={idx}
-                                variant={resultsPage === page ? "default" : "outline"}
-                                size="sm"
-                                className="w-8 h-8 p-0"
-                                onClick={() => setResultsPage(page)}
-                              >
-                                {page}
-                              </Button>
-                            ))}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setResultsPage((prev) =>
-                              Math.min(Math.ceil(filteredResults.length / resultsItemsPerPage), prev + 1),
-                            )
-                          }
-                          disabled={resultsPage >= Math.ceil(filteredResults.length / resultsItemsPerPage)}
-                        >
-                          Suivant
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  <PaginationControls
+                    page={resultsPage}
+                    itemsPerPage={resultsItemsPerPage}
+                    totalItems={filteredResults.length}
+                    itemLabel="résultats"
+                    onPageChange={setResultsPage}
+                  />
                 </>
               )}
 
@@ -2388,26 +2167,7 @@ export default function TestsManagementPage() {
                                                 {points.obtained}/{points.total}
                                               </span>
                                             </TableCell>
-                                            <TableCell>
-                                              {displayStatus === "selected" && (
-                                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                                  Passe en entretien
-                                                </Badge>
-                                              )}
-                                              {displayStatus === "not_selected" && (
-                                                <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                                                  <XCircle className="h-3 w-3 mr-1" />
-                                                  Rejeté
-                                                </Badge>
-                                              )}
-                                              {displayStatus !== "selected" && displayStatus !== "not_selected" && (
-                                                <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
-                                                  <Clock className="h-3 w-3 mr-1" />
-                                                  En attente
-                                                </Badge>
-                                              )}
-                                            </TableCell>
+                                            <TableCell><ResultStatusBadge status={displayStatus} /></TableCell>
                                             <TableCell className="text-sm">
                                               {result.submittedDate ||
                                                 new Date(result.completedAt).toLocaleDateString("fr-FR")}
@@ -4342,15 +4102,13 @@ export default function TestsManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmation de suppression de test */}
-      <Dialog open={showDeleteTestDialog} onOpenChange={setShowDeleteTestDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce test ?</DialogDescription>
-          </DialogHeader>
-
-          {testToDelete && (
+      <ConfirmationDialog
+        open={showDeleteTestDialog}
+        onOpenChange={setShowDeleteTestDialog}
+        title="Confirmer la suppression"
+        description="Êtes-vous sûr de vouloir supprimer ce test ?"
+        details={
+          testToDelete ? (
             <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md">
               <h4 className="font-medium mb-2">{testToDelete.title}</h4>
               <div className="text-sm space-y-1">
@@ -4365,51 +4123,26 @@ export default function TestsManagementPage() {
                 </p>
               </div>
             </div>
-          )}
+          ) : null
+        }
+        warningText="⚠️ Cette action est irréversible. Le test et toutes ses questions seront définitivement supprimés."
+        isLoading={deletingTest}
+        onCancel={() => {
+          setShowDeleteTestDialog(false)
+          setTestToDelete(null)
+        }}
+        onConfirm={handleConfirmDeleteTest}
+        confirmLabel="Supprimer définitivement"
+        loadingLabel="Suppression en cours..."
+      />
 
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              ⚠️ Cette action est irréversible. Le test et toutes ses questions seront définitivement supprimés.
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteTestDialog(false)
-                setTestToDelete(null)
-              }}
-              disabled={deletingTest}
-            >
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteTest} disabled={deletingTest}>
-              {deletingTest ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Suppression en cours...
-                </>
-              ) : (
-                <>
-                  <Trash className="mr-2 h-4 w-4" />
-                  Supprimer définitivement
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de confirmation de suppression de groupe */}
-      <Dialog open={showDeleteGroupDialog} onOpenChange={setShowDeleteGroupDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce groupe ?</DialogDescription>
-          </DialogHeader>
-
-          {groupToDelete && (
+      <ConfirmationDialog
+        open={showDeleteGroupDialog}
+        onOpenChange={setShowDeleteGroupDialog}
+        title="Confirmer la suppression"
+        description="Êtes-vous sûr de vouloir supprimer ce groupe ?"
+        details={
+          groupToDelete ? (
             <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md">
               <h4 className="font-medium mb-2">{groupToDelete.name}</h4>
               <div className="text-sm space-y-1">
@@ -4429,42 +4162,18 @@ export default function TestsManagementPage() {
                 </p>
               </div>
             </div>
-          )}
-
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              ⚠️ Cette action est irréversible. Le groupe sera définitivement supprimé mais les candidats seront
-              conservés.
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteGroupDialog(false)
-                setGroupToDelete(null)
-              }}
-              disabled={deletingGroup}
-            >
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteGroup} disabled={deletingGroup}>
-              {deletingGroup ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Suppression en cours...
-                </>
-              ) : (
-                <>
-                  <Trash className="mr-2 h-4 w-4" />
-                  Supprimer le groupe
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          ) : null
+        }
+        warningText="⚠️ Cette action est irréversible. Le groupe sera définitivement supprimé mais les candidats seront conservés."
+        isLoading={deletingGroup}
+        onCancel={() => {
+          setShowDeleteGroupDialog(false)
+          setGroupToDelete(null)
+        }}
+        onConfirm={handleConfirmDeleteGroup}
+        confirmLabel="Supprimer le groupe"
+        loadingLabel="Suppression en cours..."
+      />
 
       <Dialog open={showViolationsDialog} onOpenChange={setShowViolationsDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -4621,64 +4330,6 @@ export default function TestsManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmation de suppression de test */}
-      <Dialog open={showDeleteTestDialog} onOpenChange={setShowDeleteTestDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer ce test ?</DialogDescription>
-          </DialogHeader>
-
-          {testToDelete && (
-            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md">
-              <h4 className="font-medium mb-2">{testToDelete.title}</h4>
-              <div className="text-sm space-y-1">
-                <p>
-                  <strong>Référentiel :</strong> {testToDelete.referentiel}
-                </p>
-                <p>
-                  <strong>Durée :</strong> {testToDelete.duration} minutes
-                </p>
-                <p>
-                  <strong>Questions :</strong> {testToDelete.totalQuestions}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              ⚠️ Cette action est irréversible. Le test et toutes ses questions seront définitivement supprimés.
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteTestDialog(false)
-                setTestToDelete(null)
-              }}
-              disabled={deletingTest}
-            >
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteTest} disabled={deletingTest}>
-              {deletingTest ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Suppression en cours...
-                </>
-              ) : (
-                <>
-                  <Trash className="mr-2 h-4 w-4" />
-                  Supprimer définitivement
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
