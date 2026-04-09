@@ -4,13 +4,13 @@ import React, { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { requestCoworkingAccess } from "@/lib/public-api"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, CheckCircle, Wifi, Coffee, Monitor, Users, Clock, Calendar, Check, AlertCircle } from 'lucide-react'
 
 export default function CoworkingPage() {
-  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   const spaces = [
     {
       id: 1,
@@ -164,31 +164,21 @@ export default function CoworkingPage() {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/resources/request-access`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await requestCoworkingAccess(payload)
+      setSubmitted(true);
+      // Reset form data
+      setFormData({
+        name: "",
+        contact: "",
+        email: "",
+        phone: "",
+        resource: "",
+        date: "",
+        time: "",
+        details: "",
+        terms: false
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        setSubmitted(true);
-        // Reset form data
-        setFormData({
-          name: "",
-          contact: "",
-          email: "",
-          phone: "",
-          resource: "",
-          date: "",
-          time: "",
-          details: "",
-          terms: false
-        });
-        setEmailError("");
-      } else {
-        alert("Erreur : " + data.error);
-      }
+      setEmailError("");
     } catch (err) {
       alert("Erreur de soumission : " + err.message);
     }

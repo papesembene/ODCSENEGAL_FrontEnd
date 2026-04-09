@@ -42,12 +42,12 @@ import PartnersSection from "@/components/home/partners-section"
 import NewsMarquee from "@/components/home/news-marquee"
 import { motion } from "framer-motion"
 import { fadeIn, staggerContainer } from "@/lib/motion"
+import { getUpcomingEvents } from "@/lib/public-api"
 import { useInView } from "react-intersection-observer"
 import { EventDetails } from "./startups/evenements/eventComponents/EventDetailsDialog"
 import { useState, useEffect } from "react"
 
 export default function Home() {
-  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   const spaces = [
     {
       title: "Développement des Compétences Numériques",
@@ -131,14 +131,8 @@ export default function Home() {
     const fetchUpcomingEvents = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`${API_BASE_URL}/api/events/upcoming`)
-        
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des événements')
-        }
-        
-        const data = await response.json()
-        setUpcomingEvents(data.events)
+        const events = await getUpcomingEvents()
+        setUpcomingEvents(events)
       } catch (err) {
         setError(err.message)
       } finally {
