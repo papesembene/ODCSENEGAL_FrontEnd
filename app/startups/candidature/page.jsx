@@ -34,30 +34,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-// Configuration de l'API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
-
-// Types de fichiers autorisés
-const ALLOWED_FILE_TYPES = {
-  // Images
-  "image/png": ".png",
-  "image/jpeg": ".jpg, .jpeg",
-  "image/jpg": ".jpg",
-  "image/gif": ".gif",
-  "image/bmp": ".bmp",
-  "image/webp": ".webp",
-  // Documents Word
-  "application/msword": ".doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-  // PowerPoint
-  "application/vnd.ms-powerpoint": ".ppt",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
-  // PDF
-  "application/pdf": ".pdf",
-}
-
-const ALLOWED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".doc", ".docx", ".ppt", ".pptx", ".pdf"]
+import {
+  ALLOWED_EXTENSIONS,
+  ALLOWED_FILE_TYPES,
+  API_BASE_URL,
+  COUNTRY_CODES,
+  DIPLOMAS,
+  FILE_FORMATS_HELP_TEXT,
+  FILE_INPUT_ACCEPT,
+  FILE_SIZE_ERROR_MESSAGE,
+  FILE_TYPE_ERROR_MESSAGE,
+  LEGAL_FORMS,
+  MAX_FILE_SIZE,
+  REGIONS_DATA,
+  ROLES,
+  SECTORS,
+} from "./constants"
 
 export default function StartupCandidaturePage() {
   const [step, setStep] = useState(1)
@@ -113,90 +105,6 @@ export default function StartupCandidaturePage() {
     hasWorkingProduct: "",
     acceptTerms: false,
   })
-
-  // Régions et départements du Sénégal
-  const regionsData = {
-    Dakar: ["Dakar", "Guédiawaye", "Pikine", "Rufisque"],
-    Thiès: ["Thiès", "Mbour", "Tivaouane"],
-    "Saint-Louis": ["Saint-Louis", "Dagana", "Podor"],
-    Diourbel: ["Diourbel", "Bambey", "Mbacké"],
-    Louga: ["Louga", "Kébémer", "Linguère"],
-    Tambacounda: ["Tambacounda", "Bakel", "Goudiry", "Koumpentoum"],
-    Kaolack: ["Kaolack", "Guinguinéo", "Nioro du Rip"],
-    Ziguinchor: ["Ziguinchor", "Bignona", "Oussouye"],
-    Fatick: ["Fatick", "Foundiougne", "Gossas"],
-    Kolda: ["Kolda", "Médina Yoro Foulah", "Vélingara"],
-    Matam: ["Matam", "Kanel", "Ranérou"],
-    Kaffrine: ["Kaffrine", "Birkelane", "Koungheul", "Malem-Hodar"],
-    Kédougou: ["Kédougou", "Salémata", "Saraya"],
-    Sédhiou: ["Sédhiou", "Bounkiling", "Goudomp"],
-  }
-
-  // Indicatifs téléphoniques
-  const countryCodes = [
-    { code: "+221", country: "Sénégal", flag: "🇸🇳" },
-    { code: "+33", country: "France", flag: "🇫🇷" },
-    { code: "+1", country: "États-Unis", flag: "🇺🇸" },
-    { code: "+44", country: "Royaume-Uni", flag: "🇬🇧" },
-    { code: "+212", country: "Maroc", flag: "🇲🇦" },
-    { code: "+213", country: "Algérie", flag: "🇩🇿" },
-    { code: "+225", country: "Côte d'Ivoire", flag: "🇨🇮" },
-    { code: "+226", country: "Burkina Faso", flag: "🇧🇫" },
-    { code: "+227", country: "Niger", flag: "🇳🇪" },
-    { code: "+228", country: "Togo", flag: "🇹🇬" },
-    { code: "+229", country: "Bénin", flag: "🇧🇯" },
-    { code: "+233", country: "Ghana", flag: "🇬🇭" },
-    { code: "+234", country: "Nigéria", flag: "🇳🇬" },
-    { code: "+237", country: "Cameroun", flag: "🇨🇲" },
-  ].sort((a, b) => a.country.localeCompare(b.country))
-
-  // Secteurs d'activité
-  const sectors = [
-    { value: "agriculture", label: "Agriculture" },
-    { value: "education", label: "Éducation" },
-    { value: "energy", label: "Énergie" },
-    { value: "environment", label: "Environnement" },
-    { value: "finance", label: "Finance" },
-    { value: "health", label: "Santé" },
-    { value: "logistics", label: "Logistique" },
-    { value: "retail", label: "Commerce" },
-    { value: "technology", label: "Informatique" },
-    { value: "other", label: "Autre" },
-  ]
-
-  // Rôles disponibles
-  const roles = [
-    { value: "CEO", label: "CEO" },
-    { value: "CTO", label: "CTO" },
-    { value: "CMO", label: "CMO" },
-    { value: "CFO", label: "CFO" },
-    { value: "Co-fondateur", label: "Co-fondateur" },
-    { value: "Directeur Technique", label: "Directeur Technique" },
-    { value: "Directeur Commercial", label: "Directeur Commercial" },
-    { value: "Autre", label: "Autre" },
-  ]
-
-  // Diplômes disponibles
-  const diplomas = [
-    { value: "baccalaureat", label: "Baccalauréat" },
-    { value: "bts", label: "BTS" },
-    { value: "dut", label: "DUT" },
-    { value: "licence", label: "Licence" },
-    { value: "master", label: "Master" },
-    { value: "doctorat", label: "Doctorat" },
-    { value: "autre", label: "Autre" },
-  ]
-
-  // Formes juridiques disponibles
-  const legalForms = [
-    { value: "SAS", label: "SAS" },
-    { value: "SA", label: "SA" },
-    { value: "SARL", label: "SARL" },
-    { value: "SUARL", label: "SUARL" },
-    { value: "EI", label: "Entreprise Individuelle" },
-    { value: "GIE", label: "GIE" },
-    { value: "Autre", label: "Autre" },
-  ]
 
   // Fonction de validation de type de fichier
   const validateFileType = (file) => {
@@ -442,7 +350,7 @@ export default function StartupCandidaturePage() {
       setEmailCheckLoading(true)
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/startup/check-email?email=${encodeURIComponent(formData.email)}`,
+          `${API_BASE_URL}/api/startup/check-email?email=${encodeURIComponent(formData.email)}`,
         )
         if (response.ok) {
           const data = await response.json()
@@ -472,7 +380,7 @@ export default function StartupCandidaturePage() {
       setPhoneCheckLoading(true)
       try {
         const fullPhone = formData.phoneCountry + formData.phone
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/startup/check-phone?phone=${encodeURIComponent(fullPhone)}`)
+        const response = await fetch(`${API_BASE_URL}/api/startup/check-phone?phone=${encodeURIComponent(fullPhone)}`)
         if (response.ok) {
           const data = await response.json()
           setPhoneExists(data.exists)
@@ -497,22 +405,20 @@ export default function StartupCandidaturePage() {
     const { name, files } = e.target
     if (files && files[0]) {
       const file = files[0]
-      const maxSize = 128 * 1024 * 1024 
 
       // Validation du type de fichier
       if (!validateFileType(file)) {
         setValidationErrors((prev) => ({
           ...prev,
-          [name]:
-            "Type de fichier non autorisé. Formats acceptés : Images (PNG, JPG, JPEG, GIF, BMP, WEBP), Documents Word (DOC, DOCX), PowerPoint (PPT, PPTX), PDF",
+          [name]: FILE_TYPE_ERROR_MESSAGE,
         }))
         return
       }
 
-      if (file.size > maxSize) {
+      if (file.size > MAX_FILE_SIZE) {
         setValidationErrors((prev) => ({
           ...prev,
-          [name]: "Le fichier est trop volumineux. Taille maximale : 128MB",
+          [name]: FILE_SIZE_ERROR_MESSAGE,
         }))
         return
       }
@@ -769,7 +675,7 @@ export default function StartupCandidaturePage() {
       if (formData.cv) form.append("cv", formData.cv)
       if (formData.pitchDeck) form.append("pitch_deck", formData.pitchDeck)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/startup/submit`, {
+      const response = await fetch(`${API_BASE_URL}/api/startup/submit`, {
         method: "POST",
         body: form,
       })
@@ -962,7 +868,7 @@ export default function StartupCandidaturePage() {
                               <SelectValue placeholder="Sélectionnez votre rôle" />
                             </SelectTrigger>
                             <SelectContent>
-                              {roles.map((role) => (
+                              {ROLES.map((role) => (
                                 <SelectItem key={role.value} value={role.value}>
                                   {role.label}
                                 </SelectItem>
@@ -1062,7 +968,7 @@ export default function StartupCandidaturePage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {countryCodes.map((country) => (
+                                {COUNTRY_CODES.map((country) => (
                                   <SelectItem key={country.code} value={country.code}>
                                     <span className="flex items-center gap-2">
                                       <span>{country.flag}</span>
@@ -1117,7 +1023,7 @@ export default function StartupCandidaturePage() {
                                 <SelectValue placeholder="Sélectionnez votre région" />
                               </SelectTrigger>
                               <SelectContent>
-                                {Object.keys(regionsData).map((region) => (
+                                {Object.keys(REGIONS_DATA).map((region) => (
                                   <SelectItem key={region} value={region}>
                                     {region}
                                   </SelectItem>
@@ -1146,7 +1052,7 @@ export default function StartupCandidaturePage() {
                               </SelectTrigger>
                               <SelectContent>
                                 {formData.region &&
-                                  regionsData[formData.region]?.map((department) => (
+                                  REGIONS_DATA[formData.region]?.map((department) => (
                                     <SelectItem key={department} value={department}>
                                       {department}
                                     </SelectItem>
@@ -1175,7 +1081,7 @@ export default function StartupCandidaturePage() {
                               <SelectValue placeholder="Sélectionnez votre diplôme" />
                             </SelectTrigger>
                             <SelectContent>
-                              {diplomas.map((diploma) => (
+                              {DIPLOMAS.map((diploma) => (
                                 <SelectItem key={diploma.value} value={diploma.value}>
                                   {diploma.label}
                                 </SelectItem>
@@ -1249,7 +1155,7 @@ export default function StartupCandidaturePage() {
                                         glissez-déposez
                                       </p>
                                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Images, Word, PowerPoint, PDF (MAX. 128MB)
+                                        {FILE_FORMATS_HELP_TEXT}
                                       </p>
                                     </>
                                   )}
@@ -1260,7 +1166,7 @@ export default function StartupCandidaturePage() {
                                   type="file"
                                   onChange={handleFileChange}
                                   className="hidden"
-                                  accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.doc,.docx,.ppt,.pptx,.pdf"
+                                  accept={FILE_INPUT_ACCEPT}
                                   required
                                 />
                               </label>
@@ -1369,7 +1275,7 @@ export default function StartupCandidaturePage() {
                               <SelectValue placeholder="Sélectionnez un secteur" />
                             </SelectTrigger>
                             <SelectContent>
-                              {sectors.map((sector) => (
+                              {SECTORS.map((sector) => (
                                 <SelectItem key={sector.value} value={sector.value}>
                                   {sector.label}
                                 </SelectItem>
@@ -1467,7 +1373,7 @@ export default function StartupCandidaturePage() {
                               <SelectValue placeholder="Sélectionnez une forme juridique" />
                             </SelectTrigger>
                             <SelectContent>
-                              {legalForms.map((form) => (
+                              {LEGAL_FORMS.map((form) => (
                                 <SelectItem key={form.value} value={form.value}>
                                   {form.label}
                                 </SelectItem>
@@ -1689,7 +1595,7 @@ export default function StartupCandidaturePage() {
                                         glissez-déposez
                                       </p>
                                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Images, Word, PowerPoint, PDF (MAX. 128MB)
+                                        {FILE_FORMATS_HELP_TEXT}
                                       </p>
                                     </>
                                   )}
@@ -1700,7 +1606,7 @@ export default function StartupCandidaturePage() {
                                   type="file"
                                   onChange={handleFileChange}
                                   className="hidden"
-                                  accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.doc,.docx,.ppt,.pptx,.pdf"
+                                  accept={FILE_INPUT_ACCEPT}
                                   required
                                 />
                               </label>
