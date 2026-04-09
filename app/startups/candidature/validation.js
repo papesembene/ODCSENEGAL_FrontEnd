@@ -5,27 +5,27 @@ import {
   FILE_TYPE_ERROR_MESSAGE,
   MAX_FILE_SIZE,
 } from "./constants"
-
-export const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
+import {
+  getStartupRequiredBlurFields,
+  validateAlternateEmail,
+  validateApplicationFile,
+  validateApplicationFileType,
+  validateCreationDate,
+  validateEmail,
+} from "./shared-validation"
 
 export const validateFileType = (file) => {
-  const fileExtension = `.${file.name.split(".").pop().toLowerCase()}`
-  return Object.keys(ALLOWED_FILE_TYPES).includes(file.type) || ALLOWED_EXTENSIONS.includes(fileExtension)
+  return validateApplicationFileType(file, ALLOWED_FILE_TYPES, ALLOWED_EXTENSIONS)
 }
 
 export const validateFile = (file) => {
-  if (!validateFileType(file)) {
-    return FILE_TYPE_ERROR_MESSAGE
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return FILE_SIZE_ERROR_MESSAGE
-  }
-
-  return null
+  return validateApplicationFile(file, {
+    allowedFileTypes: ALLOWED_FILE_TYPES,
+    allowedExtensions: ALLOWED_EXTENSIONS,
+    maxFileSize: MAX_FILE_SIZE,
+    fileTypeErrorMessage: FILE_TYPE_ERROR_MESSAGE,
+    fileSizeErrorMessage: FILE_SIZE_ERROR_MESSAGE,
+  })
 }
 
 export const validateFieldRealtime = (name, value, formData) => {
@@ -46,11 +46,10 @@ export const validateFieldRealtime = (name, value, formData) => {
       }
       break
     case "emailAlternate":
-      if (value.trim()) {
-        if (!validateEmail(value)) {
-          errors[name] = "Veuillez saisir une adresse email valide"
-        } else if (value === formData.email) {
-          errors[name] = "L'email alternatif doit être différent de l'email principal"
+      {
+        const alternateEmailError = validateAlternateEmail(value, formData.email)
+        if (alternateEmailError) {
+          errors[name] = alternateEmailError
         }
       }
       break
@@ -81,14 +80,10 @@ export const validateFieldRealtime = (name, value, formData) => {
       if (!value.trim()) errors[name] = "Le nombre d'employés est obligatoire"
       break
     case "creationDate":
-      if (!value.trim()) {
-        errors[name] = "La date de création est obligatoire"
-      } else {
-        const creationDate = new Date(value)
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        if (creationDate > today) {
-          errors[name] = "La date de création ne peut pas dépasser la date du jour."
+      {
+        const creationDateError = validateCreationDate(value)
+        if (creationDateError) {
+          errors[name] = creationDateError
         }
       }
       break
@@ -124,25 +119,7 @@ export const validateFieldRealtime = (name, value, formData) => {
 }
 
 export const getRequiredBlurFields = (formData) => {
-  const requiredFields = [
-    "firstName",
-    "lastName",
-    "email",
-    "phone",
-    "companyName",
-    "ninea",
-    "employees",
-    "creationDate",
-    "productName",
-    "productDescription",
-    "activityDescription",
-  ]
-
-  if (formData.raisedFunds === "Oui") {
-    requiredFields.push("raisedAmount")
-  }
-
-  return requiredFields
+  return getStartupRequiredBlurFields(formData)
 }
 
 export const validateStep1 = ({ formData, emailExists, phoneExists, emailCheckLoading, phoneCheckLoading }) => {
@@ -163,10 +140,9 @@ export const validateStep1 = ({ formData, emailExists, phoneExists, emailCheckLo
   }
 
   if (formData.emailAlternate.trim()) {
-    if (!validateEmail(formData.emailAlternate)) {
-      errors.emailAlternate = "Veuillez saisir une adresse email valide"
-    } else if (formData.emailAlternate === formData.email) {
-      errors.emailAlternate = "L'email alternatif doit être différent de l'email principal"
+    const alternateEmailError = validateAlternateEmail(formData.emailAlternate, formData.email)
+    if (alternateEmailError) {
+      errors.emailAlternate = alternateEmailError
     }
   }
 
@@ -214,11 +190,9 @@ export const validateStep2 = (formData) => {
   }
 
   if (formData.creationDate) {
-    const creationDate = new Date(formData.creationDate)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (creationDate > today) {
-      errors.creationDate = "La date de création ne peut pas dépasser la date du jour."
+    const creationDateError = validateCreationDate(formData.creationDate)
+    if (creationDateError) {
+      errors.creationDate = creationDateError
     }
   }
 

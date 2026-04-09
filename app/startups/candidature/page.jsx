@@ -35,7 +35,11 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  API_BASE_URL,
+  checkStartupEmailExists,
+  checkStartupPhoneExists,
+  submitStartupApplication,
+} from "@/lib/public-api"
+import {
   COUNTRY_CODES,
   DIPLOMAS,
   FILE_FORMATS_HELP_TEXT,
@@ -46,6 +50,7 @@ import {
   SECTORS,
 } from "./constants"
 import {
+  buildApplicationFormData,
   handlePhoneInput,
   mergeErrors,
   omitError,
@@ -203,13 +208,8 @@ export default function StartupCandidaturePage() {
 
       setEmailCheckLoading(true)
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/startup/check-email?email=${encodeURIComponent(formData.email)}`,
-        )
-        if (response.ok) {
-          const data = await response.json()
-          setEmailExists(data.exists)
-        }
+        const data = await checkStartupEmailExists(formData.email)
+        setEmailExists(data.exists)
       } catch (error) {
         console.error("Error checking email:", error)
       } finally {
@@ -234,11 +234,8 @@ export default function StartupCandidaturePage() {
       setPhoneCheckLoading(true)
       try {
         const fullPhone = formData.phoneCountry + formData.phone
-        const response = await fetch(`${API_BASE_URL}/api/startup/check-phone?phone=${encodeURIComponent(fullPhone)}`)
-        if (response.ok) {
-          const data = await response.json()
-          setPhoneExists(data.exists)
-        }
+        const data = await checkStartupPhoneExists(fullPhone)
+        setPhoneExists(data.exists)
       } catch (error) {
         console.error("Error checking phone:", error)
       } finally {
@@ -375,39 +372,8 @@ export default function StartupCandidaturePage() {
     setIsSubmitting(true)
 
     try {
-      const form = new FormData()
-
-      Object.keys(formData).forEach((key) => {
-        if (key !== "cv" && key !== "pitchDeck") {
-          form.append(key, formData[key])
-        }
-      })
-
-      form.append("fullPhone", formData.phoneCountry + formData.phone)
-      form.append("program", "startup_lab")
-
-      if (formData.cv) form.append("cv", formData.cv)
-      if (formData.pitchDeck) form.append("pitch_deck", formData.pitchDeck)
-
-      const response = await fetch(`${API_BASE_URL}/api/startup/submit`, {
-        method: "POST",
-        body: form,
-      })
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type")
-        let errorMessage = `Erreur HTTP ! Code : ${response.status}`
-
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorMessage
-        } else {
-          const text = await response.text()
-          if (text) errorMessage = text
-        }
-
-        throw new Error(errorMessage)
-      }
+      const form = buildApplicationFormData(formData)
+      await submitStartupApplication(form)
 
       setIsSubmitted(true)
     } catch (error) {
