@@ -72,7 +72,6 @@ export default function StartupCandidaturePage() {
   const [validationErrors, setValidationErrors] = useState({})
   const [realtimeErrors, setRealtimeErrors] = useState({})
   const [isRegulationOpen, setIsRegulationOpen] = useState(false)
-  const [hasReadRegulation, setHasReadRegulation] = useState(false)
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -124,6 +123,19 @@ export default function StartupCandidaturePage() {
   )
 
   const [validationTimeouts, setValidationTimeouts] = useState({})
+  const allErrors = mergeErrors(realtimeErrors, validationErrors)
+
+  const setFieldValue = useCallback((name, value) => {
+    setFormData((prev) => updateFormDataValue(prev, name, value))
+  }, [])
+
+  const clearValidationError = useCallback((name) => {
+    setValidationErrors((prev) => omitError(prev, name))
+  }, [])
+
+  const clearRealtimeError = useCallback((name) => {
+    setRealtimeErrors((prev) => omitError(prev, name))
+  }, [])
 
   const debouncedValidation = useCallback(
     (name, value) => {
@@ -147,15 +159,14 @@ export default function StartupCandidaturePage() {
     const { name, value, type, checked } = e.target
     const processedValue = processInputValue({ name, value, type, checked })
 
-    setFormData((prev) => updateFormDataValue(prev, name, processedValue))
+    setFieldValue(name, processedValue)
 
     // Reset validation errors
     if (name === "email") setEmailExists(false)
     if (name === "phone") setPhoneExists(false)
 
-    setValidationErrors((prev) => omitError(prev, name))
-
-    setRealtimeErrors((prev) => omitError(prev, name))
+    clearValidationError(name)
+    clearRealtimeError(name)
 
     // Validation en temps réel avec debounce
     if (type !== "checkbox" && type !== "file") {
@@ -258,25 +269,25 @@ export default function StartupCandidaturePage() {
         return
       }
 
-      setFormData((prev) => updateFormDataValue(prev, name, file))
-      setValidationErrors((prev) => omitError(prev, name))
+      setFieldValue(name, file)
+      clearValidationError(name)
     }
   }
 
   const handleSelectChange = (name, value) => {
-    setFormData((prev) => updateFormDataValue(prev, name, value))
-    setValidationErrors((prev) => omitError(prev, name))
-    setRealtimeErrors((prev) => omitError(prev, name))
+    setFieldValue(name, value)
+    clearValidationError(name)
+    clearRealtimeError(name)
   }
 
   const handleRadioChange = (name, value) => {
-    setFormData((prev) => updateFormDataValue(prev, name, value))
-    setValidationErrors((prev) => omitError(prev, name))
+    setFieldValue(name, value)
+    clearValidationError(name)
   }
 
   // Fonction pour combiner les erreurs
   const getAllErrors = () => {
-    return mergeErrors(realtimeErrors, validationErrors)
+    return allErrors
   }
 
   // Validation des étapes
@@ -827,7 +838,6 @@ export default function StartupCandidaturePage() {
                             name="institution"
                             value={formData.institution}
                             onChange={handleChange}
-                            className={getAllErrors().institution ? "border-red-500" : ""}
                           />
                         </div>
 
@@ -1449,17 +1459,14 @@ export default function StartupCandidaturePage() {
                           <Checkbox
                             id="acceptTerms"
                             checked={formData.acceptTerms}
-                            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, acceptTerms: checked }))}
+                            onCheckedChange={(checked) => setFieldValue("acceptTerms", Boolean(checked))}
                             required
                           />
                           <Label htmlFor="acceptTerms" className="text-sm">
                             J'ai lu et accepté le{" "}
                             <Dialog open={isRegulationOpen} onOpenChange={setIsRegulationOpen}>
                               <DialogTrigger asChild>
-                                <span
-                                  className="text-orange-500 font-medium cursor-pointer hover:underline"
-                                  onClick={() => setIsRegulationOpen(true)}
-                                >
+                                <span className="text-orange-500 font-medium cursor-pointer hover:underline">
                                   règlement de participation
                                 </span>
                               </DialogTrigger>
@@ -1669,10 +1676,7 @@ export default function StartupCandidaturePage() {
                                 </ScrollArea>
                                 <div className="flex justify-end items-center pt-4">
                                   <Button
-                                    onClick={() => {
-                                      setHasReadRegulation(true)
-                                      setIsRegulationOpen(false)
-                                    }}
+                                    onClick={() => setIsRegulationOpen(false)}
                                     className="bg-orange-500 hover:bg-orange-600"
                                   >
                                     J'ai lu et compris
