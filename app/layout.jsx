@@ -1,16 +1,13 @@
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import ChatbotWrapper from "@/components/ChatbotWrapper"
-import { AuthProvider } from "./contexts/AuthContext"
+import AppProviders from "@/components/app-providers"
+import SiteShell from "@/components/site-shell"
+import { siteMetadata } from "@/lib/site-config"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Orange Digital Center Sénégal",
-  description: "Développement des compétences numériques, accompagnement des startups et open innovation",
+  ...siteMetadata,
   generator: "v0.dev",
   icons: {
     icon: "/favicon.ico",
@@ -31,16 +28,9 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <AuthProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <ChatbotWrapper />
-            </div>
-          </AuthProvider>
-        </ThemeProvider>
+        <AppProviders>
+          <SiteShell>{children}</SiteShell>
+        </AppProviders>
       </body>
     </html>
   )
