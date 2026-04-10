@@ -2,10 +2,16 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Send, CheckCircle, ChevronDown, Search, AlertCircle} from "lucide-react"
+import { ArrowLeft, Send, ChevronDown, Search, AlertCircle} from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { checkUniqueCandidatureField, submitOdcCandidature } from "@/lib/public-api"
+import { FORM_FEEDBACK_MESSAGES, formatSubmissionErrorMessage } from "@/lib/form-feedback"
+import {
+  FormCheckingMessage,
+  FormSubmissionError,
+  PublicFormSuccessState,
+} from "@/components/ui/form-feedback"
 import { countryCodes, formations, regions, getNationalitiesByLetter } from "./constants"
 import { getMonthsForFormation, validateField, validateIdNumber } from "./validation"
 import { buildNextFormData, clearFieldError, resetPhoneForCountryChange, sanitizeFieldValue } from "./input-helpers"
@@ -153,7 +159,7 @@ export default function CandidaturePage() {
       // Si l'email a changé, réinitialiser l'état emailExists
       setEmailExists(false)
       // Supprimer l'erreur d'email si elle était liée à l'existence
-      if (errors.email === "Cet email est déjà utilisé") {
+      if (errors.email === FORM_FEEDBACK_MESSAGES.duplicateEmail) {
         setErrors((prev) => {
           const newErrors = { ...prev }
           delete newErrors.email
@@ -169,7 +175,7 @@ export default function CandidaturePage() {
       setIdNumberExists(false)
 
       // Supprimer l'erreur d'idNumber si elle était liée à l'existence
-      if (errors.idNumber === "Ce numéro CNI/passeport est déjà utilisé") {
+      if (errors.idNumber === FORM_FEEDBACK_MESSAGES.duplicateIdNumber) {
         setErrors((prev) => {
           const newErrors = { ...prev }
           delete newErrors.idNumber
@@ -265,12 +271,12 @@ export default function CandidaturePage() {
       if (field === "email") {
         setEmailExists(data.exists)
         if (data.exists) {
-          setErrors((prev) => ({ ...prev, email: "Cet email est déjà utilisé" }))
+          setErrors((prev) => ({ ...prev, email: FORM_FEEDBACK_MESSAGES.duplicateEmail }))
         } else {
           // Supprimer l'erreur si l'email n'existe pas
           setErrors((prev) => {
             const newErrors = { ...prev }
-            if (newErrors.email === "Cet email est déjà utilisé") {
+            if (newErrors.email === FORM_FEEDBACK_MESSAGES.duplicateEmail) {
               delete newErrors.email
             }
             return newErrors
@@ -279,12 +285,12 @@ export default function CandidaturePage() {
       } else if (field === "idNumber") {
         setIdNumberExists(data.exists)
         if (data.exists) {
-          setErrors((prev) => ({ ...prev, idNumber: "Ce numéro CNI/passeport est déjà utilisé" }))
+          setErrors((prev) => ({ ...prev, idNumber: FORM_FEEDBACK_MESSAGES.duplicateIdNumber }))
         } else {
           // Supprimer l'erreur si le numéro n'existe pas
           setErrors((prev) => {
             const newErrors = { ...prev }
-            if (newErrors.idNumber === "Ce numéro CNI/passeport est déjà utilisé") {
+            if (newErrors.idNumber === FORM_FEEDBACK_MESSAGES.duplicateIdNumber) {
               delete newErrors.idNumber
             }
             return newErrors
@@ -350,10 +356,10 @@ export default function CandidaturePage() {
 
     // Vérification des doublons
     if (emailExists) {
-      newErrors.email = "Cet email est déjà utilisé"
+      newErrors.email = FORM_FEEDBACK_MESSAGES.duplicateEmail
     }
     if (idNumberExists) {
-      newErrors.idNumber = "Ce numéro CNI/passeport est déjà utilisé"
+      newErrors.idNumber = FORM_FEEDBACK_MESSAGES.duplicateIdNumber
     }
 
     // Le champ est toujours obligatoire, quelle que soit la formation
@@ -440,7 +446,7 @@ export default function CandidaturePage() {
       })
     } catch (error) {
       console.error("Erreur:", error)
-      setSubmitError(error.message || "Une erreur est survenue lors de l'envoi de la candidature")
+      setSubmitError(formatSubmissionErrorMessage(error))
     } finally {
       setIsSubmitting(false)
     }
@@ -449,22 +455,14 @@ export default function CandidaturePage() {
   if (isSubmitted) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-10 w-10 text-green-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Candidature envoyée avec succès !</h1>
-          <p className="text-gray-600 mb-8">
-            Merci pour votre candidature. Nous l'examinerons dans les plus brefs délais et vous contacterons pour la
-            suite du processus.
-          </p>
-          <Button asChild className="bg-[#ff7900] hover:bg-[#e66f00]">
-            <Link href="/competences">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour à la page des compétences
-            </Link>
-          </Button>
-        </div>
+        <PublicFormSuccessState
+          className=""
+          descriptions={[
+            "Merci pour votre candidature. Nous l'examinerons dans les plus brefs délais et vous contacterons pour la suite du processus.",
+          ]}
+          actionHref="/competences"
+          actionLabel="Retour à la page des compétences"
+        />
       </div>
     )
   }
@@ -550,7 +548,9 @@ export default function CandidaturePage() {
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Email <span className="text-red-500">*</span>
-                  {checkingEmail && <span className="ml-2 text-xs text-gray-500">Vérification...</span>}
+                  {checkingEmail && (
+                    <FormCheckingMessage as="span" className="ml-2 text-xs text-gray-500" />
+                  )}
                 </label>
                 <input
                   type="email"
@@ -566,7 +566,7 @@ export default function CandidaturePage() {
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 {emailExists && !errors.email && (
-                  <p className="text-red-500 text-xs mt-1">Cet email est déjà utilisé</p>
+                  <p className="text-red-500 text-xs mt-1">{FORM_FEEDBACK_MESSAGES.duplicateEmail}</p>
                 )}
                 {!errors.email && !emailExists && (
                   <p className="text-gray-500 text-xs mt-1">Exemple: nom@domaine.com</p>
@@ -760,7 +760,9 @@ export default function CandidaturePage() {
                 <label htmlFor="idNumber" className="block text-sm font-medium text-gray-700 mb-1">
                   {idType === "cni" ? "N° CNI" : idType === "passport" ? "N° Passeport" : "N° CNI/Passeport"}
                   <span className="text-red-500">*</span>
-                  {checkingIdNumber && <span className="ml-2 text-xs text-gray-500">Vérification...</span>}
+                  {checkingIdNumber && (
+                    <FormCheckingMessage as="span" className="ml-2 text-xs text-gray-500" />
+                  )}
                 </label>
                 <input
                   type="text"
@@ -783,7 +785,7 @@ export default function CandidaturePage() {
                 />
                 {errors.idNumber && <p className="text-red-500 text-xs mt-1">{errors.idNumber}</p>}
                 {idNumberExists && !errors.idNumber && (
-                  <p className="text-red-500 text-xs mt-1">Ce numéro CNI/passeport est déjà utilisé</p>
+                  <p className="text-red-500 text-xs mt-1">{FORM_FEEDBACK_MESSAGES.duplicateIdNumber}</p>
                 )}
               </div>
 
@@ -1173,9 +1175,7 @@ export default function CandidaturePage() {
               {errors.acceptTerms && <p className="text-red-500 text-xs mt-1">{errors.acceptTerms}</p>}
             </div>
 
-            {submitError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{submitError}</div>
-            )}
+            <FormSubmissionError message={submitError} />
 
             <div className="flex justify-end">
               <Button

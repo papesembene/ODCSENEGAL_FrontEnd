@@ -19,6 +19,12 @@ import {
   checkOrangeFabPhoneExists,
   submitOrangeFabApplication,
 } from "@/lib/public-api"
+import { FORM_FEEDBACK_MESSAGES, formatSubmissionErrorMessage } from "@/lib/form-feedback"
+import {
+  FormCheckingMessage,
+  FormFieldError,
+  FormSubmissionError,
+} from "@/components/ui/form-feedback"
 import {
   countryCodes,
   diplomas,
@@ -54,6 +60,7 @@ import {
 export default function OrangeFabCandidaturePage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
   const [step, setStep] = useState(1)
   const [emailExists, setEmailExists] = useState(false)
   const [emailCheckLoading, setEmailCheckLoading] = useState(false)
@@ -384,6 +391,7 @@ export default function OrangeFabCandidaturePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSubmitError("")
 
     // Validation finale avec affichage des erreurs (CONSERVÉE)
     if (!validateStep3()) {
@@ -401,7 +409,7 @@ export default function OrangeFabCandidaturePage() {
       setIsSubmitted(true)
     } catch (error) {
       console.error("Erreur lors de la soumission :", error)
-      alert("Erreur lors de la soumission : " + error.message)
+      setSubmitError(formatSubmissionErrorMessage(error))
     } finally {
       setIsSubmitting(false)
     }
@@ -457,6 +465,8 @@ export default function OrangeFabCandidaturePage() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
+                        <FormSubmissionError message={submitError} />
+
                         <OrangeFabProgressSteps step={step} />
 
                         <form onSubmit={handleSubmit}>
@@ -570,21 +580,16 @@ export default function OrangeFabCandidaturePage() {
                                     required
                                     className={`${emailExists || getAllErrors().email ? "border-red-500" : ""}`}
                                   />
-                                  {emailExists && (
-                                    <Alert variant="destructive" className="mt-2 py-2">
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>Cet email a déjà été utilisé pour une candidature.</AlertDescription>
-                                    </Alert>
-                                  )}
+                                  <FormFieldError
+                                    message={emailExists ? FORM_FEEDBACK_MESSAGES.duplicateEmail : null}
+                                  />
                                   {getAllErrors().email && !emailExists && (
                                     <Alert variant="destructive" className="mt-2 py-2">
                                       <AlertCircle className="h-4 w-4" />
                                       <AlertDescription>{getAllErrors().email}</AlertDescription>
                                     </Alert>
                                   )}
-                                  {emailCheckLoading && (
-                                    <p className="text-sm text-gray-500 mt-1">Vérification en cours...</p>
-                                  )}
+                                  {emailCheckLoading && <FormCheckingMessage />}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor="emailAlternate">Email autre contact</Label>
@@ -642,21 +647,16 @@ export default function OrangeFabCandidaturePage() {
                                     className={`rounded-l-none ${phoneExists || getAllErrors().phone ? "border-red-500" : ""}`}
                                   />
                                 </div>
-                                {phoneExists && (
-                                  <Alert variant="destructive" className="mt-2 py-2">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertDescription>
-                                      Ce numéro de téléphone a déjà été utilisé pour une candidature.
-                                    </AlertDescription>
-                                  </Alert>
-                                )}
+                                <FormFieldError
+                                  message={phoneExists ? FORM_FEEDBACK_MESSAGES.duplicatePhone : null}
+                                />
                                 {getAllErrors().phone && !phoneExists && (
                                   <Alert variant="destructive" className="mt-2 py-2">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertDescription>{getAllErrors().phone}</AlertDescription>
                                   </Alert>
                                 )}
-                                {phoneCheckLoading && <p className="text-sm text-gray-500 mt-1">Vérification en cours...</p>}
+                                {phoneCheckLoading && <FormCheckingMessage />}
                                 <p className="text-xs text-gray-500">Saisissez uniquement des chiffres</p>
                               </div>
 
