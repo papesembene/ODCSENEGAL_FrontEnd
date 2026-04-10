@@ -13,6 +13,7 @@ import {
   validateCreationDate,
   validateEmail,
 } from "./shared-validation"
+import { FORM_FEEDBACK_MESSAGES } from "@/lib/form-feedback"
 
 export const validateFileType = (file) => {
   return validateApplicationFileType(file, ALLOWED_FILE_TYPES, ALLOWED_EXTENSIONS)
@@ -159,11 +160,11 @@ export const validateStep1 = ({ formData, emailExists, phoneExists, emailCheckLo
   }
 
   if (emailExists) {
-    errors.email = "Cet email a déjà été utilisé pour une candidature"
+    errors.email = FORM_FEEDBACK_MESSAGES.duplicateEmail
   }
 
   if (phoneExists) {
-    errors.phone = "Ce numéro de téléphone a déjà été utilisé pour une candidature"
+    errors.phone = FORM_FEEDBACK_MESSAGES.duplicatePhone
   }
 
   return {

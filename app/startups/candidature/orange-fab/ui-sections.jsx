@@ -10,30 +10,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { PublicFormSuccessState } from "@/components/ui/form-feedback"
 import { ArrowRight, Check, Clock, Rocket, Users, X } from "lucide-react"
 
 export function OrangeFabSuccessState() {
   return (
-    <Card className="mt-6 container mx-auto px-4">
-      <CardContent className="flex flex-col items-center justify-center space-y-4 py-12 text-center">
-        <div className="rounded-full bg-green-100 p-3 dark:bg-green-900">
-          <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
-        </div>
-        <h3 className="text-xl font-semibold">Candidature envoyée avec succès !</h3>
-        <p className="text-gray-600 dark:text-gray-300">
-          Merci pour votre candidature. Notre équipe l'examinera dans les plus brefs délais et vous contactera pour la
-          suite du processus.
-        </p>
-        <p className="text-gray-600 dark:text-gray-300">
-          Un email de confirmation a été envoyé à l'adresse que vous avez fournie.
-        </p>
-        <div className="mt-6">
-          <Button asChild>
-            <Link href="/startups">Retour à l'espace Startups</Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <PublicFormSuccessState
+      className="mt-6 container mx-auto px-4"
+      descriptions={[
+        "Merci pour votre candidature. Notre équipe l'examinera dans les plus brefs délais et vous contactera pour la suite du processus.",
+        "Un email de confirmation a été envoyé à l'adresse que vous avez fournie.",
+      ]}
+      actionHref="/startups"
+      actionLabel="Retour à l'espace Startups"
+    />
   )
 }
 
