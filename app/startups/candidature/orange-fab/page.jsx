@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowRight, ArrowLeft, Upload, AlertCircle, FileText, Lightbulb } from "lucide-react"
+import { ArrowRight, ArrowLeft, Lightbulb } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   checkOrangeFabEmailExists,
@@ -26,6 +26,8 @@ import {
   FormSubmissionError,
 } from "@/components/ui/form-feedback"
 import {
+  ALLOWED_EXTENSIONS_ACCEPT,
+  MAX_FILE_SIZE_MB,
   countryCodes,
   diplomas,
   legalForms,
@@ -55,6 +57,7 @@ import {
   OrangeFabRegulationDialog,
   OrangeFabSuccessState,
 } from "./ui-sections"
+import FileUploadField from "./file-upload-field"
 
 
 export default function OrangeFabCandidaturePage() {
@@ -250,6 +253,11 @@ export default function OrangeFabCandidaturePage() {
           ...prev,
           [name]: fileError,
         }))
+        setFormData((prev) => ({
+          ...prev,
+          [name]: null,
+        }))
+        e.target.value = ""
         return
       }
 
@@ -260,6 +268,13 @@ export default function OrangeFabCandidaturePage() {
 
       if (validationErrors[name]) {
         setValidationErrors((prev) => {
+          const newErrors = { ...prev }
+          delete newErrors[name]
+          return newErrors
+        })
+      }
+      if (realtimeErrors[name]) {
+        setRealtimeErrors((prev) => {
           const newErrors = { ...prev }
           delete newErrors[name]
           return newErrors
@@ -786,68 +801,18 @@ export default function OrangeFabCandidaturePage() {
                                 )}
                               </div>
 
-                              <div className="space-y-2">
-                                <Label htmlFor="cv">
-                                  CV <span className="text-red-500">*</span>
-                                </Label>
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex items-center justify-center w-full">
-                                    <label
-                                      htmlFor="cv"
-                                      className={`flex flex-col items-center justify-center w-full h-32 border-2 ${getAllErrors().cv ? "border-red-500" : "border-gray-300"} border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500`}
-                                    >
-                                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        {formData.cv ? (
-                                          <>
-                                            <FileText className="w-8 h-8 mb-3 text-green-500" />
-                                            <p className="mb-2 text-sm text-green-500 font-semibold">Fichier sélectionné</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              {formData.cv.name} ({(formData.cv.size / 1024 / 1024).toFixed(2)} MB)
-                                            </p>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
-                                            <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                              <span className="font-semibold">Cliquez pour télécharger</span> ou
-                                              glissez-déposez
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              Images, Word, PowerPoint, PDF (MAX. 128MB)
-                                            </p>
-                                          </>
-                                        )}
-                                      </div>
-                                      <input
-                                        id="cv"
-                                        name="cv"
-                                        type="file"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                        accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.doc,.docx,.ppt,.pptx,.pdf"
-                                        required
-                                      />
-                                    </label>
-                                  </div>
-                                  {getAllErrors().cv && (
-                                    <Alert variant="destructive" className="mt-2 py-2">
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>{getAllErrors().cv}</AlertDescription>
-                                    </Alert>
-                                  )}
-                                  {formData.cv && (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setFormData((prev) => ({ ...prev, cv: null }))}
-                                      className="w-full md:w-auto"
-                                    >
-                                      Changer de document
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
+                              <FileUploadField
+                                id="cv"
+                                name="cv"
+                                label="CV"
+                                required
+                                file={formData.cv}
+                                error={getAllErrors().cv}
+                                onChange={handleFileChange}
+                                onClear={() => setFormData((prev) => ({ ...prev, cv: null }))}
+                                accept={ALLOWED_EXTENSIONS_ACCEPT}
+                                helperText={`Images, Word, PowerPoint, PDF (MAX. ${MAX_FILE_SIZE_MB}MB)`}
+                              />
 
                               <div className="flex justify-end">
                                 <Button
@@ -1223,69 +1188,18 @@ export default function OrangeFabCandidaturePage() {
                                 />
                               </div>
 
-                              <div className="space-y-2">
-                                <Label htmlFor="pitchDeck">
-                                  Document de présentation (pitch deck) <span className="text-red-500">*</span>
-                                </Label>
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex items-center justify-center w-full">
-                                    <label
-                                      htmlFor="pitchDeck"
-                                      className={`flex flex-col items-center justify-center w-full h-32 border-2 ${getAllErrors().pitchDeck ? "border-red-500" : "border-gray-300"} border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500`}
-                                    >
-                                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        {formData.pitchDeck ? (
-                                          <>
-                                            <FileText className="w-8 h-8 mb-3 text-green-500" />
-                                            <p className="mb-2 text-sm text-green-500 font-semibold">Fichier sélectionné</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              {formData.pitchDeck.name} ({(formData.pitchDeck.size / 1024 / 1024).toFixed(2)}{" "}
-                                              MB)
-                                            </p>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
-                                            <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                              <span className="font-semibold">Cliquez pour télécharger</span> ou
-                                              glissez-déposez
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              Images, Word, PowerPoint, PDF (MAX. 128MB)
-                                            </p>
-                                          </>
-                                        )}
-                                      </div>
-                                      <input
-                                        id="pitchDeck"
-                                        name="pitchDeck"
-                                        type="file"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                        accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.doc,.docx,.ppt,.pptx,.pdf"
-                                        required
-                                      />
-                                    </label>
-                                  </div>
-                                  {getAllErrors().pitchDeck && (
-                                    <Alert variant="destructive" className="mt-2 py-2">
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>{getAllErrors().pitchDeck}</AlertDescription>
-                                    </Alert>
-                                  )}
-                                  {formData.pitchDeck && (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setFormData((prev) => ({ ...prev, pitchDeck: null }))}
-                                      className="w-full md:w-auto"
-                                    >
-                                      Changer de document
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
+                              <FileUploadField
+                                id="pitchDeck"
+                                name="pitchDeck"
+                                label="Document de présentation (pitch deck)"
+                                required
+                                file={formData.pitchDeck}
+                                error={getAllErrors().pitchDeck}
+                                onChange={handleFileChange}
+                                onClear={() => setFormData((prev) => ({ ...prev, pitchDeck: null }))}
+                                accept={ALLOWED_EXTENSIONS_ACCEPT}
+                                helperText={`Images, Word, PowerPoint, PDF (MAX. ${MAX_FILE_SIZE_MB}MB)`}
+                              />
 
                               <div className="flex justify-between">
                                 <Button type="button" variant="outline" onClick={prevStep}>

@@ -108,7 +108,10 @@ export const ALLOWED_EXTENSIONS = [
   ".pdf",
 ]
 
+export const ALLOWED_EXTENSIONS_ACCEPT = ALLOWED_EXTENSIONS.join(",")
+
 export const MAX_FILE_SIZE = 128 * 1024 * 1024
+export const MAX_FILE_SIZE_MB = Math.round(MAX_FILE_SIZE / 1024 / 1024)
 
 export const FILE_TYPE_ERROR_MESSAGE =
   "Type de fichier non autorisé. Formats acceptés : Images (PNG, JPG, JPEG, GIF, BMP, WEBP), Documents Word (DOC, DOCX), PowerPoint (PPT, PPTX), PDF"
