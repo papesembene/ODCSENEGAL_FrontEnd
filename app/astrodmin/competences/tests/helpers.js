@@ -356,3 +356,16 @@ export const getTestUrl = (testId) => {
 
   return `/test/${testId}`
 }
+
+export const normalizeFormationName = (name) => {
+  if (!name) return ""
+  const n = name.toLowerCase().trim()
+  if (n.includes("dev") && (n.includes("web") || n.includes("mobile"))) return "Dev Web"
+  if (n.includes("data")) return "Data"
+  if (n.includes("hack")) return "Hackeuse"
+  if (n.includes("aws") || n.includes("cloud")) return "AWS"
+  if (n.includes("design") || n.includes("ux")) return "Design UX/UI"
+  if (n.includes("cyber")) return "Cyber security"
+  if (n.includes("intel") || n.includes("ia")) return "Intelligence Artificielle"
+  return name
+}

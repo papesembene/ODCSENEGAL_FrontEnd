@@ -5,7 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Users, Eye, Mail, Trash } from "lucide-react"
-import { GroupStatusBadge, PageSizeSelector, PaginationControls } from "./components"
+import { GroupStatusBadge, PageSizeSelector, PaginationControls } from "./test-components"
+import { normalizeFormationName } from "./helpers"
 
 export function GroupsTab({
   testGroups,
@@ -20,7 +21,9 @@ export function GroupsTab({
   handleOpenInvitationDialog,
   handleDeleteGroupClick,
 }) {
-  const filteredGroups = testGroups.filter((group) => groupFormationFilter === "all" || group.formation === groupFormationFilter)
+  const filteredGroups = testGroups.filter((group) => 
+    groupFormationFilter === "all" || normalizeFormationName(group.formation) === groupFormationFilter
+  )
 
   return (
     <TabsContent value="groups" className="space-y-6">
@@ -118,7 +121,6 @@ export function GroupsTab({
                               Envoyer invitations
                             </Button>
                           )}
-                          {group.status === "scheduled" && group.email_sent && <GroupStatusBadge status={group.status} emailSent={group.email_sent} />}
                           <Button size="sm" variant="ghost" onClick={() => handleDeleteGroupClick(group)}>
                             <Trash className="h-4 w-4" />
                           </Button>
@@ -143,4 +145,3 @@ export function GroupsTab({
     </TabsContent>
   )
 }
-

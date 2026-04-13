@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Search, LinkIcon, Copy, ExternalLink, Edit, Trash } from "lucide-react"
-import { PageSizeSelector, PaginationControls } from "./components"
+import { PageSizeSelector, PaginationControls } from "./test-components"
 
 export function TestsTab({
   searchTerm,

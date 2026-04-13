@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { FORMATIONS } from "./constants"
-import { PageSizeSelector, PaginationControls, ResultStatusBadge } from "./components"
+import { PageSizeSelector, PaginationControls, ResultStatusBadge } from "./test-components"
 import { Upload, Download, RefreshCw, List, LayoutGrid, FileText, Eye, AlertCircle, GraduationCap, UsersIcon, CheckCircle, XCircle, Clock } from "lucide-react"
 
 export function ResultsTab({
