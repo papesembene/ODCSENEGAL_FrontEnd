@@ -30,7 +30,11 @@ export const AuthProvider = ({ children }) => {
       
       if (storedToken) {
         try {
-          const user = await verifyToken(storedToken)
+          // D'abord vérifier le token
+          await verifyToken(storedToken)
+          // Puis récupérer le profil complet
+          const user = await fetchFullProfile(storedToken)
+          
           setAuthState(prev => ({
             ...prev,
             user,
