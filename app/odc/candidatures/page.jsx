@@ -17,6 +17,9 @@ import { getMonthsForFormation, validateField, validateIdNumber } from "./valida
 import { buildNextFormData, clearFieldError, resetPhoneForCountryChange, sanitizeFieldValue } from "./input-helpers"
 
 export default function CandidaturePage() {
+
+  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
+
   // Références pour le défilement vers les champs avec erreurs
   const formRef = useRef(null)
   const fieldRefs = useRef({})
@@ -266,6 +269,22 @@ export default function CandidaturePage() {
       if (field === "email") setCheckingEmail(true)
       if (field === "idNumber") setCheckingIdNumber(true)
 
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/candidature/check-unique?field=${field}&value=${encodeURIComponent(value)}`,
+      )
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Réponse non-JSON reçue du serveur")
+      }
+
+      const data = await response.json()
+
       const data = await checkUniqueCandidatureField(field, value)
 
       if (field === "email") {
@@ -419,7 +438,33 @@ export default function CandidaturePage() {
       }
 
       //console.log("Tentative de connexion à:", "/api/candidatures/apply")
+
+      const response = await fetch(`${API_BASE_URL}/api/candidature/apply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(candidatureData),
+      })
+
+      if (!response.ok) {
+        let errorMessage = "Erreur lors de la soumission"
+        const contentType = response.headers.get("content-type")
+        
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } else if (response.status === 404) {
+          errorMessage = "Le service de candidature est temporairement indisponible (404)"
+        }
+        
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+
       await submitOdcCandidature(candidatureData)
+
       setIsSubmitted(true)
 
       // Réinitialiser le formulaire
