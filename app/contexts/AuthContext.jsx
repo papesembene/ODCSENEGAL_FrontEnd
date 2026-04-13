@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
     if (!response.ok) throw new Error(data.message || "Authentication failed")
     
     localStorage.setItem("auth_token", data.token)
-    const user = await fetchUserProfile(data.token)
+    const user = await fetchFullProfile(data.token)
     
     setAuthState({
       user,
@@ -78,16 +78,26 @@ export const AuthProvider = ({ children }) => {
     return { user, token: data.token }
   }
 
- // Ajoutez cette fonction pour récupérer le profil complet
-const fetchUserProfile = async (token) => {
+ // Fonction pour récupérer le profil complet
+const fetchFullProfile = async (token) => {
+  const authToken = token || authState.token
+  if (!authToken) return null
+
   const response = await fetch(`${API_URL}/api/auth/get-profile`, {
     headers: {
-      "Authorization": `Bearer ${token}`,
+      "Authorization": `Bearer ${authToken}`,
       "Content-Type": "application/json"
     }
   })
   const data = await response.json()
   if (!response.ok) throw new Error(data.message || "Failed to fetch profile")
+  
+  setAuthState(prev => ({
+    ...prev,
+    user: data.user,
+    isLoading: false
+  }))
+
   return data.user
 }
   const login = async (email, password) => {
@@ -244,7 +254,7 @@ const handleOAuth = (provider) => {
       const { token } = event.data;
       localStorage.setItem("auth_token", token);
       
-      fetchUserProfile(token).then(user => {
+      fetchFullProfile(token).then(user => {
         setAuthState({
           user,
           token,
@@ -284,9 +294,10 @@ const handleOAuth = (provider) => {
 
   const value = {
     ...authState,
+    API_URL,
     isAuthenticated: !!authState.user,
     login,
-    fetchUserProfile,
+    fetchFullProfile,
     register,
     updateProfile,
     loginWithGoogle: () => handleOAuth("google"),

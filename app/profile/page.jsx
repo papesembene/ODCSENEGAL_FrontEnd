@@ -10,7 +10,7 @@ import FileUploadModal from '@/components/FileUploadModal'
 import Link from 'next/link'
 
 const ProfilePage = () => {
-  const { user, isAuthenticated, updateProfile, fetchFullProfile } = useAuth()
+  const { user, isAuthenticated, updateProfile, fetchFullProfile, API_URL } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({})
   const [activeTab, setActiveTab] = useState('overview')
@@ -20,8 +20,8 @@ const ProfilePage = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        firstName: user.first_name || '',
-        lastName: user.last_name || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
         ...(user.profile_data || {})
       })
     }
@@ -149,14 +149,14 @@ const renderProfileContent = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormInput
               label="Prénom"
-              name="firstName"
-              value={formData.firstName || ''}
+              name="first_name"
+              value={formData.first_name || ''}
               onChange={handleInputChange}
             />
             <FormInput
               label="Nom"
-              name="lastName"
-              value={formData.lastName || ''}
+              name="last_name"
+              value={formData.last_name || ''}
               onChange={handleInputChange}
             />
 
@@ -170,8 +170,8 @@ const renderProfileContent = () => {
                 />
                 <FormSelect
                   label="Niveau d'études"
-                  name="educationLevel"
-                  value={formData.educationLevel || ''}
+                  name="education_level"
+                  value={formData.education_level || ''}
                   onChange={handleInputChange}
                   options={EDUCATION_LEVELS}
                 />
@@ -187,6 +187,12 @@ const renderProfileContent = () => {
                   value={formData.motivations || ''}
                   onChange={handleInputChange}
                 />
+                <FormTextarea
+                  label="Centres d'intérêt"
+                  name="interests"
+                  value={formData.interests || ''}
+                  onChange={handleInputChange}
+                />
               </>
             )}
 
@@ -194,14 +200,14 @@ const renderProfileContent = () => {
               <>
                 <FormInput
                   label="Nom de l'entreprise"
-                  name="companyName"
-                  value={formData.companyName || ''}
+                  name="company_name"
+                  value={formData.company_name || ''}
                   onChange={handleInputChange}
                 />
                 <FormInput
                   label="Secteur d'activité"
-                  name="companySector"
-                  value={formData.companySector || ''}
+                  name="company_sector"
+                  value={formData.company_sector || ''}
                   onChange={handleInputChange}
                 />
                 <FormInput
@@ -212,16 +218,57 @@ const renderProfileContent = () => {
                 />
                 <FormTextarea
                   label="Proposition de valeur"
-                  name="valueProposition"
-                  value={formData.valueProposition || ''}
+                  name="value_proposition"
+                  value={formData.value_proposition || ''}
                   onChange={handleInputChange}
                 />
                 <FormSelect
                   label="Stade de maturité"
-                  name="maturityStage"
-                  value={formData.maturityStage || ''}
+                  name="maturity_stage"
+                  value={formData.maturity_stage || ''}
                   onChange={handleInputChange}
                   options={MATURITY_STAGES}
+                />
+                <FormTextarea
+                  label="Équipe fondatrice"
+                  name="founding_team"
+                  value={formData.founding_team || ''}
+                  onChange={handleInputChange}
+                />
+                <FormTextarea
+                  label="Besoins"
+                  name="needs"
+                  value={formData.needs || ''}
+                  onChange={handleInputChange}
+                />
+              </>
+            )}
+
+            {(user.profile_type === 'corporate' || user.profile_type === 'investor') && (
+              <>
+                <FormInput
+                  label="Nom de l'organisation"
+                  name="organization_name"
+                  value={formData.organization_name || ''}
+                  onChange={handleInputChange}
+                />
+                <FormTextarea
+                  label="Activités"
+                  name="activities"
+                  value={formData.activities || ''}
+                  onChange={handleInputChange}
+                />
+                <FormTextarea
+                  label="Secteurs d'intérêt"
+                  name="interest_sectors"
+                  value={formData.interest_sectors || ''}
+                  onChange={handleInputChange}
+                />
+                <FormTextarea
+                  label="Objectifs de coopération"
+                  name="cooperation_objectives"
+                  value={formData.cooperation_objectives || ''}
+                  onChange={handleInputChange}
                 />
               </>
             )}
@@ -251,19 +298,21 @@ const renderProfileContent = () => {
             <>
               <DocumentCard 
                 title="CV"
-                hasFile={user.profile_data?.cv_file}
+                fileData={user.profile_data?.cv_file}
                 onUpload={() => {
                   setUploadType('cv_file')
                   setIsUploadModalOpen(true)
                 }}
+                apiUrl={API_URL}
               />
               <DocumentCard 
                 title="Lettre de motivation"
-                hasFile={user.profile_data?.cover_letter_file}
+                fileData={user.profile_data?.cover_letter_file}
                 onUpload={() => {
                   setUploadType('cover_letter_file')
                   setIsUploadModalOpen(true)
                 }}
+                apiUrl={API_URL}
               />
             </>
           )}
@@ -272,27 +321,30 @@ const renderProfileContent = () => {
             <>
               <DocumentCard 
                 title="Logo"
-                hasFile={user.profile_data?.logo_file}
+                fileData={user.profile_data?.logo_file}
                 onUpload={() => {
                   setUploadType('logo_file')
                   setIsUploadModalOpen(true)
                 }}
+                apiUrl={API_URL}
               />
               <DocumentCard 
                 title="Pitch Deck"
-                hasFile={user.profile_data?.pitch_deck_file}
+                fileData={user.profile_data?.pitch_deck_file}
                 onUpload={() => {
                   setUploadType('pitch_deck_file')
                   setIsUploadModalOpen(true)
                 }}
+                apiUrl={API_URL}
               />
               <DocumentCard 
                 title="Business Plan"
-                hasFile={user.profile_data?.business_plan_file}
+                fileData={user.profile_data?.business_plan_file}
                 onUpload={() => {
                   setUploadType('business_plan_file')
                   setIsUploadModalOpen(true)
                 }}
+                apiUrl={API_URL}
               />
             </>
           )}
@@ -309,6 +361,7 @@ const renderProfileContent = () => {
           setUploadType('profile_picture')
           setIsUploadModalOpen(true)
         }}
+        apiUrl={API_URL}
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -403,9 +456,9 @@ const TabButton = ({ children, active, onClick, icon }) => (
   </button>
 )
 
-const DocumentCard = ({ title, fileData, onUpload }) => {
+const DocumentCard = ({ title, fileData, onUpload, apiUrl }) => {
   const fileUrl = fileData?.path 
-    ? `${API_URL}/uploads/${fileData.path}`
+    ? `${apiUrl}/${fileData.path.startsWith('uploads/') ? fileData.path : 'uploads/' + fileData.path}`
     : null
 
   return (

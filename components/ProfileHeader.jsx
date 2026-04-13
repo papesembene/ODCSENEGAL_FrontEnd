@@ -1,14 +1,26 @@
 import { FiCamera } from 'react-icons/fi'
 
-const ProfileHeader = ({ user, onEditAvatar }) => {
+const ProfileHeader = ({ user, onEditAvatar, apiUrl }) => {
+  const getAvatarUrl = () => {
+    if (!user.profile_picture) return null
+    if (user.profile_picture.startsWith('http')) return user.profile_picture
+    // Prepend API_URL and ensure uploads/ is present
+    const path = user.profile_picture.startsWith('uploads/') 
+      ? user.profile_picture 
+      : 'uploads/' + user.profile_picture
+    return `${apiUrl}/${path}`
+  }
+
+  const avatarUrl = getAvatarUrl()
+
   return (
     <div className="relative bg-gradient-to-r from-orange-400 to-orange-600 h-48">
       <div className="absolute -bottom-16 left-8">
         <div className="relative group">
           <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow-lg">
-            {user.profile_picture ? (
+            {avatarUrl ? (
               <img 
-                src={user.profile_picture} 
+                src={avatarUrl} 
                 alt="Profile" 
                 className="w-full h-full object-cover"
               />
