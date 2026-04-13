@@ -47,6 +47,8 @@ export default function RegisterPage() {
 
   // Step 1: Basic Information
   const [email, setEmail] = useState("")
+  const [first_name, setFirstName] = useState("")
+  const [last_name, setLastName] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [profileType, setProfileType] = useState("")
@@ -140,6 +142,16 @@ export default function RegisterPage() {
     // Profile type validation
     if (!profileType) {
       setProfileTypeError("Veuillez sélectionner un type de profil")
+      isValid = false
+    }
+
+    if (!first_name) {
+      setError("Le prénom est requis")
+      isValid = false
+    }
+
+    if (!last_name) {
+      setError("Le nom est requis")
       isValid = false
     }
 
@@ -246,6 +258,8 @@ export default function RegisterPage() {
     try {
       const formData = new FormData()
       formData.append("email", email)
+      formData.append("first_name", first_name)
+      formData.append("last_name", last_name)
       formData.append("password", password)
       formData.append("profileType", profileType)
   
@@ -277,23 +291,14 @@ export default function RegisterPage() {
         if (brochureFile) formData.append("brochure_file", brochureFile)
       }
   
-      // 👉 Envoi de la requête POST vers ton backend déployé
-      const response = await fetch("https://odcdeploye-2.onrender.com/api/auth/register", {
-        method: "POST",
-        body: formData,
-      })
-  
-      const data = await response.json()
-  
-      if (!response.ok) {
-        throw new Error(data?.message || "Erreur lors de l'inscription")
-      }
+      // Utilisation du service de registre du contexte
+      await register(formData)
   
       setSuccess(true)
   
       // Rediriger après 2s
       setTimeout(() => {
-        router.push("/")
+        router.push("/profile")
       }, 2000)
     } catch (err) {
       setError(err?.message || "Une erreur est survenue lors de l'inscription")
@@ -1024,6 +1029,37 @@ export default function RegisterPage() {
                       }`}
                     />
                     {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
+                        Prénom <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="first_name"
+                        type="text"
+                        placeholder="Votre prénom"
+                        value={first_name}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff7900]"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
+                        Nom <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="last_name"
+                        type="text"
+                        placeholder="Votre nom"
+                        value={last_name}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff7900]"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
