@@ -34,11 +34,11 @@ import {
   Award,
   Globe,
 } from "lucide-react"
+import { getUpcomingEvents } from "@/lib/public-api"
 
 import { EventDetails } from "./evenements/eventComponents/EventDetailsDialog";
 
 export default function StartupsPage() {
-  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   // Ajout des états React nécessaires
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [showRegistration, setShowRegistration] = useState(false)
@@ -87,14 +87,8 @@ useEffect(() => {
   const fetchUpcomingEvents = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/api/events/upcoming`)
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des événements')
-      }
-      
-      const data = await response.json()
-      setUpcomingEvents(data.events)
+      const events = await getUpcomingEvents()
+      setUpcomingEvents(events)
     } catch (err) {
       setError(err.message)
     } finally {

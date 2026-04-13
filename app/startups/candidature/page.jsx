@@ -35,7 +35,18 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  API_BASE_URL,
+  checkStartupEmailExists,
+  checkStartupPhoneExists,
+  submitStartupApplication,
+} from "@/lib/public-api"
+import { FORM_FEEDBACK_MESSAGES, formatSubmissionErrorMessage } from "@/lib/form-feedback"
+import {
+  FormCheckingMessage,
+  FormFieldError,
+  FormSubmissionError,
+  PublicFormSuccessState,
+} from "@/components/ui/form-feedback"
+import {
   COUNTRY_CODES,
   DIPLOMAS,
   FILE_FORMATS_HELP_TEXT,
@@ -46,6 +57,7 @@ import {
   SECTORS,
 } from "./constants"
 import {
+  buildApplicationFormData,
   handlePhoneInput,
   mergeErrors,
   omitError,
@@ -65,6 +77,7 @@ export default function StartupCandidaturePage() {
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState("")
   const [emailExists, setEmailExists] = useState(false)
   const [phoneExists, setPhoneExists] = useState(false)
   const [emailCheckLoading, setEmailCheckLoading] = useState(false)
@@ -203,13 +216,8 @@ export default function StartupCandidaturePage() {
 
       setEmailCheckLoading(true)
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/startup/check-email?email=${encodeURIComponent(formData.email)}`,
-        )
-        if (response.ok) {
-          const data = await response.json()
-          setEmailExists(data.exists)
-        }
+        const data = await checkStartupEmailExists(formData.email)
+        setEmailExists(data.exists)
       } catch (error) {
         console.error("Error checking email:", error)
       } finally {
@@ -234,11 +242,8 @@ export default function StartupCandidaturePage() {
       setPhoneCheckLoading(true)
       try {
         const fullPhone = formData.phoneCountry + formData.phone
-        const response = await fetch(`${API_BASE_URL}/api/startup/check-phone?phone=${encodeURIComponent(fullPhone)}`)
-        if (response.ok) {
-          const data = await response.json()
-          setPhoneExists(data.exists)
-        }
+        const data = await checkStartupPhoneExists(fullPhone)
+        setPhoneExists(data.exists)
       } catch (error) {
         console.error("Error checking phone:", error)
       } finally {
@@ -366,6 +371,7 @@ export default function StartupCandidaturePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSubmitError("")
 
     if (!runStep3Validation()) {
       scrollToFirstError()
@@ -375,44 +381,13 @@ export default function StartupCandidaturePage() {
     setIsSubmitting(true)
 
     try {
-      const form = new FormData()
-
-      Object.keys(formData).forEach((key) => {
-        if (key !== "cv" && key !== "pitchDeck") {
-          form.append(key, formData[key])
-        }
-      })
-
-      form.append("fullPhone", formData.phoneCountry + formData.phone)
-      form.append("program", "startup_lab")
-
-      if (formData.cv) form.append("cv", formData.cv)
-      if (formData.pitchDeck) form.append("pitch_deck", formData.pitchDeck)
-
-      const response = await fetch(`${API_BASE_URL}/api/startup/submit`, {
-        method: "POST",
-        body: form,
-      })
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type")
-        let errorMessage = `Erreur HTTP ! Code : ${response.status}`
-
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorMessage
-        } else {
-          const text = await response.text()
-          if (text) errorMessage = text
-        }
-
-        throw new Error(errorMessage)
-      }
+      const form = buildApplicationFormData(formData)
+      await submitStartupApplication(form)
 
       setIsSubmitted(true)
     } catch (error) {
       console.error("Erreur lors de la soumission :", error)
-      alert("Erreur lors de la soumission : " + error.message)
+      setSubmitError(formatSubmissionErrorMessage(error))
     } finally {
       setIsSubmitting(false)
     }
@@ -453,26 +428,14 @@ export default function StartupCandidaturePage() {
 
           <TabsContent value="apply">
             {isSubmitted ? (
-              <Card className="mt-6">
-                <CardContent className="flex flex-col items-center justify-center space-y-4 py-12 text-center">
-                  <div className="rounded-full bg-green-100 p-3 dark:bg-green-900">
-                    <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold">Candidature envoyée avec succès !</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Merci pour votre candidature. Notre équipe l'examinera dans les plus brefs délais et vous contactera
-                    pour la suite du processus.
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Un email de confirmation a été envoyé à l'adresse que vous avez fournie.
-                  </p>
-                  <div className="mt-6">
-                    <Button asChild>
-                      <Link href="/startups">Retour à l'espace Startups</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <PublicFormSuccessState
+                descriptions={[
+                  "Merci pour votre candidature. Notre équipe l'examinera dans les plus brefs délais et vous contactera pour la suite du processus.",
+                  "Un email de confirmation a été envoyé à l'adresse que vous avez fournie.",
+                ]}
+                actionHref="/startups"
+                actionLabel="Retour à l'espace Startups"
+              />
             ) : (
               <Card className="mt-6">
                 <CardHeader>
@@ -482,6 +445,8 @@ export default function StartupCandidaturePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <FormSubmissionError message={submitError} />
+
                   <div className="mb-8">
                     <div className="flex justify-between">
                       {[1, 2, 3].map((i) => (
@@ -633,21 +598,14 @@ export default function StartupCandidaturePage() {
                               required
                               className={`${emailExists || getAllErrors().email ? "border-red-500" : ""}`}
                             />
-                            {emailExists && (
-                              <Alert variant="destructive" className="mt-2 py-2">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription>Cet email a déjà été utilisé pour une candidature.</AlertDescription>
-                              </Alert>
-                            )}
+                            <FormFieldError message={emailExists ? FORM_FEEDBACK_MESSAGES.duplicateEmail : null} />
                             {getAllErrors().email && !emailExists && (
                               <Alert variant="destructive" className="mt-2 py-2">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>{getAllErrors().email}</AlertDescription>
                               </Alert>
                             )}
-                            {emailCheckLoading && (
-                              <p className="text-sm text-gray-500 mt-1">Vérification en cours...</p>
-                            )}
+                            {emailCheckLoading && <FormCheckingMessage />}
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="emailAlternate">Email alternatif</Label>
@@ -705,21 +663,14 @@ export default function StartupCandidaturePage() {
                               className={`rounded-l-none ${phoneExists || getAllErrors().phone ? "border-red-500" : ""}`}
                             />
                           </div>
-                          {phoneExists && (
-                            <Alert variant="destructive" className="mt-2 py-2">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertDescription>
-                                Ce numéro de téléphone a déjà été utilisé pour une candidature.
-                              </AlertDescription>
-                            </Alert>
-                          )}
+                          <FormFieldError message={phoneExists ? FORM_FEEDBACK_MESSAGES.duplicatePhone : null} />
                           {getAllErrors().phone && !phoneExists && (
                             <Alert variant="destructive" className="mt-2 py-2">
                               <AlertCircle className="h-4 w-4" />
                               <AlertDescription>{getAllErrors().phone}</AlertDescription>
                             </Alert>
                           )}
-                          {phoneCheckLoading && <p className="text-sm text-gray-500 mt-1">Vérification en cours...</p>}
+                          {phoneCheckLoading && <FormCheckingMessage />}
                           <p className="text-xs text-gray-500">Saisissez uniquement des chiffres</p>
                         </div>
 

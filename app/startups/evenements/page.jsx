@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { createEvent, getEventCollections, getPublicMediaUrl, registerToEvent, subscribeToNewsletter } from "@/lib/public-api"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -28,7 +29,6 @@ import { EventDetails } from "./eventComponents/EventDetailsDialog";
 
 
 export default function EvenementsPage() {
-  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
   const [showAddEvent, setShowAddEvent] = useState(false)
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -146,20 +146,7 @@ export default function EvenementsPage() {
         formData.append('image', newEvent.image);
       }
   
-      const response = await fetch(`${API_BASE_URL}/api/events/`, {
-        method: 'POST',
-        body: formData,
-        // Note: Ne pas mettre le header 'Content-Type' pour FormData,
-        // le navigateur le fera automatiquement avec le bon boundary
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erreur backend:", errorData);
-        throw new Error(errorData.error || "Erreur lors de l'ajout de l'événement");
-      }
-
-      const data = await response.json();
+      const data = await createEvent(formData)
       
       // Update events list
       setUpcomingEvents(prev => [...prev, data.event]);
@@ -230,17 +217,7 @@ export default function EvenementsPage() {
     e.preventDefault()
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/events/${selectedEvent.id}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'inscription')
-      }
+      await registerToEvent(selectedEvent.id, formData)
       
       setRegistrationSuccess(true)
       setFormData({
@@ -270,17 +247,7 @@ export default function EvenementsPage() {
     e.preventDefault()
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/newsletter/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: newsletterEmail }),
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'inscription à la newsletter')
-      }
+      await subscribeToNewsletter(newsletterEmail)
       
       setNewsletterSuccess(true)
       setNewsletterEmail("")
@@ -330,17 +297,7 @@ export default function EvenementsPage() {
     const fetchEvents = async () => {
       try {
         setLoading(true)
-        const [upcomingRes, pastRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/events/upcoming`),
-          fetch(`${API_BASE_URL}/api/events/past`)
-        ])
-        
-        if (!upcomingRes.ok || !pastRes.ok) {
-          throw new Error('Erreur lors de la récupération des événements')
-        }
-        
-        const upcomingData = await upcomingRes.json()
-        const pastData = await pastRes.json()
+        const { upcomingEvents: upcomingData, pastEvents: pastData } = await getEventCollections()
     
         const transformEventDates = (events) => {
           return events.map(event => ({
@@ -350,8 +307,8 @@ export default function EvenementsPage() {
           }))
         }
     
-        setUpcomingEvents(transformEventDates(upcomingData.events))
-        setPastEvents(transformEventDates(pastData.events))
+        setUpcomingEvents(transformEventDates(upcomingData))
+        setPastEvents(transformEventDates(pastData))
       } catch (err) {
         setError(err.message)
       } finally {
@@ -512,7 +469,7 @@ export default function EvenementsPage() {
             <Card key={`${event.id}-${event.title}`} className="overflow-hidden transition-all hover:shadow-lg">
               <div className="relative h-48">
                 <img
-                  src={event.image?.startsWith("http") ? event.image : `${API_BASE_URL}${event.image}`}
+                  src={getPublicMediaUrl(event.image)}
                   alt="Image événement"
                   className="w-full h-48 object-cover"
                 />

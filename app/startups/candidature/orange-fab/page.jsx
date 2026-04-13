@@ -12,9 +12,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowRight, ArrowLeft, Upload, AlertCircle, FileText, Lightbulb } from "lucide-react"
+import { ArrowRight, ArrowLeft, Lightbulb } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
+  checkOrangeFabEmailExists,
+  checkOrangeFabPhoneExists,
+  submitOrangeFabApplication,
+} from "@/lib/public-api"
+import { FORM_FEEDBACK_MESSAGES, formatSubmissionErrorMessage } from "@/lib/form-feedback"
+import {
+  FormCheckingMessage,
+  FormFieldError,
+  FormSubmissionError,
+} from "@/components/ui/form-feedback"
+import {
+  ALLOWED_EXTENSIONS_ACCEPT,
+  MAX_FILE_SIZE_MB,
   countryCodes,
   diplomas,
   legalForms,
@@ -23,6 +36,7 @@ import {
   sectors,
 } from "./constants"
 import {
+  buildApplicationFormData,
   buildInputFormData,
   buildSelectFormData,
   clearFieldError,
@@ -31,7 +45,7 @@ import {
 } from "./input-helpers"
 import {
   validateFieldRealtime as validateOrangeFabFieldRealtime,
-  validateFileType,
+  validateFile,
   validateRequiredFieldOnBlur as validateOrangeFabRequiredFieldOnBlur,
   validateStep1 as validateOrangeFabStep1,
   validateStep2 as validateOrangeFabStep2,
@@ -43,11 +57,13 @@ import {
   OrangeFabRegulationDialog,
   OrangeFabSuccessState,
 } from "./ui-sections"
+import FileUploadField from "./file-upload-field"
 
 
 export default function OrangeFabCandidaturePage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
   const [step, setStep] = useState(1)
   const [emailExists, setEmailExists] = useState(false)
   const [emailCheckLoading, setEmailCheckLoading] = useState(false)
@@ -182,13 +198,8 @@ export default function OrangeFabCandidaturePage() {
 
       setEmailCheckLoading(true)
       try {
-        //const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orangefab/check-email?email=${encodeURIComponent(formData.email)}`)
-
-        if (response.ok) {
-          const data = await response.json()
-          setEmailExists(data.exists)
-        }
+        const data = await checkOrangeFabEmailExists(formData.email)
+        setEmailExists(data.exists)
       } catch (error) {
         console.error("Error checking email:", error)
       } finally {
@@ -212,14 +223,9 @@ export default function OrangeFabCandidaturePage() {
 
       setPhoneCheckLoading(true)
       try {
-        //const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
         const fullPhone = formData.phoneCountry + formData.phone
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orangefab/check-phone?phone=${encodeURIComponent(fullPhone)}`)
-
-        if (response.ok) {
-          const data = await response.json()
-          setPhoneExists(data.exists)
-        }
+        const data = await checkOrangeFabPhoneExists(fullPhone)
+        setPhoneExists(data.exists)
       } catch (error) {
         console.error("Error checking phone:", error)
       } finally {
@@ -240,23 +246,18 @@ export default function OrangeFabCandidaturePage() {
     const { name, files } = e.target
     if (files && files[0]) {
       const file = files[0]
-      const maxSize = 128 * 1024 * 1024 
+      const fileError = validateFile(file)
 
-      // Validation du type de fichier
-      if (!validateFileType(file)) {
+      if (fileError) {
         setValidationErrors((prev) => ({
           ...prev,
-          [name]:
-            "Type de fichier non autorisé. Formats acceptés : Images (PNG, JPG, JPEG, GIF, BMP, WEBP), Documents Word (DOC, DOCX), PowerPoint (PPT, PPTX), PDF",
+          [name]: fileError,
         }))
-        return
-      }
-
-      if (file.size > maxSize) {
-        setValidationErrors((prev) => ({
+        setFormData((prev) => ({
           ...prev,
-          [name]: "Le fichier est trop volumineux. Taille maximale : 128MB",
+          [name]: null,
         }))
+        e.target.value = ""
         return
       }
 
@@ -267,6 +268,13 @@ export default function OrangeFabCandidaturePage() {
 
       if (validationErrors[name]) {
         setValidationErrors((prev) => {
+          const newErrors = { ...prev }
+          delete newErrors[name]
+          return newErrors
+        })
+      }
+      if (realtimeErrors[name]) {
+        setRealtimeErrors((prev) => {
           const newErrors = { ...prev }
           delete newErrors[name]
           return newErrors
@@ -398,6 +406,7 @@ export default function OrangeFabCandidaturePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSubmitError("")
 
     // Validation finale avec affichage des erreurs (CONSERVÉE)
     if (!validateStep3()) {
@@ -409,38 +418,13 @@ export default function OrangeFabCandidaturePage() {
     setIsSubmitting(true)
 
     try {
-      const form = new FormData()
-
-      // Ajouter tous les champs au FormData
-      Object.keys(formData).forEach((key) => {
-        if (key !== "cv" && key !== "pitchDeck") {
-          form.append(key, formData[key])
-        }
-      })
-
-      // Ajouter le téléphone complet avec indicatif
-      form.append("fullPhone", formData.phoneCountry + formData.phone)
-
-      // Ajouter les fichiers
-      if (formData.cv) form.append("cv", formData.cv)
-      if (formData.pitchDeck) form.append("pitch_deck", formData.pitchDeck)
-
-      //const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orangefab/`, {
-        method: "POST",
-        body: form,
-      })
-
-      if (!response.ok) {
-        const err = await response.json()
-        alert(`Erreur : ${err.error || "Échec de la soumission."}`)
-        return
-      }
+      const form = buildApplicationFormData(formData)
+      await submitOrangeFabApplication(form)
 
       setIsSubmitted(true)
     } catch (error) {
       console.error("Erreur lors de la soumission :", error)
-      alert("Erreur lors de la soumission : " + error.message)
+      setSubmitError(formatSubmissionErrorMessage(error))
     } finally {
       setIsSubmitting(false)
     }
@@ -496,6 +480,8 @@ export default function OrangeFabCandidaturePage() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
+                        <FormSubmissionError message={submitError} />
+
                         <OrangeFabProgressSteps step={step} />
 
                         <form onSubmit={handleSubmit}>
@@ -609,21 +595,16 @@ export default function OrangeFabCandidaturePage() {
                                     required
                                     className={`${emailExists || getAllErrors().email ? "border-red-500" : ""}`}
                                   />
-                                  {emailExists && (
-                                    <Alert variant="destructive" className="mt-2 py-2">
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>Cet email a déjà été utilisé pour une candidature.</AlertDescription>
-                                    </Alert>
-                                  )}
+                                  <FormFieldError
+                                    message={emailExists ? FORM_FEEDBACK_MESSAGES.duplicateEmail : null}
+                                  />
                                   {getAllErrors().email && !emailExists && (
                                     <Alert variant="destructive" className="mt-2 py-2">
                                       <AlertCircle className="h-4 w-4" />
                                       <AlertDescription>{getAllErrors().email}</AlertDescription>
                                     </Alert>
                                   )}
-                                  {emailCheckLoading && (
-                                    <p className="text-sm text-gray-500 mt-1">Vérification en cours...</p>
-                                  )}
+                                  {emailCheckLoading && <FormCheckingMessage />}
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor="emailAlternate">Email autre contact</Label>
@@ -681,21 +662,16 @@ export default function OrangeFabCandidaturePage() {
                                     className={`rounded-l-none ${phoneExists || getAllErrors().phone ? "border-red-500" : ""}`}
                                   />
                                 </div>
-                                {phoneExists && (
-                                  <Alert variant="destructive" className="mt-2 py-2">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertDescription>
-                                      Ce numéro de téléphone a déjà été utilisé pour une candidature.
-                                    </AlertDescription>
-                                  </Alert>
-                                )}
+                                <FormFieldError
+                                  message={phoneExists ? FORM_FEEDBACK_MESSAGES.duplicatePhone : null}
+                                />
                                 {getAllErrors().phone && !phoneExists && (
                                   <Alert variant="destructive" className="mt-2 py-2">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertDescription>{getAllErrors().phone}</AlertDescription>
                                   </Alert>
                                 )}
-                                {phoneCheckLoading && <p className="text-sm text-gray-500 mt-1">Vérification en cours...</p>}
+                                {phoneCheckLoading && <FormCheckingMessage />}
                                 <p className="text-xs text-gray-500">Saisissez uniquement des chiffres</p>
                               </div>
 
@@ -825,68 +801,18 @@ export default function OrangeFabCandidaturePage() {
                                 )}
                               </div>
 
-                              <div className="space-y-2">
-                                <Label htmlFor="cv">
-                                  CV <span className="text-red-500">*</span>
-                                </Label>
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex items-center justify-center w-full">
-                                    <label
-                                      htmlFor="cv"
-                                      className={`flex flex-col items-center justify-center w-full h-32 border-2 ${getAllErrors().cv ? "border-red-500" : "border-gray-300"} border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500`}
-                                    >
-                                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        {formData.cv ? (
-                                          <>
-                                            <FileText className="w-8 h-8 mb-3 text-green-500" />
-                                            <p className="mb-2 text-sm text-green-500 font-semibold">Fichier sélectionné</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              {formData.cv.name} ({(formData.cv.size / 1024 / 1024).toFixed(2)} MB)
-                                            </p>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
-                                            <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                              <span className="font-semibold">Cliquez pour télécharger</span> ou
-                                              glissez-déposez
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              Images, Word, PowerPoint, PDF (MAX. 128MB)
-                                            </p>
-                                          </>
-                                        )}
-                                      </div>
-                                      <input
-                                        id="cv"
-                                        name="cv"
-                                        type="file"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                        accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.doc,.docx,.ppt,.pptx,.pdf"
-                                        required
-                                      />
-                                    </label>
-                                  </div>
-                                  {getAllErrors().cv && (
-                                    <Alert variant="destructive" className="mt-2 py-2">
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>{getAllErrors().cv}</AlertDescription>
-                                    </Alert>
-                                  )}
-                                  {formData.cv && (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setFormData((prev) => ({ ...prev, cv: null }))}
-                                      className="w-full md:w-auto"
-                                    >
-                                      Changer de document
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
+                              <FileUploadField
+                                id="cv"
+                                name="cv"
+                                label="CV"
+                                required
+                                file={formData.cv}
+                                error={getAllErrors().cv}
+                                onChange={handleFileChange}
+                                onClear={() => setFormData((prev) => ({ ...prev, cv: null }))}
+                                accept={ALLOWED_EXTENSIONS_ACCEPT}
+                                helperText={`Images, Word, PowerPoint, PDF (MAX. ${MAX_FILE_SIZE_MB}MB)`}
+                              />
 
                               <div className="flex justify-end">
                                 <Button
@@ -1262,69 +1188,18 @@ export default function OrangeFabCandidaturePage() {
                                 />
                               </div>
 
-                              <div className="space-y-2">
-                                <Label htmlFor="pitchDeck">
-                                  Document de présentation (pitch deck) <span className="text-red-500">*</span>
-                                </Label>
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex items-center justify-center w-full">
-                                    <label
-                                      htmlFor="pitchDeck"
-                                      className={`flex flex-col items-center justify-center w-full h-32 border-2 ${getAllErrors().pitchDeck ? "border-red-500" : "border-gray-300"} border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500`}
-                                    >
-                                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        {formData.pitchDeck ? (
-                                          <>
-                                            <FileText className="w-8 h-8 mb-3 text-green-500" />
-                                            <p className="mb-2 text-sm text-green-500 font-semibold">Fichier sélectionné</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              {formData.pitchDeck.name} ({(formData.pitchDeck.size / 1024 / 1024).toFixed(2)}{" "}
-                                              MB)
-                                            </p>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
-                                            <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                              <span className="font-semibold">Cliquez pour télécharger</span> ou
-                                              glissez-déposez
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                              Images, Word, PowerPoint, PDF (MAX. 128MB)
-                                            </p>
-                                          </>
-                                        )}
-                                      </div>
-                                      <input
-                                        id="pitchDeck"
-                                        name="pitchDeck"
-                                        type="file"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                        accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.doc,.docx,.ppt,.pptx,.pdf"
-                                        required
-                                      />
-                                    </label>
-                                  </div>
-                                  {getAllErrors().pitchDeck && (
-                                    <Alert variant="destructive" className="mt-2 py-2">
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>{getAllErrors().pitchDeck}</AlertDescription>
-                                    </Alert>
-                                  )}
-                                  {formData.pitchDeck && (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setFormData((prev) => ({ ...prev, pitchDeck: null }))}
-                                      className="w-full md:w-auto"
-                                    >
-                                      Changer de document
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
+                              <FileUploadField
+                                id="pitchDeck"
+                                name="pitchDeck"
+                                label="Document de présentation (pitch deck)"
+                                required
+                                file={formData.pitchDeck}
+                                error={getAllErrors().pitchDeck}
+                                onChange={handleFileChange}
+                                onClear={() => setFormData((prev) => ({ ...prev, pitchDeck: null }))}
+                                accept={ALLOWED_EXTENSIONS_ACCEPT}
+                                helperText={`Images, Word, PowerPoint, PDF (MAX. ${MAX_FILE_SIZE_MB}MB)`}
+                              />
 
                               <div className="flex justify-between">
                                 <Button type="button" variant="outline" onClick={prevStep}>
