@@ -1,9 +1,8 @@
-"use client"
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Users, PenToolIcon as Tool, Lightbulb, MapPin, Calendar, ArrowRight, BookOpen } from "lucide-react"
-import { motion } from "framer-motion"
+import { ArrowLeft, Users, PenTool as Tool, Lightbulb, MapPin, Calendar, ArrowRight, BookOpen } from "lucide-react"
+import AnimatedSection from "@/components/AnimatedSection"
 import Image from "next/image"
 
 export default function ProgrammesPage() {
@@ -34,12 +33,7 @@ export default function ProgrammesPage() {
       <section className="py-8 md:py-10 bg-white dark:bg-gray-800">
         <div className="container bg-gray-100 mx-auto p-4">
           <div className="mx-auto max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-8 md:mb-12"
-            >
+            <AnimatedSection className="mb-8 md:mb-12">
               <div className="flex items-center mb-4">
                 <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 flex-shrink-0">
                   <Users size={24} className="md:w-8 md:h-8" />
@@ -49,14 +43,10 @@ export default function ProgrammesPage() {
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 md:mb-8">
                 Des communautés d'apprentissage et d'innovation dans les universités sénégalaises.
               </p>
-            </motion.div>
+            </AnimatedSection>
 
             <div className="grid lg:grid-cols-2 gap-8 md:gap-12">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
+              <AnimatedSection delay={0.2}>
                 <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   Communautés d'apprentissage dans les universités
                 </h3>
@@ -91,14 +81,9 @@ export default function ProgrammesPage() {
                     ))}
                   </ul>
                 </div>
-              </motion.div>
+              </AnimatedSection>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="flex flex-col h-full"
-              >
+              <AnimatedSection delay={0.4} className="flex flex-col h-full">
                 <div className="relative w-full">
                   <Image
                     src="/ODCClubs.jpg"
@@ -107,9 +92,8 @@ export default function ProgrammesPage() {
                     height={1000}
                     className="object-contain rounded-xl"
                   />
-
                 </div>
-              </motion.div>
+              </AnimatedSection>
             </div>
           </div>
         </div>
@@ -119,12 +103,7 @@ export default function ProgrammesPage() {
       <section className="py-8 md:py-10 bg-white dark:bg-gray-900">
         <div className="container bg-gray-100 mx-auto p-4">
           <div className="mx-auto max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-8 md:mb-12"
-            >
+            <AnimatedSection className="mb-8 md:mb-12">
               <div className="flex items-center mb-4">
                 <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 flex-shrink-0">
                   <Tool size={24} className="md:w-8 md:h-8" />
@@ -134,65 +113,54 @@ export default function ProgrammesPage() {
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-6 md:mb-8">
                 Un espace d'innovation, de fabrication numérique et de prototypage ouvert à tous.
               </p>
-            </motion.div>
+            </AnimatedSection>
 
             <div className="grid lg:grid-cols-2 gap-8 md:gap-12">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="flex flex-col"
-              >
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  Lab-S : Un centre d'innovation pour tous
-                </h3>
-                <p className="text-gray-700 dark:text-gray-300 mb-6 md:mb-8 text-base md:text-lg leading-relaxed">
-                  Lab-S est un espace dédié à l'apprentissage et à la création, où nous rendons les nouvelles
-                  technologies accessibles à tous. Nous offrons des formations et des ressources pour encourager la
-                  créativité et permettre à chacun de concrétiser ses idées en solutions innovantes.
-                </p>
+              <div className="flex flex-col">
+                <AnimatedSection delay={0.2}>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                    Lab-S : Un centre d'innovation pour tous
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 mb-6 md:mb-8 text-base md:text-lg leading-relaxed">
+                    Lab-S est un espace dédié à l'apprentissage et à la création, où nous rendons les nouvelles
+                    technologies accessibles à tous. Nous offrons des formations et des ressources pour encourager la
+                    créativité et permettre à chacun de concrétiser ses idées en solutions innovantes.
+                  </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-                  {[
-                    {
-                      icon: <Lightbulb className="text-white w-4 h-4 md:w-5 md:h-5" />,
-                      title: "Idéation",
-                      description: "Développez vos idées innovantes avec le suivi de nos experts.",
-                    },
-                    {
-                      icon: <Tool className="text-white w-4 h-4 md:w-5 md:h-5" />,
-                      title: "Prototypage",
-                      description: "Créez des prototypes fonctionnels grâce à nos équipements de pointe.",
-                    },
-                    {
-                      icon: <ArrowRight className="text-white w-4 h-4 md:w-5 md:h-5" />,
-                      title: "Production",
-                      description: "Réalisez vos projets et lancez vos produits sur le marché.",
-                    },
-                  ].map((feature, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                      className="bg-gradient-to-br from-[#ff7900] to-[#e56b00] p-4 md:p-6 rounded-xl text-white h-full"
-                    >
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 md:mb-4">
-                        {feature.icon}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                    {[
+                      {
+                        icon: <Lightbulb className="text-white w-4 h-4 md:w-5 md:h-5" />,
+                        title: "Idéation",
+                        description: "Développez vos idées innovantes avec le suivi de nos experts.",
+                      },
+                      {
+                        icon: <Tool className="text-white w-4 h-4 md:w-5 md:h-5" />,
+                        title: "Prototypage",
+                        description: "Créez des prototypes fonctionnels grâce à nos équipements de pointe.",
+                      },
+                      {
+                        icon: <ArrowRight className="text-white w-4 h-4 md:w-5 md:h-5" />,
+                        title: "Production",
+                        description: "Réalisez vos projets et lancez vos produits sur le marché.",
+                      },
+                    ].map((feature, index) => (
+                      <div
+                        key={index}
+                        className="bg-gradient-to-br from-[#ff7900] to-[#e56b00] p-4 md:p-6 rounded-xl text-white h-full"
+                      >
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 md:mb-4">
+                          {feature.icon}
+                        </div>
+                        <h4 className="text-base md:text-lg font-bold mb-2 leading-tight">{feature.title}</h4>
+                        <p className="text-white/90 text-sm md:text-base">{feature.description}</p>
                       </div>
-                      <h4 className="text-base md:text-lg font-bold mb-2 leading-tight">{feature.title}</h4>
-                      <p className="text-white/90 text-sm md:text-base">{feature.description}</p>
-                    </motion.div>
-                                  ))}
-                </div>
-              </motion.div>
+                    ))}
+                  </div>
+                </AnimatedSection>
+              </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="flex flex-col h-full"
-              >
+              <AnimatedSection delay={0.4} className="flex flex-col h-full">
                 <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-md mb-6 md:mb-8">
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">Nos équipements</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
@@ -232,7 +200,7 @@ export default function ProgrammesPage() {
                     </a>
                   </Button>
                 </div>
-              </motion.div>
+              </AnimatedSection>
             </div>
           </div>
         </div>
@@ -242,12 +210,7 @@ export default function ProgrammesPage() {
       <section className="py-8 md:py-10 bg-white dark:bg-gray-800">
         <div className="container bg-gray-100 mx-auto p-4">
           <div className="mx-auto max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-8 md:mb-12"
-            >
+            <AnimatedSection className="mb-8 md:mb-12">
               <div className="flex items-center mb-4">
                 <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 flex-shrink-0">
                   <Lightbulb size={24} className="md:w-8 md:h-8" />
@@ -258,14 +221,10 @@ export default function ProgrammesPage() {
                 L'acculturation numérique : Tech-ki propose des formations interactives sur l'inclusion numérique : navigation web, outils
                 bureautiques et sécurité en ligne. Elles sont accessibles à tous les niveaux.
               </p>
-            </motion.div>
+            </AnimatedSection>
 
             <div className="grid lg:grid-cols-2 gap-8 md:gap-12">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
+              <AnimatedSection delay={0.2}>
                 <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   Présentation du programme
                 </h3>
@@ -295,12 +254,9 @@ export default function ProgrammesPage() {
                       description:
                         "Programme suivi personnalisé des participants et mise en relation avec l'écosystème entrepreneurial.",
                     },
-                            ].map((feature, index) => (
-                    <motion.div
+                  ].map((feature, index) => (
+                    <div
                       key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
                       className="bg-gradient-to-br from-[#ff7900] to-[#e56b00] p-3 md:p-4 rounded-xl text-white h-full"
                     >
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 md:mb-4">
@@ -314,16 +270,12 @@ export default function ProgrammesPage() {
                         {feature.title}
                       </h4>
                       <p className="text-white/90 text-sm md:text-base">{feature.description}</p>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
-              </motion.div>
+              </AnimatedSection>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
+              <AnimatedSection delay={0.4}>
                 <div className="p-4 md:p-4 rounded-xl text-black h-full flex flex-col justify-between">
                   <div className="bg-white p-4 md:p-4 rounded-lg shadow-md ">
                     <h4 className="text-lg md:text-xl font-bold mb-3">Impact du programme</h4>
@@ -350,12 +302,9 @@ export default function ProgrammesPage() {
                       Rejoignez Tech-Ki pour apprendre à maîtriser les outils numériques, développer votre confiance et
                       transformer durablement votre vie personnelle et professionnelle grâce aux compétences digitales.
                     </p>
-                    {/* <Button className="w-full bg-[#ff7900] hover:bg-[#e56b00] text-white text-sm md:text-base py-3 md:py-4">
-                      Le numérique pour tous avec Tech-ki
-                    </Button> */}
                   </div>
                 </div>
-              </motion.div>
+              </AnimatedSection>
             </div>
           </div>
         </div>

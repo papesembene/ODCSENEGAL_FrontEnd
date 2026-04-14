@@ -1,4 +1,5 @@
-"use client"
+
+
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Phone, Mail, Clock } from "lucide-react"

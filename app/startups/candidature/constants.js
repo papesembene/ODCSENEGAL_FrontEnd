@@ -2,9 +2,6 @@ export const ALLOWED_FILE_TYPES = {
   "image/png": ".png",
   "image/jpeg": ".jpg, .jpeg",
   "image/jpg": ".jpg",
-  "image/gif": ".gif",
-  "image/bmp": ".bmp",
-  "image/webp": ".webp",
   "application/msword": ".doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
   "application/vnd.ms-powerpoint": ".ppt",
@@ -12,18 +9,18 @@ export const ALLOWED_FILE_TYPES = {
   "application/pdf": ".pdf",
 }
 
-export const ALLOWED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".doc", ".docx", ".ppt", ".pptx", ".pdf"]
+export const ALLOWED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".doc", ".docx", ".ppt", ".pptx", ".pdf"]
 
-export const MAX_FILE_SIZE = 128 * 1024 * 1024
+export const MAX_FILE_SIZE = 10 * 1024 * 1024
 
-export const FILE_INPUT_ACCEPT = ".png,.jpg,.jpeg,.gif,.bmp,.webp,.doc,.docx,.ppt,.pptx,.pdf"
+export const FILE_INPUT_ACCEPT = ".png,.jpg,.jpeg,.doc,.docx,.ppt,.pptx,.pdf"
 
-export const FILE_FORMATS_HELP_TEXT = "Images, Word, PowerPoint, PDF (MAX. 128MB)"
+export const FILE_FORMATS_HELP_TEXT = "Images (PNG, JPG), Word, PowerPoint, PDF (MAX. 10MB)"
 
 export const FILE_TYPE_ERROR_MESSAGE =
-  "Type de fichier non autorisé. Formats acceptés : Images (PNG, JPG, JPEG, GIF, BMP, WEBP), Documents Word (DOC, DOCX), PowerPoint (PPT, PPTX), PDF"
+  "Type de fichier non autorisé. Formats acceptés : Images (PNG, JPG, JPEG), Documents Word (DOC, DOCX), PowerPoint (PPT, PPTX), PDF"
 
-export const FILE_SIZE_ERROR_MESSAGE = "Le fichier est trop volumineux. Taille maximale : 128MB"
+export const FILE_SIZE_ERROR_MESSAGE = "Le fichier est trop volumineux. Taille maximale : 10MB"
 
 export const REGIONS_DATA = {
   Dakar: ["Dakar", "Guédiawaye", "Pikine", "Rufisque"],

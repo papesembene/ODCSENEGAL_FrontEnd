@@ -85,6 +85,8 @@ export default function StartupCandidaturePage() {
   const [validationErrors, setValidationErrors] = useState({})
   const [realtimeErrors, setRealtimeErrors] = useState({})
   const [isRegulationOpen, setIsRegulationOpen] = useState(false)
+  const [dragOverCV, setDragOverCV] = useState(false)
+  const [dragOverPitchDeck, setDragOverPitchDeck] = useState(false)
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -260,10 +262,8 @@ export default function StartupCandidaturePage() {
     return () => clearTimeout(debounceTimer)
   }, [formData.phone, formData.phoneCountry])
 
-  const handleFileChange = (e) => {
-    const { name, files } = e.target
-    if (files && files[0]) {
-      const file = files[0]
+  const processFile = useCallback(
+    (name, file) => {
       const fileError = validateFile(file)
 
       if (fileError) {
@@ -276,8 +276,45 @@ export default function StartupCandidaturePage() {
 
       setFieldValue(name, file)
       clearValidationError(name)
+    },
+    [clearValidationError, setFieldValue],
+  )
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target
+    if (files && files[0]) {
+      processFile(name, files[0])
     }
   }
+
+  const handleDragOver = useCallback((e, name) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (name === "cv") setDragOverCV(true)
+    if (name === "pitchDeck") setDragOverPitchDeck(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e, name) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (name === "cv") setDragOverCV(false)
+    if (name === "pitchDeck") setDragOverPitchDeck(false)
+  }, [])
+
+  const handleDrop = useCallback(
+    (e, name) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (name === "cv") setDragOverCV(false)
+      if (name === "pitchDeck") setDragOverPitchDeck(false)
+
+      const files = e.dataTransfer.files
+      if (files && files[0]) {
+        processFile(name, files[0])
+      }
+    },
+    [processFile],
+  )
 
   const handleSelectChange = (name, value) => {
     setFieldValue(name, value)
@@ -800,20 +837,40 @@ export default function StartupCandidaturePage() {
                             <div className="flex items-center justify-center w-full">
                               <label
                                 htmlFor="cv"
-                                className={`flex flex-col items-center justify-center w-full h-32 border-2 ${getAllErrors().cv ? "border-red-500" : "border-gray-300"} border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500`}
+                                onDragOver={(e) => handleDragOver(e, "cv")}
+                                onDragLeave={(e) => handleDragLeave(e, "cv")}
+                                onDrop={(e) => handleDrop(e, "cv")}
+                                className={`flex flex-col items-center justify-center w-full h-32 border-2 ${
+                                  getAllErrors().cv ? "border-red-500" : dragOverCV ? "border-orange-500 bg-orange-50" : "border-gray-300"
+                                } border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 transition-colors`}
                               >
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                   {formData.cv ? (
-                                    <>
-                                      <FileText className="w-8 h-8 mb-3 text-green-500" />
-                                      <p className="mb-2 text-sm text-green-500 font-semibold">Fichier sélectionné</p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {formData.cv.name} ({(formData.cv.size / 1024 / 1024).toFixed(2)} MB)
+                                    <div className="flex flex-col items-center">
+                                      <FileText className="w-8 h-8 mb-2 text-green-500" />
+                                      <p className="text-sm text-green-600 font-semibold text-center px-4">
+                                        {formData.cv.name}
                                       </p>
-                                    </>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        ({(formData.cv.size / 1024 / 1024).toFixed(2)} MB)
+                                      </p>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          setFormData((prev) => ({ ...prev, cv: null }))
+                                        }}
+                                        className="mt-2 text-red-500 hover:text-red-700 hover:bg-red-50 h-8 gap-1"
+                                      >
+                                        <X className="h-4 w-4" /> Supprimer
+                                      </Button>
+                                    </div>
                                   ) : (
                                     <>
-                                      <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
+                                      <Upload className={`w-8 h-8 mb-3 ${dragOverCV ? "text-orange-500" : "text-gray-500 dark:text-gray-400"}`} />
                                       <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
                                         <span className="font-semibold">Cliquez pour télécharger</span> ou
                                         glissez-déposez
@@ -840,17 +897,6 @@ export default function StartupCandidaturePage() {
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>{getAllErrors().cv}</AlertDescription>
                               </Alert>
-                            )}
-                            {formData.cv && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setFormData((prev) => ({ ...prev, cv: null }))}
-                                className="w-full md:w-auto"
-                              >
-                                Changer de fichier
-                              </Button>
                             )}
                           </div>
                         </div>
@@ -1239,21 +1285,40 @@ export default function StartupCandidaturePage() {
                             <div className="flex items-center justify-center w-full">
                               <label
                                 htmlFor="pitchDeck"
-                                className={`flex flex-col items-center justify-center w-full h-32 border-2 ${getAllErrors().pitchDeck ? "border-red-500" : "border-gray-300"} border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500`}
+                                onDragOver={(e) => handleDragOver(e, "pitchDeck")}
+                                onDragLeave={(e) => handleDragLeave(e, "pitchDeck")}
+                                onDrop={(e) => handleDrop(e, "pitchDeck")}
+                                className={`flex flex-col items-center justify-center w-full h-32 border-2 ${
+                                  getAllErrors().pitchDeck ? "border-red-500" : dragOverPitchDeck ? "border-orange-500 bg-orange-50" : "border-gray-300"
+                                } border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 transition-colors`}
                               >
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                   {formData.pitchDeck ? (
-                                    <>
-                                      <FilePresentation className="w-8 h-8 mb-3 text-green-500" />
-                                      <p className="mb-2 text-sm text-green-500 font-semibold">Fichier sélectionné</p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {formData.pitchDeck.name} ({(formData.pitchDeck.size / 1024 / 1024).toFixed(2)}{" "}
-                                        MB)
+                                    <div className="flex flex-col items-center">
+                                      <FilePresentation className="w-8 h-8 mb-2 text-green-500" />
+                                      <p className="text-sm text-green-600 font-semibold text-center px-4">
+                                        {formData.pitchDeck.name}
                                       </p>
-                                    </>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        ({(formData.pitchDeck.size / 1024 / 1024).toFixed(2)} MB)
+                                      </p>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          setFormData((prev) => ({ ...prev, pitchDeck: null }))
+                                        }}
+                                        className="mt-2 text-red-500 hover:text-red-700 hover:bg-red-50 h-8 gap-1"
+                                      >
+                                        <X className="h-4 w-4" /> Supprimer
+                                      </Button>
+                                    </div>
                                   ) : (
                                     <>
-                                      <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
+                                      <Upload className={`w-8 h-8 mb-3 ${dragOverPitchDeck ? "text-orange-500" : "text-gray-500 dark:text-gray-400"}`} />
                                       <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
                                         <span className="font-semibold">Cliquez pour télécharger</span> ou
                                         glissez-déposez
@@ -1280,17 +1345,6 @@ export default function StartupCandidaturePage() {
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>{getAllErrors().pitchDeck}</AlertDescription>
                               </Alert>
-                            )}
-                            {formData.pitchDeck && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setFormData((prev) => ({ ...prev, pitchDeck: null }))}
-                                className="w-full md:w-auto"
-                              >
-                                Changer de fichier
-                              </Button>
                             )}
                           </div>
                         </div>
