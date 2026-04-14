@@ -85,6 +85,9 @@ export const useAdminApi = () => {
         const query = new URLSearchParams(params).toString()
         return makeRequest(`/api/admin/candidatures${query ? `?${query}` : ''}`)
       },
+      getOne: (id) => makeRequest(`/api/admin/candidatures/${id}`),
+      update: (id, data) => makeRequest(`/api/admin/candidatures/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+      delete: (id) => makeRequest(`/api/admin/candidatures/${id}`, { method: 'DELETE' }),
     }
   }), [makeRequest])
 }

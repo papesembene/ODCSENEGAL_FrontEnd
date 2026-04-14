@@ -13,7 +13,7 @@ import {
   Award,
   Users,
   Building,
-  Tool,
+  Wrench,
   Lightbulb,
 } from "lucide-react"
 import FormationsSection from "@/components/odc/FormationsSection"
@@ -206,7 +206,7 @@ export default function CompetencesPage() {
                 features: ["Présent dans 4 universités", "Hackathons et ateliers tech", "Mentorat par des professionnels"]
               },
               {
-                icon: <Tool size={24} />,
+                icon: <Wrench size={24} />,
                 title: "FabLab (Lab-S)",
                 description: "Un espace d'innovation, de fabrication numérique et de prototypage ouvert à tous.",
                 features: ["Imprimantes 3D et découpeuses laser", "Accompagnement au prototypage", "Espace de co-création"]

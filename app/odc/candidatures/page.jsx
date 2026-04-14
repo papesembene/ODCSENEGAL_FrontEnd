@@ -270,7 +270,8 @@ export default function CandidaturePage() {
       if (field === "idNumber") setCheckingIdNumber(true)
 
 
-      const data = await checkUniqueCandidatureField(field, value)
+      const apiField = field === "idNumber" ? "cni_or_passport_number" : field
+      const data = await checkUniqueCandidatureField(apiField, value)
 
       if (field === "email") {
         setEmailExists(data.exists)

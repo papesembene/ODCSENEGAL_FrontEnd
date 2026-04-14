@@ -1,7 +1,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Users, PenToolIcon as Tool, Lightbulb, MapPin, Calendar, ArrowRight, BookOpen } from "lucide-react"
+import { ArrowLeft, Users, PenTool as Tool, Lightbulb, MapPin, Calendar, ArrowRight, BookOpen } from "lucide-react"
 import AnimatedSection from "@/components/AnimatedSection"
 import Image from "next/image"
 
