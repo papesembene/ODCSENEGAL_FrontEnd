@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
+import { useAdminApi } from "@/app/hooks/useAdminApi"
 import {
-  API_BASE_URL,
   CANDIDATES_LIST,
 } from "../constants"
 import {
@@ -30,7 +30,7 @@ import {
 } from "../helpers"
 
 export const useTestsManagement = (router) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { tests, testGroups: testGroupsApi, candidatures } = useAdminApi()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -117,12 +117,7 @@ export const useTestsManagement = (router) => {
   const fetchTests = useCallback(async () => {
     try {
       setRefreshing(true)
-      const { fetchJsonWithTimeout } = await import("@/app/utils/fetchWithTimeout")
-      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests`, {
-        timeout: 30000,
-        retries: 2,
-        retryDelay: 1000,
-      })
+      const result = await tests.getAll()
 
       if (result.success) {
         setTestsData(result.data || [])
@@ -138,16 +133,11 @@ export const useTestsManagement = (router) => {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [])
+  }, [tests])
 
   const fetchResults = useCallback(async () => {
     try {
-      const { fetchJsonWithTimeout } = await import("@/app/utils/fetchWithTimeout")
-      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/results`, {
-        timeout: 45000,
-        retries: 2,
-        retryDelay: 1500,
-      })
+      const result = await tests.getResults()
 
       if (result.success) {
         setTestResults(result.data || [])
@@ -160,16 +150,11 @@ export const useTestsManagement = (router) => {
       toast.error("Impossible de charger les résultats.")
       setTestResults([])
     }
-  }, [])
+  }, [tests])
 
   const fetchStatistics = useCallback(async () => {
     try {
-      const { fetchJsonWithTimeout } = await import("@/app/utils/fetchWithTimeout")
-      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/statistics`, {
-        timeout: 30000,
-        retries: 2,
-        retryDelay: 1000,
-      })
+      const result = await tests.getStatistics()
 
       if (result.success) {
         setStatistics(result.data)
@@ -182,7 +167,7 @@ export const useTestsManagement = (router) => {
       toast.error("Impossible de charger les statistiques.")
       setStatistics(null)
     }
-  }, [])
+  }, [tests])
 
   const fetchAllViolations = useCallback(async () => {
     try {
@@ -192,12 +177,9 @@ export const useTestsManagement = (router) => {
         const testId = result.testId
         if (candidateEmail && testId) {
           try {
-            const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/violations/${candidateEmail}`)
-            if (response.ok) {
-              const data = await response.json()
-              if (data.success && data.data) {
-                violationsMap[result.id] = data.data
-              }
+            const resultData = await tests.getViolations(testId, candidateEmail)
+            if (resultData.success && resultData.data) {
+              violationsMap[result.id] = resultData.data
             }
           } catch (error) {
             console.error(`Erreur violations pour ${candidateEmail}:`, error)
@@ -208,16 +190,11 @@ export const useTestsManagement = (router) => {
     } catch (error) {
       console.error("Erreur lors de la récupération des violations:", error)
     }
-  }, [testResults])
+  }, [testResults, tests])
 
   const fetchTestGroups = useCallback(async () => {
     try {
-      let url = `${API_BASE_URL}/api/admin/test-groups?`
-      if (groupFormationFilter !== "all") {
-        url += `formation=${groupFormationFilter}`
-      }
-      const response = await fetch(url)
-      const result = await response.json()
+      const result = await testGroupsApi.getAll(groupFormationFilter)
       if (result.success) {
         const groups = result.data || []
         setTestGroups(groups)
@@ -240,12 +217,11 @@ export const useTestsManagement = (router) => {
       console.error("Erreur:", error)
       toast.error("Impossible de récupérer les groupes")
     }
-  }, [groupFormationFilter])
+  }, [groupFormationFilter, testGroups])
 
   const fetchAvailableCandidates = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`)
-      const result = await response.json()
+      const result = await candidatures.getAll()
       if (result.success) {
         const normalized = (result.data || []).map(c => ({
           ...c,
@@ -256,34 +232,29 @@ export const useTestsManagement = (router) => {
     } catch (error) {
       console.error("Erreur:", error)
     }
-  }, [])
+  }, [candidatures])
 
+  // Chargement initial des données
   useEffect(() => {
-    const authenticated = !!localStorage.getItem("admin_token")
-    const adminType = localStorage.getItem("admin_type")
-    if (!authenticated || (adminType !== "competences" && adminType !== "super_admin")) {
-      router.push("/astrodmin")
-      return
-    }
-    setIsAuthenticated(true)
     fetchTests()
     fetchResults()
     fetchStatistics()
     fetchTestGroups()
     fetchAvailableCandidates()
-  }, [router, fetchTests, fetchResults, fetchStatistics, fetchTestGroups, fetchAvailableCandidates])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchTestGroups()
-    }
-  }, [groupFormationFilter, isAuthenticated, fetchTestGroups])
+    fetchTestGroups()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupFormationFilter])
 
   useEffect(() => {
     if (testResults.length > 0) {
       fetchAllViolations()
     }
-  }, [testResults, fetchAllViolations])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testResults])
 
   // Handlers
   const handleAddQuestion = () => {
@@ -470,7 +441,6 @@ export const useTestsManagement = (router) => {
     })
     setShowCreateDialog(true)
   }
-
   const handleCreateTest = async () => {
     try {
       if (!newTest.title || !newTest.referentiel || !newTest.scheduledDate || !newTest.scheduledTime) {
@@ -486,20 +456,15 @@ export const useTestsManagement = (router) => {
         totalQuestions: newTest.questions.length,
         updatedBy: localStorage.getItem("admin_email"),
       }
-      const url = editingTest ? `${API_BASE_URL}/api/admin/tests/${editingTest.id}` : `${API_BASE_URL}/api/admin/tests`
-      const method = editingTest ? "PATCH" : "POST"
       if (!editingTest) {
         testData.status = "active"
         testData.createdBy = localStorage.getItem("admin_email")
       } else {
         testData.updatedAt = new Date().toISOString()
       }
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(testData),
-      })
-      const result = await response.json()
+
+      const result = editingTest ? await tests.update(editingTest.id, testData) : await tests.create(testData)
+      
       if (result.success) {
         toast.success(editingTest ? "Test modifié !" : "Test créé !")
         setEditingTest(null)
@@ -526,8 +491,7 @@ export const useTestsManagement = (router) => {
     if (!testToDelete) return
     setDeletingTest(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testToDelete.id}`, { method: "DELETE" })
-      const result = await response.json()
+      const result = await tests.delete(testToDelete.id)
       if (result.success) {
         toast.success(`Test "${testToDelete.title}" supprimé`)
         fetchTests()
@@ -550,12 +514,7 @@ export const useTestsManagement = (router) => {
   const handleToggleTestStatus = async (testId, currentStatus) => {
     const newStatus = currentStatus === "active" ? "scheduled" : "active"
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: testId, status: newStatus }),
-      })
-      const result = await response.json()
+      const result = await tests.updateStatus({ id: testId, status: newStatus })
       if (result.success) {
         toast.success(`Test ${newStatus === "active" ? "activé" : "désactivé"}`)
         fetchTests()
@@ -580,12 +539,7 @@ export const useTestsManagement = (router) => {
         candidate_ids: selectedCandidatesForGroup,
         created_by: localStorage.getItem("admin_email"),
       }
-      const response = await fetch(`${API_BASE_URL}/api/admin/test-groups`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(groupData),
-      })
-      const result = await response.json()
+      const result = await testGroupsApi.create(groupData)
       if (result.success) {
         toast.success("Groupe créé !")
         setShowCreateGroupDialog(false)
@@ -663,21 +617,13 @@ export const useTestsManagement = (router) => {
     setSendingInvitations(true)
     try {
       const testDateTime = `${invitationDetails.test_date}T${invitationDetails.test_time}:00`
-      const updateResponse = await fetch(`${API_BASE_URL}/api/admin/test-groups/${selectedGroupForInvitation.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...invitationDetails, test_date: testDateTime }),
-      })
-      if (!(await updateResponse.json()).success) {
+      const updateResult = await testGroupsApi.update(selectedGroupForInvitation.id, { ...invitationDetails, test_date: testDateTime })
+      if (!updateResult.success) {
         toast.error("Erreur mise à jour groupe")
         setSendingInvitations(false)
         return
       }
-      const sendResponse = await fetch(`${API_BASE_URL}/api/admin/test-groups/${selectedGroupForInvitation.id}/send-invitations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
-      const sendResult = await sendResponse.json()
+      const sendResult = await testGroupsApi.sendInvitations(selectedGroupForInvitation.id)
       if (sendResult.success) {
         toast.success(`Invitations envoyées à ${sendResult.data?.sent || 0} candidats`)
       } else { toast.error(sendResult.error || "Erreur d'envoi") }
@@ -696,8 +642,8 @@ export const useTestsManagement = (router) => {
     if (!groupToDelete) return
     setDeletingGroup(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/test-groups/${groupToDelete.id}`, { method: "DELETE" })
-      if ((await response.json()).success) {
+      const result = await testGroupsApi.delete(groupToDelete.id)
+      if (result.success) {
         toast.success(`Groupe "${groupToDelete.name}" supprimé`)
         fetchTestGroups()
         setTimeout(() => {
@@ -719,8 +665,7 @@ export const useTestsManagement = (router) => {
         setGroupCandidatesDetails([])
         return
       }
-      const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`)
-      const result = await response.json()
+      const result = await candidatures.getAll()
       if (result.success) {
         setGroupCandidatesDetails(result.data.filter((c) => candidateIds.includes(c.id)))
       }
@@ -739,17 +684,13 @@ export const useTestsManagement = (router) => {
   const handleSendEmails = async () => {
     try {
       const selectedCandidatesData = CANDIDATES_LIST.filter((c) => emailData.selectedCandidates.includes(c.id))
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests/send-emails`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...emailData,
-          recipients: selectedCandidatesData,
-          testDetails: selectedTest,
-          testUrl: selectedTest ? getTestUrl(selectedTest.id) : "",
-        }),
+      const result = await tests.sendEmails({
+        ...emailData,
+        recipients: selectedCandidatesData,
+        testDetails: selectedTest,
+        testUrl: selectedTest ? getTestUrl(selectedTest.id) : "",
       })
-      if ((await response.json()).success) toast.success("Emails envoyés !")
+      if (result.success) toast.success("Emails envoyés !")
       else toast.success("Email envoyé ! (simulation)")
       setShowEmailDialog(false)
       setEmailData(createInitialEmailData())
@@ -777,12 +718,8 @@ export const useTestsManagement = (router) => {
     setManualGrades(updatedGrades)
     if (selectedResult) {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/tests/results/${selectedResult.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ manualGrades: updatedGrades }),
-        })
-        if (await response.json().success) {
+        const result = await tests.updateResult(selectedResult.id, { manualGrades: updatedGrades })
+        if (result.success) {
           toast.success("Note sauvegardée")
           setSelectedResult({ ...selectedResult, manualGrades: updatedGrades })
         }
@@ -826,7 +763,6 @@ export const useTestsManagement = (router) => {
   })
 
   return {
-    isAuthenticated,
     loading,
     refreshing,
     testsData,

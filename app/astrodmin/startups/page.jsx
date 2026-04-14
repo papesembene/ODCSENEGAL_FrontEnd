@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useAdminApi } from "@/app/hooks/useAdminApi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -28,8 +29,7 @@ import { Download, Search, Building, Calendar, Eye, Edit, Trash, Plus, RefreshCw
 import { exportToCSV, exportToExcel, exportToPDF } from "@/app/utils/export-utils"
 
 export default function AdminStartupsPage() {
-  const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { startups } = useAdminApi()
   const [adminType, setAdminType] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -48,42 +48,12 @@ export default function AdminStartupsPage() {
     acceptedStartups: 0,
   })
 
-  useEffect(() => {
-    // Vérifier l'authentification
-    const authenticated = !!localStorage.getItem("admin_token")
-    const type = localStorage.getItem("admin_type")
-
-    setIsAuthenticated(authenticated)
-    setAdminType(type)
-    setLoading(false)
-
-    if (!authenticated) {
-      router.push("/astrodmin")
-    }
-  }, [router])
-
-  // Fonction pour récupérer les données depuis l'API
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-
-  const fetchStartups = async () => {
+  const fetchStartups = useCallback(async () => {
     try {
       setRefreshing(true)
       setError(null)
 
-      // Utiliser fetchWithTimeout pour éviter les timeouts
-      const { fetchJsonWithTimeout } = await import("@/app/utils/fetchWithTimeout")
-      const result = await fetchJsonWithTimeout(
-        `${API_BASE_URL}/api/admin/startup/candidatures`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          timeout: 45000, // 45 secondes
-          retries: 2,
-          retryDelay: 1500,
-        }
-      )
+      const result = await startups.getCandidatures()
 
       if (result.success) {
         const startups = result.data || []
@@ -103,26 +73,26 @@ export default function AdminStartupsPage() {
     } catch (error) {
       console.error("Erreur lors de la récupération des startups:", error)
       setError(error.message)
-      // En cas d'erreur, garder les données existantes ou utiliser un tableau vide
       if (startupsData.length === 0) {
         setStartupsData([])
       }
     } finally {
       setRefreshing(false)
+      setLoading(false)
     }
-  }
+  }, [startups])
 
-  // Récupérer les données au chargement et configurer le rafraîchissement automatique
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchStartups()
+    const type = localStorage.getItem("admin_type")
+    setAdminType(type)
 
-      // Rafraîchir les données toutes les 30 secondes
-      const interval = setInterval(fetchStartups, 30000)
+    fetchStartups()
 
-      return () => clearInterval(interval)
-    }
-  }, [isAuthenticated])
+    // Rafraîchir les données toutes les 60 secondes
+    const interval = setInterval(fetchStartups, 60000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (loading) {
     return (
@@ -130,10 +100,6 @@ export default function AdminStartupsPage() {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     )
-  }
-
-  if (!isAuthenticated) {
-    return null // Ne rien afficher pendant la redirection
   }
 
   // Données pour les graphiques (calculées dynamiquement)

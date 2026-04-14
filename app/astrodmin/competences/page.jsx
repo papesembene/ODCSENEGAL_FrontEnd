@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useAdminApi } from "@/app/hooks/useAdminApi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -65,7 +66,7 @@ import { downloadCSV, downloadExcel, downloadPDF } from "@/app/utils/export-util
 import odcFormations from "@/data/odcFormations"
 
 const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"]
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
 
 // Mapping entre les titres de formations ODC et les valeurs de desired_training (IDs du formulaire)
 const FORMATION_MAPPING = {
@@ -86,7 +87,6 @@ export default function CompetencesAdminDashboard() {
   const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [candidatesData, setCandidatesData] = useState([])
   const [filteredCandidates, setFilteredCandidates] = useState([])
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -127,6 +127,7 @@ export default function CompetencesAdminDashboard() {
   const [sendingEmails, setSendingEmails] = useState(false)
   
   const router = useRouter()
+  const { candidatures, testGroups: testGroupsApi } = useAdminApi()
 
   // Statistiques calculées dynamiquement
   const [stats, setStats] = useState({
@@ -138,56 +139,21 @@ export default function CompetencesAdminDashboard() {
     refuses: 0,
   })
 
-  // Vérifier l'authentification
-  useEffect(() => {
-    const authenticated = !!localStorage.getItem("admin_token")
-    const adminType = localStorage.getItem("admin_type")
 
-    // Permettre l'accès aux admins compétences et super_admin
-    if (!authenticated || (adminType !== "competences" && adminType !== "super_admin")) {
-      router.push("/astrodmin")
-      return
-    }
-
-    setIsAuthenticated(true)
-    fetchCandidates()
-  }, [router])
-
-  const fetchCandidates = async () => {
+  const fetchCandidates = useCallback(async () => {
     try {
       setRefreshing(true)
       setError(null)
 
-    // Utiliser fetchWithTimeout pour éviter les timeouts avec beaucoup de données
-    const { fetchJsonWithTimeout } = await import("@/app/utils/fetchWithTimeout")
-    const result = await fetchJsonWithTimeout(
-      `${API_BASE_URL}/api/admin/candidatures`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 45000, // 45 secondes pour les listes de candidatures
-        retries: 2,
-        retryDelay: 1500,
-      }
-    )
+      const result = await candidatures.getAll()
 
       if (result.success) {
         const candidates = result.data || []
         setCandidatesData(candidates)
         
-        // Log pour debug
-        console.log(`✅ ${candidates.length} candidat(s) récupéré(s) depuis MongoDB`)
-        
-        // Afficher les formations uniques des candidats
-        const uniqueFormations = [...new Set(candidates.map(c => c.desired_training))]
-        console.log('Formations trouvées dans les candidatures:', uniqueFormations)
-
-        // Calculer les statistiques avec normalisation des valeurs
+        // Calculer les statistiques
         const newStats = {
           total: candidates.length,
-          // Normaliser les valeurs de genre (gérer différentes variantes)
           femmes: candidates.filter((c) => {
             const gender = (c.gender || '').toLowerCase().trim()
             return ['femme', 'f', 'female', 'féminin'].includes(gender)
@@ -196,7 +162,6 @@ export default function CompetencesAdminDashboard() {
             const gender = (c.gender || '').toLowerCase().trim()
             return ['homme', 'h', 'male', 'm', 'masculin'].includes(gender)
           }).length,
-          // Normaliser les statuts (par défaut 'pending' si non défini)
           acceptes: candidates.filter((c) => (c.status || 'pending') === "accepted").length,
           enAttente: candidates.filter((c) => {
             const status = c.status || 'pending'
@@ -211,7 +176,6 @@ export default function CompetencesAdminDashboard() {
     } catch (error) {
       console.error("Erreur lors de la récupération des candidatures:", error)
       setError(error.message)
-      // En cas d'erreur, garder les données existantes ou utiliser un tableau vide
       if (candidatesData.length === 0) {
         setCandidatesData([])
       }
@@ -219,18 +183,14 @@ export default function CompetencesAdminDashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [candidatures])
 
-  // Fonction pour récupérer les candidats déjà assignés à des groupes
-  const fetchAssignedCandidates = async () => {
+  const fetchAssignedCandidates = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/test-groups`)
-      const result = await response.json()
+      const result = await testGroupsApi.getAll()
       
       if (result.success) {
         const groups = result.data || []
-        
-        // Extraire tous les candidats déjà assignés à un groupe
         const assignedIds = new Set()
         const candidateGroupMap = {}
         
@@ -238,7 +198,7 @@ export default function CompetencesAdminDashboard() {
           if (group.candidate_ids && Array.isArray(group.candidate_ids)) {
             group.candidate_ids.forEach(id => {
               assignedIds.add(id)
-              candidateGroupMap[id] = group.name // Stocker le nom du groupe pour chaque candidat
+              candidateGroupMap[id] = group.name
             })
           }
         })
@@ -249,20 +209,18 @@ export default function CompetencesAdminDashboard() {
     } catch (error) {
       console.error("Erreur lors de la récupération des groupes:", error)
     }
-  }
+  }, [testGroupsApi])
 
-  // Récupérer les données au chargement et configurer le rafraîchissement automatique
+  // Effect unique pour le chargement initial et l'intervalle
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchCandidates()
-      fetchAssignedCandidates()
+    fetchCandidates()
+    fetchAssignedCandidates()
 
-      // Rafraîchir les données toutes les 30 secondes
-      const interval = setInterval(fetchCandidates, 30000)
-
-      return () => clearInterval(interval)
-    }
-  }, [isAuthenticated])
+    const interval = setInterval(fetchCandidates, 60000)
+    return () => clearInterval(interval)
+    // On ne veut pas que cet effet dépende des fonctions pour éviter les boucles
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Filtrer les candidats
   useEffect(() => {
@@ -286,9 +244,12 @@ export default function CompetencesAdminDashboard() {
     setFilteredCandidates(filtered)
   }, [searchTerm, selectedFormation, selectedStatus, selectedGender, candidatesData])
 
-  // Si l'utilisateur n'est pas authentifié, ne rien afficher pendant la redirection
-  if (!isAuthenticated) {
-    return null
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    )
   }
 
   // Données pour les graphiques (calculées dynamiquement)
@@ -503,13 +464,7 @@ export default function CompetencesAdminDashboard() {
         created_by: localStorage.getItem("admin_email")
       }
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/test-groups`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(groupData)
-      })
-      
-      const result = await response.json()
+      const result = await testGroupsApi.create(groupData)
       
       if (result.success) {
         // Réinitialiser la sélection
@@ -565,9 +520,7 @@ export default function CompetencesAdminDashboard() {
     setCreatingGroups(true)
     
     try {
-      // Récupérer les groupes existants pour cette formation
-      const existingGroupsResponse = await fetch(`${API_BASE_URL}/api/admin/test-groups?formation=${selectedFormationData.shortName}`)
-      const existingGroupsResult = await existingGroupsResponse.json()
+      const existingGroupsResult = await testGroupsApi.getAll(selectedFormationData.shortName)
       const existingGroups = existingGroupsResult.success ? (existingGroupsResult.data || []) : []
       
       // Trouver le numéro de groupe le plus élevé existant
@@ -616,13 +569,7 @@ export default function CompetencesAdminDashboard() {
       
       for (const group of groups) {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/admin/test-groups`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(group)
-          })
-          
-          const result = await response.json()
+          const result = await testGroupsApi.create(group)
           
           if (result.success) {
             createdGroups.push({
@@ -713,13 +660,7 @@ export default function CompetencesAdminDashboard() {
   const updateCandidateStatus = async (id, newStatus) => {
     setUpdatingStatus(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/candidatures/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      })
-
-      const result = await response.json()
+      const result = await candidatures.update(id, { status: newStatus })
       
       if (result.success) {
         toast.success(`Statut mis à jour avec succès !`)
