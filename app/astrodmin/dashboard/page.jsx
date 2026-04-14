@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useAdminApi } from "@/app/hooks/useAdminApi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,12 +37,11 @@ import {
 
 const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"]
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
 
 
 export default function AdminDashboard() {
-  const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { dashboard } = useAdminApi()
   const [adminType, setAdminType] = useState(null)
   const [adminEmail, setAdminEmail] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -50,40 +50,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null)
   const [daysRange, setDaysRange] = useState(7)
 
-  useEffect(() => {
-    // Vérifier l'authentification
-    const authenticated = !!localStorage.getItem("admin_token")
-    const type = localStorage.getItem("admin_type")
-    const email = localStorage.getItem("admin_email")
-
-    setIsAuthenticated(authenticated)
-    setAdminType(type)
-    setAdminEmail(email)
-    setLoading(false)
-
-    if (!authenticated) {
-      router.push("/astrodmin")
-    } else {
-      // Charger les statistiques
-      fetchDashboardStatistics()
-    }
-  }, [router])
-
-  const fetchDashboardStatistics = async () => {
+  const fetchDashboardStatistics = useCallback(async () => {
     try {
       setStatsLoading(true)
       setError(null)
       
-      // Utiliser fetchWithTimeout pour éviter les timeouts
-      const { fetchJsonWithTimeout } = await import("@/app/utils/fetchWithTimeout")
-      const result = await fetchJsonWithTimeout(
-        `${API_BASE_URL}/api/admin/dashboard/statistics?days=${daysRange}`,
-        {
-          timeout: 60000, // 60 secondes pour les statistiques (peuvent être lourdes)
-          retries: 2, // 2 tentatives supplémentaires en cas d'échec
-          retryDelay: 2000, // 2 secondes entre les tentatives
-        }
-      )
+      const result = await dashboard.getStatistics(daysRange)
       
       if (result.success) {
         setDashboardData(result.data)
@@ -99,14 +71,21 @@ export default function AdminDashboard() {
     } finally {
       setStatsLoading(false)
     }
-  }
+  }, [dashboard, daysRange])
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchDashboardStatistics()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [daysRange])
+    // Vérifier l'authentification
+    const type = localStorage.getItem("admin_type")
+    const email = localStorage.getItem("admin_email")
+
+    setAdminType(type)
+    setAdminEmail(email)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    fetchDashboardStatistics()
+  }, [fetchDashboardStatistics])
 
   const handleChangeRange = (range) => {
     if (range === daysRange) return
@@ -121,9 +100,6 @@ export default function AdminDashboard() {
     )
   }
 
-  if (!isAuthenticated) {
-    return null
-  }
 
   if (!dashboardData && !error) {
     return (

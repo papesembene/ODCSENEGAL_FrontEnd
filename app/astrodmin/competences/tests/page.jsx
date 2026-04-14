@@ -40,7 +40,7 @@ export default function TestsManagementPage() {
   
   const m = useTestsManagement(router)
 
-  if (!m.isAuthenticated || m.loading) {
+  if (m.loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <RefreshCw className="h-12 w-12 animate-spin text-orange-500" />
