@@ -1,3 +1,5 @@
+"use client"
+
 // /**
 //  * Service anti-triche pour les tests en ligne
 //  * Détecte et enregistre les activités suspectes

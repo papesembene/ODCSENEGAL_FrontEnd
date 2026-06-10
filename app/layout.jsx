@@ -1,12 +1,9 @@
-import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ChatbotWrapper from "@/components/ChatbotWrapper"
 import { AuthProvider } from "./contexts/AuthContext"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
   title: "Orange Digital Center Sénégal",
@@ -30,7 +27,7 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body className={inter.className}>
+      <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <div className="flex min-h-screen flex-col">

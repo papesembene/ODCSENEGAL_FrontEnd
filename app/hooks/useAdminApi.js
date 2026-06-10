@@ -1,7 +1,9 @@
+"use client"
+
 export const useAdminApi = () => {
   const makeRequest = async (endpoint, options = {}) => {
     const token = localStorage.getItem('admin_token')
-    
+
     if (!token) {
       throw new Error('Token non trouvé')
     }
@@ -29,4 +31,4 @@ export const useAdminApi = () => {
   }
 
   return { makeRequest }
-} 
+}

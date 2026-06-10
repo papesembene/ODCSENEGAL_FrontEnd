@@ -93,7 +93,13 @@ const formSchema = z.object({
   cv: z.string().min(1, { message: "Veuillez joindre votre CV" }),
 })
 
-export default function OffreEmploiDetailPage({ params }) {
+type OffreEmploiDetailPageProps = {
+  params: Promise<{
+    id: string
+  }>
+}
+
+export default function OffreEmploiDetailPage({ params: _params }: OffreEmploiDetailPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
@@ -111,7 +117,7 @@ export default function OffreEmploiDetailPage({ params }) {
   })
 
   // Gérer la soumission du formulaire
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsSubmitting(true)
 
     // Simuler une requête API
@@ -129,16 +135,16 @@ export default function OffreEmploiDetailPage({ params }) {
   }
 
   // Formater la date
-  const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric" }
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric" }
     return new Date(dateString).toLocaleDateString("fr-FR", options)
   }
 
   // Calculer le temps restant
-  const getTimeRemaining = (dateString) => {
+  const getTimeRemaining = (dateString: string) => {
     const deadline = new Date(dateString)
     const now = new Date()
-    const diffTime = deadline - now
+    const diffTime = deadline.getTime() - now.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays < 0) return "Offre expirée"

@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef } from 'react'
 import { FiUpload, FiX } from 'react-icons/fi'
 

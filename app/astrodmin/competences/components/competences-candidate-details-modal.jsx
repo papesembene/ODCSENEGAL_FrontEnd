@@ -1,3 +1,5 @@
+"use client"
+
 import { Download, FileText, Mail, Phone, UserCheck, UserX, X } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"

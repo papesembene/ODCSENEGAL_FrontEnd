@@ -50,6 +50,8 @@ const categories = [
   "Autre",
 ]
 
+type OffreEmploiFormValues = z.infer<typeof formSchema>
+
 export default function NewOffreEmploiPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -60,7 +62,7 @@ export default function NewOffreEmploiPage() {
   const [newEtape, setNewEtape] = useState("")
 
   // Initialiser le formulaire
-  const form = useForm({
+  const form = useForm<OffreEmploiFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       titre: "",
@@ -74,14 +76,18 @@ export default function NewOffreEmploiPage() {
       profil: [],
       avantages: [],
       salaire: "",
-      dateLimite: undefined,
+      dateLimite: undefined as unknown as Date,
       processRecrutement: [],
       conditions: false,
     },
   })
 
   // Gérer l'ajout d'un élément à une liste
-  const handleAddItem = (field, value, setValue) => {
+  const handleAddItem = (
+    field: keyof Pick<OffreEmploiFormValues, "competences" | "responsabilites" | "profil" | "avantages" | "processRecrutement">,
+    value: string,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
+  ) => {
     if (value.trim() === "") return
 
     form.setValue(field, [...form.getValues(field), value])
@@ -89,16 +95,19 @@ export default function NewOffreEmploiPage() {
   }
 
   // Gérer la suppression d'un élément d'une liste
-  const handleRemoveItem = (field, index) => {
+  const handleRemoveItem = (
+    field: keyof Pick<OffreEmploiFormValues, "competences" | "responsabilites" | "profil" | "avantages" | "processRecrutement">,
+    index: number,
+  ) => {
     const currentItems = form.getValues(field)
     form.setValue(
       field,
-      currentItems.filter((_, i) => i !== index),
+      currentItems.filter((_: string, i: number) => i !== index),
     )
   }
 
   // Gérer la soumission du formulaire
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: OffreEmploiFormValues) => {
     setIsSubmitting(true)
 
     // Simuler une requête API
@@ -515,8 +524,8 @@ export default function NewOffreEmploiPage() {
                       <FormLabel>Date limite de candidature *</FormLabel>
                       <FormControl>
                         <DatePicker
-                          selected={field.value}
-                          onSelect={field.onChange}
+                          date={field.value}
+                          setDate={field.onChange}
                           disabled={(date) => date < new Date()}
                           placeholder="Sélectionnez une date"
                         />
