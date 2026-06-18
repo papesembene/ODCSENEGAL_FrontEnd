@@ -1,297 +1,23 @@
 "use client"
 
-// /**
-//  * Service anti-triche pour les tests en ligne
-//  * Détecte et enregistre les activités suspectes
-//  */
+import {
+  createSessionId,
+  getAntiCheatSessionKey,
+  getAntiCheatTabKey,
+  readPersistedState,
+  removeAntiCheatTabState,
+  sendViolationToBackend,
+  writePersistedState,
+} from "./anti-cheat-utils"
 
-// export class AntiCheatService {
-//   constructor(testId, candidateEmail, onViolation) {
-//     this.testId = testId
-//     this.candidateEmail = candidateEmail
-//     this.onViolation = onViolation || (() => {})
-//     this.violations = []
-//     this.tabSwitchCount = 0
-//     this.blurCount = 0
-//     this.copyAttempts = 0
-//     this.pasteAttempts = 0
-//     this.rightClickAttempts = 0
-//     this.devToolsAttempts = 0
-//     this.startTime = Date.now()
-//     this.isActive = false
-//   }
-
-//   start() {
-//     if (this.isActive) return
-//     this.isActive = true
-//     this.startTime = Date.now()
-//     this.setupEventListeners()
-//     this.detectMultipleTabs()
-//   }
-
-//   stop() {
-//     this.isActive = false
-//     this.removeEventListeners()
-//   }
-
-//   setupEventListeners() {
-//     // Détection de copier
-//     document.addEventListener('copy', this.handleCopy.bind(this), true)
-//     document.addEventListener('cut', this.handleCopy.bind(this), true)
-    
-//     // Détection de coller
-//     document.addEventListener('paste', this.handlePaste.bind(this), true)
-    
-//     // Désactiver le clic droit
-//     document.addEventListener('contextmenu', this.handleRightClick.bind(this), true)
-    
-//     // Détection de perte de focus
-//     window.addEventListener('blur', this.handleBlur.bind(this))
-//     window.addEventListener('focus', this.handleFocus.bind(this))
-    
-//     // Détection de changement d'onglet
-//     document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this))
-    
-//     // Détection des raccourcis clavier suspects
-//     document.addEventListener('keydown', this.handleKeyDown.bind(this), true)
-    
-//     // Détection de F12 et autres raccourcis développeur
-//     document.addEventListener('keydown', this.handleDevTools.bind(this), true)
-    
-//     // Détection de la capture d'écran (limité mais possible)
-//     this.detectScreenshot()
-//   }
-
-//   removeEventListeners() {
-//     document.removeEventListener('copy', this.handleCopy.bind(this), true)
-//     document.removeEventListener('cut', this.handleCopy.bind(this), true)
-//     document.removeEventListener('paste', this.handlePaste.bind(this), true)
-//     document.removeEventListener('contextmenu', this.handleRightClick.bind(this), true)
-//     window.removeEventListener('blur', this.handleBlur.bind(this))
-//     window.removeEventListener('focus', this.handleFocus.bind(this))
-//     document.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this))
-//     document.removeEventListener('keydown', this.handleKeyDown.bind(this), true)
-//     document.removeEventListener('keydown', this.handleDevTools.bind(this), true)
-//   }
-
-//   handleCopy(event) {
-//     if (!this.isActive) return
-//     this.copyAttempts++
-//     this.recordViolation('copy', 'Tentative de copie détectée')
-//     event.preventDefault()
-//     event.stopPropagation()
-//     return false
-//   }
-
-//   handlePaste(event) {
-//     if (!this.isActive) return
-//     this.pasteAttempts++
-//     this.recordViolation('paste', 'Tentative de collage détectée')
-//     event.preventDefault()
-//     event.stopPropagation()
-//     return false
-//   }
-
-//   handleRightClick(event) {
-//     if (!this.isActive) return
-//     this.rightClickAttempts++
-//     this.recordViolation('right_click', 'Clic droit détecté')
-//     event.preventDefault()
-//     event.stopPropagation()
-//     return false
-//   }
-
-//   handleBlur(event) {
-//     if (!this.isActive) return
-//     this.blurCount++
-//     this.recordViolation('blur', `Perte de focus (${this.blurCount} fois)`)
-//   }
-
-//   handleFocus(event) {
-//     if (!this.isActive) return
-//     // Optionnel : enregistrer le retour de focus
-//   }
-
-//   handleVisibilityChange(event) {
-//     if (!this.isActive) return
-//     if (document.hidden) {
-//       this.tabSwitchCount++
-//       this.recordViolation('tab_switch', `Changement d'onglet détecté (${this.tabSwitchCount} fois)`)
-//     }
-//   }
-
-//   handleKeyDown(event) {
-//     if (!this.isActive) return
-    
-//     // Détecter Ctrl+C, Ctrl+V, Ctrl+A, Ctrl+X
-//     if (event.ctrlKey || event.metaKey) {
-//       const key = event.key.toLowerCase()
-//       if (['c', 'v', 'a', 'x'].includes(key)) {
-//         this.recordViolation('keyboard_shortcut', `Raccourci clavier détecté: Ctrl+${key.toUpperCase()}`)
-//         event.preventDefault()
-//         event.stopPropagation()
-//         return false
-//       }
-//     }
-    
-//     // Détecter Print Screen
-//     if (event.key === 'PrintScreen' || event.keyCode === 44) {
-//       this.recordViolation('screenshot', 'Tentative de capture d\'écran détectée')
-//       event.preventDefault()
-//       return false
-//     }
-//   }
-
-//   handleDevTools(event) {
-//     if (!this.isActive) return
-    
-//     // Détecter F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-//     if (
-//       event.key === 'F12' ||
-//       (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(event.key.toLowerCase())) ||
-//       (event.ctrlKey && event.key.toLowerCase() === 'u')
-//     ) {
-//       this.devToolsAttempts++
-//       this.recordViolation('devtools', `Tentative d'ouverture des outils développeur (${this.devToolsAttempts} fois)`)
-//       event.preventDefault()
-//       event.stopPropagation()
-//       return false
-//     }
-//   }
-
-//   detectScreenshot() {
-//     // Détection basique de capture d'écran
-//     // Note: La détection complète est difficile côté client
-//     // Cette méthode détecte les tentatives via raccourcis clavier
-//   }
-
-//   detectMultipleTabs() {
-//     // Utiliser localStorage pour détecter plusieurs onglets
-//     const storageKey = `test_active_${this.testId}`
-//     const sessionId = `${Date.now()}_${Math.random()}`
-    
-//     const checkTabs = () => {
-//       if (!this.isActive) return
-      
-//       const activeSession = localStorage.getItem(storageKey)
-//       if (activeSession && activeSession !== sessionId) {
-//         this.recordViolation('multiple_tabs', 'Plusieurs onglets du test détectés')
-//       }
-//       localStorage.setItem(storageKey, sessionId)
-//       localStorage.setItem(`${storageKey}_timestamp`, Date.now().toString())
-//     }
-    
-//     checkTabs()
-//     this.tabCheckInterval = setInterval(checkTabs, 2000) // Vérifier toutes les 2 secondes
-//   }
-
-//   recordViolation(type, message) {
-//     const violation = {
-//       type,
-//       message,
-//       timestamp: new Date().toISOString(),
-//       testId: this.testId,
-//       candidateEmail: this.candidateEmail,
-//       elapsedTime: Date.now() - this.startTime
-//     }
-    
-//     this.violations.push(violation)
-    
-//     // Appeler le callback si fourni
-//     if (this.onViolation) {
-//       this.onViolation(violation)
-//     }
-    
-//     // Envoyer au backend (optionnel, peut être fait en batch)
-//     this.sendViolationToBackend(violation)
-//   }
-
-//   async sendViolationToBackend(violation) {
-//     try {
-//       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-//       await fetch(`${API_BASE_URL}/api/admin/tests/${this.testId}/log-violation`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(violation)
-//       })
-//     } catch (error) {
-//       console.error('Erreur lors de l\'envoi de la violation:', error)
-//     }
-//   }
-
-//   getViolationsSummary() {
-//     return {
-//       total: this.violations.length,
-//       tabSwitchCount: this.tabSwitchCount,
-//       blurCount: this.blurCount,
-//       copyAttempts: this.copyAttempts,
-//       pasteAttempts: this.pasteAttempts,
-//       rightClickAttempts: this.rightClickAttempts,
-//       devToolsAttempts: this.devToolsAttempts,
-//       violations: this.violations
-//     }
-//   }
-
-//   cleanup() {
-//     this.stop()
-//     if (this.tabCheckInterval) {
-//       clearInterval(this.tabCheckInterval)
-//     }
-//     const storageKey = `test_active_${this.testId}`
-//     localStorage.removeItem(storageKey)
-//     localStorage.removeItem(`${storageKey}_timestamp`)
-//   }
-// }
-
-// /**
-//  * Service anti-triche pour les tests en ligne
-//  * Détecte et enregistre les activités suspectes
-//  * Inclut alertes audio et protection contre capture d'écran
-//  */
-
-// /**
-//  * Service anti-triche pour les tests en ligne
-//  * Détecte et enregistre les activités suspectes
-//  * Inclut alertes audio et protection contre capture d'écran
-//  */
-/**
- * Service anti-triche pour les tests en ligne
- * Persiste l'état même après refresh/reload
- * Détecte et enregistre les activités suspectes
- */
-/**
- * Service anti-triche pour les tests en ligne
- * Persiste l'état même après refresh/reload
- * Détecte et enregistre les activités suspectes
- */
-/**
- * Service anti-triche pour les tests en ligne
- * Persiste l'état même après refresh/reload
- * Détecte et enregistre les activités suspectes
- */
-/**
- * Service anti-triche pour les tests en ligne
- * Persiste l'état même après refresh/reload
- * Détecte et enregistre les activités suspectes
- */
-/**
- * Service anti-triche pour les tests en ligne
- * Persiste l'état même après refresh/reload
- * Détecte et enregistre les activités suspectes
- */
-/**
- * Service anti-triche pour les tests en ligne
- * Persiste l'état même après refresh/reload
- * Détecte et enregistre les activités suspectes
- */
 export class AntiCheatService {
   constructor(testId, candidateEmail, onViolation) {
     this.testId = testId
     this.candidateEmail = candidateEmail
     this.onViolation = onViolation || (() => {})
 
-    const sessionKey = `session_id_${testId}`
-    this.sessionId = sessionStorage.getItem(sessionKey) || `${Date.now()}_${Math.random()}`
+    const sessionKey = getAntiCheatSessionKey(testId)
+    this.sessionId = sessionStorage.getItem(sessionKey) || createSessionId()
     sessionStorage.setItem(sessionKey, this.sessionId)
 
     this.violations = []
@@ -307,107 +33,111 @@ export class AntiCheatService {
     this.audioContext = null
     this.lastAudioTime = 0
     this.audioDebounceMs = 500
-    this.screenProtectionEnabled = false
     this.persistenceInterval = null
     this.tabCheckInterval = null
+    this.beforeUnloadHandler = null
+    this.restoreCanvasToBlob = null
+    this.screenshotProtectionOverlay = null
+
+    this.boundHandlers = {
+      beforeUnload: () => this.persistState(),
+      blur: () => this.handleBlur(),
+      contextMenu: (event) => this.handleRightClick(event),
+      copy: (event) => this.handleCopy(event),
+      cut: (event) => this.handleCopy(event),
+      focus: () => this.handleFocus(),
+      keyDown: (event) => this.handleKeyDown(event),
+      paste: (event) => this.handlePaste(event),
+      screenshotKeyDown: (event) => this.handleScreenshotShortcut(event),
+      visibilityChange: () => this.handleVisibilityChange(),
+    }
 
     this.restorePersistentState()
   }
 
-  persistState() {
-    const stateKey = `anti_cheat_state_${this.testId}`
-    const state = {
-      sessionId: this.sessionId,
-      violations: this.violations,
-      reloadAttempts: this.reloadAttempts,
-      tabSwitchCount: this.tabSwitchCount,
-      blurCount: this.blurCount,
-      copyAttempts: this.copyAttempts,
-      pasteAttempts: this.pasteAttempts,
-      rightClickAttempts: this.rightClickAttempts,
-      devToolsAttempts: this.devToolsAttempts,
-      startTime: this.startTime,
-    }
-    sessionStorage.setItem(stateKey, JSON.stringify(state))
-  }
-
-  restorePersistentState() {
-    const stateKey = `anti_cheat_state_${this.testId}`
-    const savedState = sessionStorage.getItem(stateKey)
-
-    if (savedState) {
-      try {
-        const state = JSON.parse(savedState)
-        // Restaurer les violations (s'assurer que c'est un tableau)
-        this.violations = Array.isArray(state.violations) ? state.violations : []
-        // Restaurer les compteurs (s'assurer que ce sont des nombres)
-        this.reloadAttempts = Number(state.reloadAttempts) || 0
-        this.tabSwitchCount = Number(state.tabSwitchCount) || 0
-        this.blurCount = Number(state.blurCount) || 0
-        this.copyAttempts = Number(state.copyAttempts) || 0
-        this.pasteAttempts = Number(state.pasteAttempts) || 0
-        this.rightClickAttempts = Number(state.rightClickAttempts) || 0
-        this.devToolsAttempts = Number(state.devToolsAttempts) || 0
-        this.startTime = Number(state.startTime) || Date.now()
-        this.sessionId = state.sessionId || this.sessionId
-        
-        // Log pour confirmer la restauration
-        if (this.violations.length > 0) {
-          console.log(`[AntiCheat] État restauré: ${this.violations.length} violation(s) trouvée(s)`, {
-            violations: this.violations.length,
-            copyAttempts: this.copyAttempts,
-            pasteAttempts: this.pasteAttempts,
-            tabSwitchCount: this.tabSwitchCount,
-            blurCount: this.blurCount,
-            devToolsAttempts: this.devToolsAttempts,
-            rightClickAttempts: this.rightClickAttempts,
-            reloadAttempts: this.reloadAttempts
-          })
-        }
-      } catch (error) {
-        console.error("Erreur lors de la restauration de l'état:", error)
-      }
-    }
-  }
-
   start() {
-    if (this.isActive) return
+    if (this.isActive) {
+      return
+    }
 
     this.detectReload()
-
     this.isActive = true
     this.initializeAudioContext()
-
     this.setupEventListeners()
     this.detectMultipleTabs()
     this.enableScreenshotProtection()
 
-    this.persistenceInterval = setInterval(() => {
-      this.persistState()
-    }, 5000)
-
+    this.persistenceInterval = setInterval(() => this.persistState(), 5000)
     this.persistState()
   }
 
   stop() {
+    if (!this.isActive) {
+      return
+    }
+
     this.isActive = false
     this.removeEventListeners()
     this.disableScreenshotProtection()
 
     if (this.persistenceInterval) {
       clearInterval(this.persistenceInterval)
+      this.persistenceInterval = null
     }
 
     this.persistState()
   }
 
+  cleanup() {
+    this.stop()
+
+    if (this.tabCheckInterval) {
+      clearInterval(this.tabCheckInterval)
+      this.tabCheckInterval = null
+    }
+
+    removeAntiCheatTabState(this.testId)
+  }
+
+  persistState() {
+    writePersistedState(this.testId, {
+      blurCount: this.blurCount,
+      copyAttempts: this.copyAttempts,
+      devToolsAttempts: this.devToolsAttempts,
+      pasteAttempts: this.pasteAttempts,
+      reloadAttempts: this.reloadAttempts,
+      rightClickAttempts: this.rightClickAttempts,
+      sessionId: this.sessionId,
+      startTime: this.startTime,
+      tabSwitchCount: this.tabSwitchCount,
+      violations: this.violations,
+    })
+  }
+
+  restorePersistentState() {
+    const state = readPersistedState(this.testId)
+    if (!state) {
+      return
+    }
+
+    this.violations = Array.isArray(state.violations) ? state.violations : []
+    this.reloadAttempts = Number(state.reloadAttempts) || 0
+    this.tabSwitchCount = Number(state.tabSwitchCount) || 0
+    this.blurCount = Number(state.blurCount) || 0
+    this.copyAttempts = Number(state.copyAttempts) || 0
+    this.pasteAttempts = Number(state.pasteAttempts) || 0
+    this.rightClickAttempts = Number(state.rightClickAttempts) || 0
+    this.devToolsAttempts = Number(state.devToolsAttempts) || 0
+    this.startTime = Number(state.startTime) || Date.now()
+    this.sessionId = state.sessionId || this.sessionId
+  }
+
   detectReload() {
-    if (performance.getEntriesByType("navigation")[0]?.type === "reload") {
-      this.reloadAttempts++
+    const navigationEntries = performance.getEntriesByType("navigation")
+    if (navigationEntries[0]?.type === "reload") {
+      this.reloadAttempts += 1
       this.recordViolation("reload", `Rechargement de la page détecté (${this.reloadAttempts} fois)`)
-      setTimeout(() => {
-        this.playAlertSound(900, 350)
-      }, 500)
+      setTimeout(() => this.playAlertSound(900, 350), 500)
     }
   }
 
@@ -416,210 +146,185 @@ export class AntiCheatService {
       const AudioContext = window.AudioContext || window.webkitAudioContext
       this.audioContext = new AudioContext()
     } catch (error) {
-      console.error("Audio Context not supported:", error)
+      console.error("Audio Context non supporté:", error)
     }
   }
 
   playAlertSound(frequency = 800, duration = 300) {
     const now = Date.now()
-    if (now - this.lastAudioTime < this.audioDebounceMs) {
+    if (now - this.lastAudioTime < this.audioDebounceMs || !this.audioContext) {
       return
     }
-    this.lastAudioTime = now
 
-    if (!this.audioContext) return
+    this.lastAudioTime = now
 
     try {
       const ctx = this.audioContext
-      const oscillator1 = ctx.createOscillator()
-      const oscillator2 = ctx.createOscillator()
+      const durationSec = duration / 1000
+      const oscillatorOne = ctx.createOscillator()
+      const oscillatorTwo = ctx.createOscillator()
       const gainNode = ctx.createGain()
       const lfo = ctx.createOscillator()
-
-      oscillator1.connect(gainNode)
-      oscillator2.connect(gainNode)
-      lfo.connect(oscillator1.frequency)
-      gainNode.connect(ctx.destination)
-
-      oscillator1.frequency.value = frequency
-      oscillator1.type = "square"
-      oscillator2.frequency.value = frequency * 1.5
-      oscillator2.type = "sawtooth"
-
-      lfo.frequency.value = 6
-      lfo.type = "sine"
-
       const lfoGain = ctx.createGain()
-      lfo.connect(lfoGain)
-      lfoGain.connect(oscillator1.frequency)
+
+      oscillatorOne.type = "square"
+      oscillatorTwo.type = "sawtooth"
+      oscillatorOne.frequency.value = frequency
+      oscillatorTwo.frequency.value = frequency * 1.5
+
+      lfo.type = "sine"
+      lfo.frequency.value = 6
       lfoGain.gain.value = frequency * 0.3
 
-      const durationSec = duration / 1000
+      oscillatorOne.connect(gainNode)
+      oscillatorTwo.connect(gainNode)
+      lfo.connect(lfoGain)
+      lfoGain.connect(oscillatorOne.frequency)
+      gainNode.connect(ctx.destination)
+
       gainNode.gain.setValueAtTime(0.4, ctx.currentTime)
       gainNode.gain.linearRampToValueAtTime(0.4, ctx.currentTime + durationSec * 0.9)
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + durationSec)
 
-      oscillator1.start(ctx.currentTime)
-      oscillator2.start(ctx.currentTime)
+      oscillatorOne.start(ctx.currentTime)
+      oscillatorTwo.start(ctx.currentTime)
       lfo.start(ctx.currentTime)
 
-      oscillator1.stop(ctx.currentTime + durationSec)
-      oscillator2.stop(ctx.currentTime + durationSec)
+      oscillatorOne.stop(ctx.currentTime + durationSec)
+      oscillatorTwo.stop(ctx.currentTime + durationSec)
       lfo.stop(ctx.currentTime + durationSec)
     } catch (error) {
-      console.error("Error playing alert sound:", error)
+      console.error("Erreur lors de la lecture du son d'alerte:", error)
     }
+  }
+
+  setupEventListeners() {
+    document.addEventListener("copy", this.boundHandlers.copy, true)
+    document.addEventListener("cut", this.boundHandlers.cut, true)
+    document.addEventListener("paste", this.boundHandlers.paste, true)
+    document.addEventListener("contextmenu", this.boundHandlers.contextMenu, true)
+    document.addEventListener("keydown", this.boundHandlers.keyDown, true)
+    document.addEventListener("keydown", this.boundHandlers.screenshotKeyDown, true)
+    document.addEventListener("visibilitychange", this.boundHandlers.visibilityChange)
+    window.addEventListener("blur", this.boundHandlers.blur)
+    window.addEventListener("focus", this.boundHandlers.focus)
+    window.addEventListener("beforeunload", this.boundHandlers.beforeUnload)
+  }
+
+  removeEventListeners() {
+    document.removeEventListener("copy", this.boundHandlers.copy, true)
+    document.removeEventListener("cut", this.boundHandlers.cut, true)
+    document.removeEventListener("paste", this.boundHandlers.paste, true)
+    document.removeEventListener("contextmenu", this.boundHandlers.contextMenu, true)
+    document.removeEventListener("keydown", this.boundHandlers.keyDown, true)
+    document.removeEventListener("keydown", this.boundHandlers.screenshotKeyDown, true)
+    document.removeEventListener("visibilitychange", this.boundHandlers.visibilityChange)
+    window.removeEventListener("blur", this.boundHandlers.blur)
+    window.removeEventListener("focus", this.boundHandlers.focus)
+    window.removeEventListener("beforeunload", this.boundHandlers.beforeUnload)
   }
 
   enableScreenshotProtection() {
-    this.screenProtectionEnabled = true
-    const overlay = document.createElement("div")
-    overlay.id = "screenshot-protection-overlay"
-    overlay.style.position = "fixed"
-    overlay.style.top = "0"
-    overlay.style.left = "0"
-    overlay.style.width = "100%"
-    overlay.style.height = "100%"
-    overlay.style.zIndex = "-9999"
-    overlay.style.pointerEvents = "none"
-    overlay.setAttribute("data-test-protected", "true")
-    document.body.appendChild(overlay)
+    this.screenshotProtectionOverlay = document.createElement("div")
+    this.screenshotProtectionOverlay.id = "screenshot-protection-overlay"
+    this.screenshotProtectionOverlay.style.position = "fixed"
+    this.screenshotProtectionOverlay.style.top = "0"
+    this.screenshotProtectionOverlay.style.left = "0"
+    this.screenshotProtectionOverlay.style.width = "100%"
+    this.screenshotProtectionOverlay.style.height = "100%"
+    this.screenshotProtectionOverlay.style.zIndex = "-9999"
+    this.screenshotProtectionOverlay.style.pointerEvents = "none"
+    this.screenshotProtectionOverlay.setAttribute("data-test-protected", "true")
+    document.body.appendChild(this.screenshotProtectionOverlay)
 
-    this.setupScreenshotPrevention()
-  }
-
-  disableScreenshotProtection() {
-    this.screenProtectionEnabled = false
-    const overlay = document.getElementById("screenshot-protection-overlay")
-    if (overlay) {
-      overlay.remove()
-    }
-  }
-
-  setupScreenshotPrevention() {
-    document.addEventListener(
-      "keydown",
-      (e) => {
-        if (!this.isActive) return
-
-        if (e.keyCode === 44 || (e.shiftKey && e.keyCode === 44)) {
-          e.preventDefault()
-          e.stopImmediatePropagation()
-          this.recordViolation("screenshot_attempt_printscreen", "Tentative de capture d'écran via Print Screen")
-          this.playAlertSound(1000, 400)
-          return false
-        }
-
-        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "s") {
-          e.preventDefault()
-          e.stopImmediatePropagation()
-          this.recordViolation("screenshot_attempt_shortcut", "Tentative de capture d'écran via Ctrl+Shift+S")
-          this.playAlertSound(1000, 400)
-          return false
-        }
-      },
-      true,
-    )
-
-    document.addEventListener(
-      "contextmenu",
-      (e) => {
-        if (!this.isActive) return
-        e.preventDefault()
-        return false
-      },
-      true,
-    )
-
-    if (window.HTMLCanvasElement) {
+    if (window.HTMLCanvasElement && !this.restoreCanvasToBlob) {
       const originalToBlob = HTMLCanvasElement.prototype.toBlob
       HTMLCanvasElement.prototype.toBlob = function (...args) {
         this.recordViolation("canvas_export_attempt", "Tentative d'export canvas détectée")
         this.playAlertSound(900, 350)
         return originalToBlob.apply(this, args)
       }.bind(this)
+
+      this.restoreCanvasToBlob = () => {
+        HTMLCanvasElement.prototype.toBlob = originalToBlob
+      }
     }
   }
 
-  setupEventListeners() {
-    document.addEventListener("copy", this.handleCopy.bind(this), true)
-    document.addEventListener("cut", this.handleCopy.bind(this), true)
-    document.addEventListener("paste", this.handlePaste.bind(this), true)
-    document.addEventListener("contextmenu", this.handleRightClick.bind(this), true)
-    window.addEventListener("blur", this.handleBlur.bind(this))
-    window.addEventListener("focus", this.handleFocus.bind(this))
-    document.addEventListener("visibilitychange", this.handleVisibilityChange.bind(this))
-    document.addEventListener("keydown", this.handleKeyDown.bind(this), true)
-    document.addEventListener("keydown", this.handleDevTools.bind(this), true)
+  disableScreenshotProtection() {
+    if (this.screenshotProtectionOverlay) {
+      this.screenshotProtectionOverlay.remove()
+      this.screenshotProtectionOverlay = null
+    }
 
-    window.addEventListener("beforeunload", () => this.persistState())
-  }
-
-  removeEventListeners() {
-    document.removeEventListener("copy", this.handleCopy.bind(this), true)
-    document.removeEventListener("cut", this.handleCopy.bind(this), true)
-    document.removeEventListener("paste", this.handlePaste.bind(this), true)
-    document.removeEventListener("contextmenu", this.handleRightClick.bind(this), true)
-    window.removeEventListener("blur", this.handleBlur.bind(this))
-    window.removeEventListener("focus", this.handleFocus.bind(this))
-    document.removeEventListener("visibilitychange", this.handleVisibilityChange.bind(this))
-    document.removeEventListener("keydown", this.handleKeyDown.bind(this), true)
-    document.removeEventListener("keydown", this.handleDevTools.bind(this), true)
-    window.removeEventListener("beforeunload", () => this.persistState())
+    if (this.restoreCanvasToBlob) {
+      this.restoreCanvasToBlob()
+      this.restoreCanvasToBlob = null
+    }
   }
 
   handleCopy(event) {
-    if (!this.isActive) return
-    this.copyAttempts++
+    if (!this.isActive) {
+      return
+    }
+
+    this.copyAttempts += 1
     this.recordViolation("copy", `Tentative de copie détectée (${this.copyAttempts} fois)`)
     this.playAlertSound(600, 250)
     event.preventDefault()
     event.stopPropagation()
-    return false
   }
 
   handlePaste(event) {
-    if (!this.isActive) return
-    this.pasteAttempts++
+    if (!this.isActive) {
+      return
+    }
+
+    this.pasteAttempts += 1
     this.recordViolation("paste", `Tentative de collage détectée (${this.pasteAttempts} fois)`)
     this.playAlertSound(600, 250)
     event.preventDefault()
     event.stopPropagation()
-    return false
   }
 
   handleRightClick(event) {
-    if (!this.isActive) return
-    this.rightClickAttempts++
+    if (!this.isActive) {
+      return
+    }
+
+    this.rightClickAttempts += 1
     this.recordViolation("right_click", `Clic droit détecté (${this.rightClickAttempts} fois)`)
     this.playAlertSound(700, 250)
     event.preventDefault()
     event.stopPropagation()
-    return false
   }
 
-  handleBlur(event) {
-    if (!this.isActive) return
-    this.blurCount++
+  handleBlur() {
+    if (!this.isActive) {
+      return
+    }
+
+    this.blurCount += 1
     this.recordViolation("blur", `Perte de focus (${this.blurCount} fois)`)
     this.playAlertSound(950, 300)
   }
 
-  handleFocus(event) {
-    if (!this.isActive) return
-  }
+  handleFocus() {}
 
-  handleVisibilityChange(event) {
-    if (!this.isActive) return
-    if (document.hidden) {
-      this.tabSwitchCount++
-      this.recordViolation("tab_switch", `Changement d'onglet détecté (${this.tabSwitchCount} fois)`)
-      this.playAlertSound(1050, 400)
+  handleVisibilityChange() {
+    if (!this.isActive || !document.hidden) {
+      return
     }
+
+    this.tabSwitchCount += 1
+    this.recordViolation("tab_switch", `Changement d'onglet détecté (${this.tabSwitchCount} fois)`)
+    this.playAlertSound(1050, 400)
   }
 
   handleKeyDown(event) {
-    if (!this.isActive) return
+    if (!this.isActive) {
+      return
+    }
 
     if (event.ctrlKey || event.metaKey) {
       const key = event.key.toLowerCase()
@@ -628,50 +333,57 @@ export class AntiCheatService {
         this.playAlertSound(700, 250)
         event.preventDefault()
         event.stopPropagation()
-        return false
       }
     }
-
-    if (event.key === "PrintScreen" || event.keyCode === 44) {
-      this.recordViolation("screenshot", "Tentative de capture d'écran détectée")
-      this.playAlertSound(1000, 400)
-      event.preventDefault()
-      return false
-    }
-  }
-
-  handleDevTools(event) {
-    if (!this.isActive) return
 
     if (
       event.key === "F12" ||
       (event.ctrlKey && event.shiftKey && ["i", "j", "c"].includes(event.key.toLowerCase())) ||
       (event.ctrlKey && event.key.toLowerCase() === "u")
     ) {
-      this.devToolsAttempts++
+      this.devToolsAttempts += 1
       this.recordViolation("devtools", `Tentative d'ouverture des outils développeur (${this.devToolsAttempts} fois)`)
       this.playAlertSound(800, 350)
       event.preventDefault()
       event.stopPropagation()
-      return false
     }
   }
 
-  detectScreenshot() {}
+  handleScreenshotShortcut(event) {
+    if (!this.isActive) {
+      return
+    }
+
+    const isPrintScreen = event.key === "PrintScreen" || event.keyCode === 44 || (event.shiftKey && event.keyCode === 44)
+    const isCtrlShiftS = event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "s"
+
+    if (!isPrintScreen && !isCtrlShiftS) {
+      return
+    }
+
+    this.recordViolation(
+      isCtrlShiftS ? "screenshot_attempt_shortcut" : "screenshot_attempt_printscreen",
+      isCtrlShiftS ? "Tentative de capture d'écran via Ctrl+Shift+S" : "Tentative de capture d'écran via Print Screen",
+    )
+    this.playAlertSound(1000, 400)
+    event.preventDefault()
+    event.stopImmediatePropagation()
+  }
 
   detectMultipleTabs() {
-    const storageKey = `test_active_${this.testId}`
-    const sessionId = `${Date.now()}_${Math.random()}`
-
+    const tabKey = getAntiCheatTabKey(this.testId)
     const checkTabs = () => {
-      if (!this.isActive) return
+      if (!this.isActive) {
+        return
+      }
 
-      const activeSession = localStorage.getItem(storageKey)
-      if (activeSession && activeSession !== sessionId) {
+      const activeSession = localStorage.getItem(tabKey)
+      if (activeSession && activeSession !== this.sessionId) {
         this.recordViolation("multiple_tabs", "Plusieurs onglets du test détectés")
       }
-      localStorage.setItem(storageKey, sessionId)
-      localStorage.setItem(`${storageKey}_timestamp`, Date.now().toString())
+
+      localStorage.setItem(tabKey, this.sessionId)
+      localStorage.setItem(`${tabKey}_timestamp`, Date.now().toString())
     }
 
     checkTabs()
@@ -680,95 +392,30 @@ export class AntiCheatService {
 
   recordViolation(type, message) {
     const violation = {
-      type,
-      message,
-      timestamp: new Date().toISOString(),
-      testId: this.testId,
       candidateEmail: this.candidateEmail,
       elapsedTime: Date.now() - this.startTime,
+      message,
+      testId: this.testId,
+      timestamp: new Date().toISOString(),
+      type,
     }
 
     this.violations.push(violation)
-
-    // Sauvegarder immédiatement l'état après chaque violation
-    // pour garantir la persistance même en cas de rafraîchissement inattendu
     this.persistState()
-
-    if (this.onViolation) {
-      this.onViolation(violation)
-    }
-
-    this.sendViolationToBackend(violation)
-  }
-
-  async sendViolationToBackend(violation) {
-    try {
-      const API_BASE_URL =
-        typeof window !== "undefined" && window.location.hostname === "localhost"
-          ? "http://localhost:5000"
-          : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-
-      const url = `${API_BASE_URL}/api/admin/tests/${this.testId}/log-violation`
-
-      console.log("[v0] Sending violation to backend:", {
-        url,
-        testId: this.testId,
-        candidateEmail: this.candidateEmail,
-        violationType: violation.type,
-      })
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          candidateEmail: this.candidateEmail,
-          type: violation.type,
-          message: violation.message,
-          elapsedTime: violation.elapsedTime,
-          metadata: {
-            userAgent: navigator.userAgent,
-            timestamp: violation.timestamp,
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        console.error("[v0] Failed to send violation - HTTP status:", response.status)
-        const errorText = await response.text()
-        console.error("[v0] Error response:", errorText)
-      } else {
-        const data = await response.json()
-        console.log("[v0] Violation sent successfully:", data)
-      }
-    } catch (error) {
-      console.error("[v0] Error sending violation to backend:", {
-        error: error.message,
-        testId: this.testId,
-        candidateEmail: this.candidateEmail,
-      })
-    }
+    this.onViolation(violation)
+    sendViolationToBackend(violation)
   }
 
   getViolationsSummary() {
     return {
-      total: this.violations.length,
-      tabSwitchCount: this.tabSwitchCount,
       blurCount: this.blurCount,
       copyAttempts: this.copyAttempts,
+      devToolsAttempts: this.devToolsAttempts,
       pasteAttempts: this.pasteAttempts,
       rightClickAttempts: this.rightClickAttempts,
-      devToolsAttempts: this.devToolsAttempts,
+      tabSwitchCount: this.tabSwitchCount,
+      total: this.violations.length,
       violations: this.violations,
     }
-  }
-
-  cleanup() {
-    this.stop()
-    if (this.tabCheckInterval) {
-      clearInterval(this.tabCheckInterval)
-    }
-    const storageKey = `test_active_${this.testId}`
-    localStorage.removeItem(storageKey)
-    localStorage.removeItem(`${storageKey}_timestamp`)
   }
 }

@@ -1,0 +1,474 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { toast } from "sonner"
+import { AntiCheatService } from "../antiCheat"
+import {
+  API_BASE_URL,
+  buildResultPayload,
+  calculateCountdownLabel,
+  calculateScore,
+  createStorageKeys,
+  formatTime,
+} from "../test-session-utils"
+import { buildAuthenticatedCandidate, sanitizeAuthPayload, validateAuthPayload } from "./test-candidate-session-auth"
+import { createAnswerHandlers } from "./test-candidate-session-handlers"
+import { getTestAvailabilityState, getTestStartState } from "./test-candidate-session-status"
+import { readStoredJsonValue, removeStoredValues, resolveStoredTestSession, writeStoredJsonValue, writeStoredValue } from "./test-candidate-session-storage"
+import { useAutoResumeAuthentication, useRestoreStoredAuth } from "./use-test-candidate-auth-recovery"
+import { useBeforeUnloadProtection, usePersistedAnswers, useVisibilityWarning } from "./use-test-candidate-browser-guards"
+
+export default function useTestCandidateSession({ testId }) {
+  const [loading, setLoading] = useState(true)
+  const [testData, setTestData] = useState(null)
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [answers, setAnswers] = useState({})
+  const [timeRemaining, setTimeRemaining] = useState(0)
+  const [testStarted, setTestStarted] = useState(false)
+  const [testCompleted, setTestCompleted] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showAuthDialog, setShowAuthDialog] = useState(true)
+  const [authError, setAuthError] = useState("")
+  const [testAccessStatus, setTestAccessStatus] = useState("checking")
+  const [scheduledDateTime, setScheduledDateTime] = useState(null)
+  const [countdown, setCountdown] = useState("")
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [authData, setAuthData] = useState({ name: "", email: "", phone: "" })
+  const [resumeAttempted, setResumeAttempted] = useState(false)
+  const [resuming, setResuming] = useState(false)
+
+  const storageKeys = useMemo(() => createStorageKeys(testId), [testId])
+  const timerRef = useRef(null)
+  const antiCheatRef = useRef(null)
+  const countdownRef = useRef(null)
+
+  const stopAntiCheat = useCallback(() => {
+    if (!antiCheatRef.current) {
+      return
+    }
+
+    try {
+      antiCheatRef.current.stop()
+      antiCheatRef.current.cleanup()
+    } catch (error) {
+      console.warn("Erreur lors du nettoyage du service anti-triche:", error)
+    }
+  }, [])
+
+  const startAntiCheat = useCallback(() => {
+    if (!authData.email || !testId) {
+      return
+    }
+
+    stopAntiCheat()
+
+    try {
+      antiCheatRef.current = new AntiCheatService(testId, authData.email, (violation) => {
+        if (violation.type === "tab_switch" || violation.type === "blur") {
+          toast.warning(`⚠️ ${violation.message}`)
+        }
+      })
+      antiCheatRef.current.start()
+    } catch (error) {
+      console.error("[AntiCheat] Erreur lors de l'initialisation du service:", error)
+    }
+  }, [authData.email, stopAntiCheat, testId])
+
+  const updateCountdown = useCallback((targetDate) => {
+    const nextLabel = calculateCountdownLabel(targetDate)
+
+    if (!nextLabel) {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+        countdownRef.current = null
+      }
+      setTestAccessStatus("available")
+      setCountdown("")
+      toast.success("Le test est maintenant disponible ! Vous pouvez vous authentifier.")
+      return
+    }
+
+    setCountdown(nextLabel)
+  }, [])
+
+  const checkTestAvailability = useCallback((test) => {
+    const { status, testDate } = getTestAvailabilityState(test)
+
+    setScheduledDateTime(testDate)
+
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current)
+      countdownRef.current = null
+    }
+
+    if (status === "too_early") {
+      setTestAccessStatus("too_early")
+      updateCountdown(testDate)
+      countdownRef.current = setInterval(() => updateCountdown(testDate), 1000)
+      return
+    }
+
+    if (status === "expired") {
+      setTestAccessStatus("expired")
+      return
+    }
+
+    if (status === "inactive") {
+      setTestAccessStatus("inactive")
+      return
+    }
+
+    setTestAccessStatus("available")
+  }, [updateCountdown])
+
+  const loadTestData = useCallback(async () => {
+    try {
+      if (!testId) {
+        return
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}`)
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        const test = result.data
+        setTestData(test)
+        setTimeRemaining(test.duration * 60)
+        checkTestAvailability(test)
+      } else {
+        toast.error("Test non trouvé")
+        setTestData(null)
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement du test:", error)
+      toast.error("Erreur lors du chargement du test. Vérifiez que le backend est démarré.")
+      setTestData(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [checkTestAvailability, testId])
+
+  const performAuthentication = useCallback(
+    async ({ name, email, phone }, { silent = false, skipValidation = false } = {}) => {
+      setAuthError("")
+      const { cleanedName, cleanedEmail, cleanedPhone, rawPhone } = sanitizeAuthPayload({ name, email, phone })
+      const validationError = validateAuthPayload({
+        cleanedName,
+        cleanedEmail,
+        cleanedPhone,
+        skipValidation,
+      })
+
+      if (validationError === "missing_required_fields") {
+        return false
+      }
+
+      if (validationError) {
+        setAuthError(validationError)
+        if (!silent) toast.error(validationError)
+        return false
+      }
+
+      setLoading(true)
+
+      try {
+        const verifyResponse = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/verify-access`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: cleanedEmail,
+            phone: rawPhone,
+          }),
+        })
+
+        const verifyResult = await verifyResponse.json()
+
+        if (!verifyResponse.ok || !verifyResult.success || !verifyResult.authorized) {
+          const error = verifyResult.error || "❌ Accès non autorisé"
+          setAuthError(error)
+          if (!silent) toast.error(error)
+          return false
+        }
+
+        const nextAuthData = buildAuthenticatedCandidate({
+          cleanedName,
+          cleanedEmail,
+          cleanedPhone,
+          candidate: verifyResult.candidate,
+        })
+
+        setAuthData(nextAuthData)
+
+        if (typeof window !== "undefined") {
+          writeStoredJsonValue(storageKeys.auth, nextAuthData)
+        }
+
+        setIsAuthenticated(true)
+        setShowAuthDialog(false)
+        setAuthError("")
+
+        if (!silent) {
+          toast.success("✅ Authentification réussie. Vous pouvez commencer le test.")
+        }
+
+        return true
+      } catch (error) {
+        console.error("Erreur d'authentification:", error)
+        const errorMsg = "❌ Erreur de connexion au serveur. Veuillez réessayer."
+        setAuthError(errorMsg)
+        if (!silent) toast.error(errorMsg)
+        return false
+      } finally {
+        setLoading(false)
+      }
+    },
+    [storageKeys.auth, testId],
+  )
+
+  const resumeTestFromStorage = useCallback(() => {
+    if (!testData || typeof window === "undefined") {
+      return
+    }
+
+    try {
+      if (localStorage.getItem(storageKeys.submitted) === "true") {
+        setTestCompleted(true)
+        setShowSuccessModal(true)
+        toast.info("Vous avez déjà soumis ce test. Merci pour votre participation.")
+        return
+      }
+
+      const storedAnswers = readStoredJsonValue(storageKeys.answers)
+      if (storedAnswers) {
+        if (typeof storedAnswers === "object") {
+          setAnswers(storedAnswers)
+        }
+      }
+
+      const storedStartedAt = localStorage.getItem(storageKeys.startedAt)
+      const storedSession = resolveStoredTestSession({
+        startedAt: storedStartedAt,
+        durationInMinutes: testData.duration,
+      })
+      if (!storedSession) {
+        return
+      }
+
+      setTimeRemaining(storedSession.remainingSeconds)
+
+      if (!storedSession.expired) {
+        setTestStarted(true)
+        if (!resuming) {
+          toast.info("Reprise de votre session de test.")
+        }
+      } else {
+        setTestStarted(false)
+        setTestCompleted(true)
+        setShowSuccessModal(true)
+      }
+    } catch (error) {
+      console.warn("Impossible de reprendre l'état du test depuis le stockage local:", error)
+    }
+  }, [resuming, storageKeys.answers, storageKeys.startedAt, storageKeys.submitted, testData])
+
+  const submitResults = useCallback(
+    async (finalScore) => {
+      try {
+        const resultData = buildResultPayload({ testData, authData, answers, finalScore })
+        const response = await fetch(`${API_BASE_URL}/api/admin/tests/results`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(resultData),
+        })
+
+        const result = await response.json()
+
+        if (!result.success) {
+          throw new Error(result.error || "Erreur lors de l'enregistrement des résultats")
+        }
+
+        await fetch(`${API_BASE_URL}/api/admin/tests/${testData.id}/update-status`, {
+          method: "POST",
+        })
+      } catch (error) {
+        console.error("Erreur lors de l'envoi des résultats:", error)
+        toast.error("Impossible d'enregistrer les résultats. Vérifiez la connexion au backend.")
+      if (typeof window !== "undefined") {
+          removeStoredValues([storageKeys.submitted])
+        }
+      }
+    },
+    [answers, authData, storageKeys.submitted, testData],
+  )
+
+  const confirmSubmitTest = useCallback(
+    (autoSubmit = false) => {
+      setShowConfirmSubmit(false)
+      clearInterval(timerRef.current)
+      stopAntiCheat()
+
+      const finalScore = calculateScore(testData, answers)
+      setTestStarted(false)
+      setTestCompleted(true)
+
+      if (typeof window !== "undefined") {
+        writeStoredValue(storageKeys.submitted, "true")
+        removeStoredValues([storageKeys.startedAt, storageKeys.answers])
+      }
+
+      submitResults(finalScore)
+      setShowSuccessModal(true)
+
+      if (autoSubmit) {
+        toast.warning("Le temps est écoulé. Votre test a été automatiquement soumis.")
+      }
+    },
+    [answers, storageKeys.answers, storageKeys.startedAt, storageKeys.submitted, stopAntiCheat, submitResults, testData],
+  )
+
+  const handleSubmitTest = useCallback(
+    (autoSubmit = false) => {
+      if (!autoSubmit) {
+        setShowConfirmSubmit(true)
+        return
+      }
+
+      confirmSubmitTest(true)
+    },
+    [confirmSubmitTest],
+  )
+
+  const handleStartTest = useCallback(() => {
+    if (typeof window !== "undefined" && localStorage.getItem(storageKeys.submitted) === "true") {
+      toast.error("Vous avez déjà soumis ce test.")
+      setTestCompleted(true)
+      setShowSuccessModal(true)
+      return
+    }
+
+    const { isLateStart, remainingMinutes } = getTestStartState(testData)
+
+    setTimeRemaining(remainingMinutes * 60)
+    setTestStarted(true)
+
+    if (typeof window !== "undefined") {
+      writeStoredValue(storageKeys.startedAt, new Date().toISOString())
+    }
+
+    startAntiCheat()
+
+    if (isLateStart) {
+      toast.warning(`Attention ! Il vous reste ${remainingMinutes} minute(s) pour terminer le test.`)
+    } else {
+      toast.success("Le test a commencé. Bonne chance !")
+    }
+  }, [startAntiCheat, storageKeys.startedAt, storageKeys.submitted, testData])
+
+  const updateAuthField = useCallback((field, value) => {
+    setAuthData((prev) => ({ ...prev, [field]: value }))
+  }, [])
+
+  const { handleSingleAnswerChange, handleMultipleAnswerChange, handleTextAnswerChange } = useMemo(() => createAnswerHandlers({ currentQuestion, setAnswers }), [currentQuestion])
+
+  useEffect(() => {
+    loadTestData()
+
+    return () => {
+      clearInterval(timerRef.current)
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+      }
+      stopAntiCheat()
+    }
+  }, [loadTestData, stopAntiCheat])
+
+  useRestoreStoredAuth({ setAuthData, storageKey: storageKeys.auth })
+
+  useEffect(() => {
+    if (!testStarted || timeRemaining <= 0 || testCompleted) {
+      return
+    }
+
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          handleSubmitTest(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timerRef.current)
+  }, [handleSubmitTest, testCompleted, testStarted, timeRemaining])
+
+  useAutoResumeAuthentication({ isAuthenticated, performAuthentication, resumeAttempted, setResumeAttempted, setResuming, storageKey: storageKeys.auth, testAccessStatus, testData })
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      resumeTestFromStorage()
+    }
+  }, [isAuthenticated, resumeTestFromStorage])
+
+  useBeforeUnloadProtection({ testCompleted, testStarted })
+  useVisibilityWarning({ testCompleted, testStarted })
+  usePersistedAnswers({ answers, storageKey: storageKeys.answers, testStarted })
+
+  useEffect(() => {
+    if (!testStarted || testCompleted || !isAuthenticated || !authData.email || !testId) {
+      return
+    }
+
+    if (antiCheatRef.current?.isActive) {
+      return
+    }
+
+    startAntiCheat()
+
+    return () => {
+      stopAntiCheat()
+    }
+  }, [authData.email, isAuthenticated, startAntiCheat, stopAntiCheat, testCompleted, testId, testStarted])
+
+  const currentQuestionData = testData?.questions?.[currentQuestion]
+  const answeredCount = Object.keys(answers).length
+  const progress = testData ? ((currentQuestion + 1) / testData.questions.length) * 100 : 0
+  const unansweredCount = testData ? testData.questions.length - answeredCount : 0
+  const formattedTimeRemaining = formatTime(timeRemaining)
+
+  return {
+    loading,
+    testData,
+    currentQuestion,
+    currentQuestionData,
+    answers,
+    testStarted,
+    testCompleted,
+    isAuthenticated,
+    showAuthDialog,
+    authError,
+    testAccessStatus,
+    scheduledDateTime,
+    countdown,
+    showConfirmSubmit,
+    showSuccessModal,
+    authData,
+    resuming,
+    answeredCount,
+    progress,
+    unansweredCount,
+    formattedTimeRemaining,
+    setCurrentQuestion,
+    setShowAuthDialog,
+    setShowConfirmSubmit,
+    handleStartTest,
+    handleSubmitTest,
+    confirmSubmitTest,
+    performAuthentication,
+    updateAuthField,
+    handleSingleAnswerChange,
+    handleMultipleAnswerChange,
+    handleTextAnswerChange,
+  }
+}
