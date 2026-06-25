@@ -1,4 +1,5 @@
 import { toast } from "sonner"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import { API_BASE_URL } from "../constants"
 import { createInitialGroup, createInitialInvitationDetails } from "../helpers"
 
@@ -38,7 +39,7 @@ export function createGroupHandlers({
 
       const response = await fetch(`${API_BASE_URL}/api/admin/test-groups`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           ...newGroup,
           candidate_ids: selectedCandidatesForGroup,
@@ -126,7 +127,7 @@ export function createGroupHandlers({
       const testDateTime = `${invitationDetails.test_date}T${invitationDetails.test_time}:00`
       const updateResponse = await fetch(`${API_BASE_URL}/api/admin/test-groups/${selectedGroupForInvitation.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ...invitationDetails, test_date: testDateTime }),
       })
 
@@ -139,18 +140,22 @@ export function createGroupHandlers({
         `${API_BASE_URL}/api/admin/test-groups/${selectedGroupForInvitation.id}/send-invitations`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         },
       )
       const sendResult = await sendResponse.json()
 
       if (sendResult.success) {
-        toast.success(`Invitations envoyées à ${sendResult.data?.sent || 0} candidats`)
+        toast.success(sendResult.message || `Invitations envoyées à ${sendResult.data?.sent || 0} candidats`)
+      } else if (sendResponse.status === 207) {
+        toast.warning(sendResult.message || `Invitations partiellement envoyées : ${sendResult.data?.sent || 0} succès`)
       } else {
-        toast.error(sendResult.error || "Erreur d'envoi")
+        toast.error(sendResult.error || sendResult.message || "Erreur d'envoi")
       }
 
-      setShowSendInvitationDialog(false)
+      if (sendResponse.ok) {
+        setShowSendInvitationDialog(false)
+      }
       fetchTestGroups()
     } catch {
       toast.error("Erreur invitations")
@@ -169,7 +174,10 @@ export function createGroupHandlers({
     setDeletingGroup(true)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/test-groups/${groupToDelete.id}`, { method: "DELETE" })
+      const response = await fetch(`${API_BASE_URL}/api/admin/test-groups/${groupToDelete.id}`, {
+        method: "DELETE",
+        headers: getAdminAuthHeaders(),
+      })
       if ((await response.json()).success) {
         toast.success(`Groupe "${groupToDelete.name}" supprimé`)
         fetchTestGroups()
@@ -198,7 +206,9 @@ export function createGroupHandlers({
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`)
+      const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`, {
+        headers: getAdminAuthHeaders(),
+      })
       const result = await response.json()
       if (result.success) {
         setGroupCandidatesDetails(result.data.filter((candidate) => candidateIds.includes(candidate.id)))

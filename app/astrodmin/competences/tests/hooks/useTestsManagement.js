@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import {
   API_BASE_URL,
 } from "../constants"
@@ -206,7 +207,10 @@ export const useTestsManagement = (router) => {
     if (!testToDelete) return
     setDeletingTest(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testToDelete.id}`, { method: "DELETE" })
+      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testToDelete.id}`, {
+        method: "DELETE",
+        headers: getAdminAuthHeaders(),
+      })
       const result = await response.json()
       if (result.success) {
         toast.success(`Test "${testToDelete.title}" supprimé`)

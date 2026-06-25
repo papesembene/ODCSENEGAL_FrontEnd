@@ -1,8 +1,8 @@
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
 import ChatbotWrapper from "@/components/ChatbotWrapper"
+import AppToaster from "@/components/app-toaster"
+import SiteShell from "@/components/site-shell"
 import { AuthProvider } from "./contexts/AuthContext"
 
 export const metadata = {
@@ -30,12 +30,9 @@ export default function RootLayout({ children }) {
       <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <ChatbotWrapper />
-            </div>
+            <SiteShell>{children}</SiteShell>
+            <ChatbotWrapper />
+            <AppToaster />
           </AuthProvider>
         </ThemeProvider>
       </body>

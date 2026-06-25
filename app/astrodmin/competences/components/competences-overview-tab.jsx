@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { AlertCircle, BarChart as BarChartIcon, RefreshCw, TrendingUp, UserCheck, UserPlus, Users } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -31,6 +34,12 @@ export default function CompetencesOverviewTab({
   nationalityData,
   dashboardColors,
 }) {
+  const [lastUpdatedLabel, setLastUpdatedLabel] = useState("")
+
+  useEffect(() => {
+    setLastUpdatedLabel(new Date().toLocaleTimeString())
+  }, [stats.total, refreshing])
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -58,7 +67,7 @@ export default function CompetencesOverviewTab({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Dernière mise à jour: {new Date().toLocaleTimeString()}</p>
+            <p className="text-xs text-muted-foreground">Dernière mise à jour: {lastUpdatedLabel || "--:--:--"}</p>
           </CardContent>
         </Card>
 

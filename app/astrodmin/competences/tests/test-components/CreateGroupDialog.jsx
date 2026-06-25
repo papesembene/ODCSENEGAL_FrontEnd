@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,8 +18,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Plus } from "lucide-react"
+import { Plus, Search, Users } from "lucide-react"
 import { normalizeFormationName } from "../helpers"
+
+function parseNumberInput(value, fallback) {
+  if (value === "") {
+    return fallback
+  }
+
+  const parsedValue = Number.parseInt(value, 10)
+  return Number.isNaN(parsedValue) ? fallback : parsedValue
+}
 
 export function CreateGroupDialog({
   open,
@@ -35,6 +45,43 @@ export function CreateGroupDialog({
   setSelectedCandidatesForGroup,
   handleCancelCreateGroup,
 }) {
+  const [candidateSearch, setCandidateSearch] = useState("")
+  const matchingTests = testsData.filter((test) => normalizeFormationName(test.referentiel) === newGroup.formation)
+  const availableCandidatesForFormation = availableCandidates.filter(
+    (candidate) => normalizeFormationName(candidate.desired_training) === newGroup.formation,
+  )
+  const filteredCandidates = useMemo(() => {
+    const normalizedSearch = candidateSearch.trim().toLowerCase()
+
+    if (!normalizedSearch) {
+      return availableCandidatesForFormation
+    }
+
+    return availableCandidatesForFormation.filter((candidate) => {
+      const fullName = `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim().toLowerCase()
+      const email = (candidate.email || "").toLowerCase()
+      return fullName.includes(normalizedSearch) || email.includes(normalizedSearch)
+    })
+  }, [availableCandidatesForFormation, candidateSearch])
+
+  const selectableCandidateIds = filteredCandidates
+    .filter((candidate) => !assignedCandidateIds.includes(candidate.id))
+    .map((candidate) => candidate.id)
+
+  const selectedVisibleCount = selectableCandidateIds.filter((candidateId) =>
+    selectedCandidatesForGroup.includes(candidateId),
+  ).length
+
+  const handleSelectVisibleCandidates = () => {
+    setSelectedCandidatesForGroup((previous) => Array.from(new Set([...previous, ...selectableCandidateIds])))
+  }
+
+  const handleClearVisibleCandidates = () => {
+    setSelectedCandidatesForGroup((previous) =>
+      previous.filter((candidateId) => !selectableCandidateIds.includes(candidateId)),
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -103,7 +150,7 @@ export function CreateGroupDialog({
                 id="groupDuration"
                 type="number"
                 value={newGroup.duration}
-                onChange={(e) => setNewGroup({ ...newGroup, duration: Number.parseInt(e.target.value) })}
+                onChange={(e) => setNewGroup({ ...newGroup, duration: parseNumberInput(e.target.value, 60) })}
               />
             </div>
           </div>
@@ -111,6 +158,17 @@ export function CreateGroupDialog({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="groupTest">Test associé (optionnel)</Label>
+              {newGroup.formation ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {matchingTests.length > 0
+                    ? `${matchingTests.length} test(s) disponible(s) pour la formation ${newGroup.formation}`
+                    : `Aucun test ne correspond encore à la formation ${newGroup.formation}`}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Choisissez d'abord une formation pour voir les tests compatibles.
+                </p>
+              )}
               <Select
                 value={newGroup.test_id || "none"}
                 onValueChange={(value) => setNewGroup({ ...newGroup, test_id: value === "none" ? "" : value })}
@@ -120,13 +178,11 @@ export function CreateGroupDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Aucun test</SelectItem>
-                  {testsData
-                    .filter((test) => test.referentiel === newGroup.formation)
-                    .map((test) => (
+                  {matchingTests.map((test) => (
                       <SelectItem key={test.id} value={test.id}>
-                        {test.title}
+                        {test.title} - {test.scheduledDate || "date non définie"}
                       </SelectItem>
-                    ))}
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -155,16 +211,45 @@ export function CreateGroupDialog({
           {newGroup.formation && (
             <div>
               <Label>Liste des candidats de la formation</Label>
+              <div className="mt-2 space-y-3 rounded-md border p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="relative w-full md:max-w-sm">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={candidateSearch}
+                      onChange={(e) => setCandidateSearch(e.target.value)}
+                      placeholder="Rechercher par nom ou email"
+                      className="pl-9"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={handleSelectVisibleCandidates} disabled={selectableCandidateIds.length === 0}>
+                      <Users className="mr-2 h-4 w-4" />
+                      Sélectionner visibles
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={handleClearVisibleCandidates} disabled={selectedVisibleCount === 0}>
+                      Tout retirer
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">{availableCandidatesForFormation.length} candidat(s)</Badge>
+                  <Badge variant="outline">{filteredCandidates.length} affiché(s)</Badge>
+                  <Badge variant="outline">{selectedCandidatesForGroup.length} sélectionné(s)</Badge>
+                </div>
+              </div>
               <div className="mt-2 border rounded-md p-4 max-h-[40vh] overflow-y-auto custom-scrollbar">
-                {availableCandidates.filter((c) => normalizeFormationName(c.desired_training) === newGroup.formation).length === 0 ? (
+                {availableCandidatesForFormation.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Aucun candidat trouvé pour cette formation
                   </p>
+                ) : filteredCandidates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Aucun candidat ne correspond à votre recherche
+                  </p>
                 ) : (
                   <div className="space-y-2">
-                    {availableCandidates
-                      .filter((c) => normalizeFormationName(c.desired_training) === newGroup.formation)
-                      .map((candidate) => {
+                    {filteredCandidates.map((candidate) => {
                         const isAssigned = assignedCandidateIds.includes(candidate.id)
                         const isSelected = selectedCandidatesForGroup.includes(candidate.id)
                         const groupName = candidateToGroupMap[candidate.id]

@@ -9,6 +9,18 @@ export function createStorageKeys(testId) {
   }
 }
 
+export function getQuestionCount(testData) {
+  if (!testData) {
+    return 0
+  }
+
+  if (typeof testData.totalQuestions === "number") {
+    return testData.totalQuestions
+  }
+
+  return testData.questions?.length || 0
+}
+
 export function calculateCountdownLabel(targetDateTime) {
   const diff = targetDateTime.getTime() - Date.now()
 

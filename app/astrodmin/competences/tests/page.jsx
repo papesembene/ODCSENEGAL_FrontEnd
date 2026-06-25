@@ -50,10 +50,16 @@ export default function TestsManagementPage() {
   }
 
   const getViolationSeverityBadge = (violations) => {
-    if (!violations || violations.totalViolations === 0) {
+    const count = Number(
+      violations?.totalViolations
+        ?? violations?.violations?.length
+        ?? 0
+    )
+
+    if (!violations || count === 0) {
       return <Badge variant="outline" className="text-green-600 border-green-200">Aucune</Badge>
     }
-    const count = violations.totalViolations
+
     if (count < 3) return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Faible ({count})</Badge>
     if (count < 6) return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Moyenne ({count})</Badge>
     return <Badge variant="destructive">Élevée ({count})</Badge>

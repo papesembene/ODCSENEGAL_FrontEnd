@@ -1,4 +1,6 @@
 import { toast } from "sonner"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
+import { fetchJsonWithTimeout } from "@/app/utils/fetchWithTimeout"
 import { API_BASE_URL, CANDIDATES_LIST } from "../constants"
 import {
   buildResultsCsvContent,
@@ -38,7 +40,7 @@ export function createTestHandlers({
           try {
             const response = await fetch(`${API_BASE_URL}/api/admin/tests/results`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify(result),
             })
             if (response.ok) successCount += 1
@@ -127,12 +129,14 @@ export function createTestHandlers({
         testData.updatedAt = new Date().toISOString()
       }
 
-      const response = await fetch(url, {
+      const result = await fetchJsonWithTimeout(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(testData),
+        timeout: 30000,
+        retries: 1,
+        retryDelay: 1000,
       })
-      const result = await response.json()
 
       if (!result.success) {
         toast.error(result.error || "Erreur lors de la sauvegarde")
@@ -147,7 +151,7 @@ export function createTestHandlers({
       setCurrentQuestion(createInitialQuestion())
     } catch (error) {
       console.error(error)
-      toast.error("Erreur lors de la sauvegarde du test")
+      toast.error(error.message || "Erreur lors de la sauvegarde du test")
     }
   }
 
@@ -157,7 +161,7 @@ export function createTestHandlers({
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/tests`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ id: testId, status: newStatus }),
       })
 
@@ -175,7 +179,7 @@ export function createTestHandlers({
       const selectedCandidatesData = CANDIDATES_LIST.filter((candidate) => emailData.selectedCandidates.includes(candidate.id))
       const response = await fetch(`${API_BASE_URL}/api/admin/tests/send-emails`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           ...emailData,
           recipients: selectedCandidatesData,

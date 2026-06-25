@@ -10,6 +10,7 @@ import {
   calculateScore,
   createStorageKeys,
   formatTime,
+  getQuestionCount,
 } from "../test-session-utils"
 import { buildAuthenticatedCandidate, sanitizeAuthPayload, validateAuthPayload } from "./test-candidate-session-auth"
 import { createAnswerHandlers } from "./test-candidate-session-handlers"
@@ -37,6 +38,7 @@ export default function useTestCandidateSession({ testId }) {
   const [authData, setAuthData] = useState({ name: "", email: "", phone: "" })
   const [resumeAttempted, setResumeAttempted] = useState(false)
   const [resuming, setResuming] = useState(false)
+  const [loadingFullTest, setLoadingFullTest] = useState(false)
 
   const storageKeys = useMemo(() => createStorageKeys(testId), [testId])
   const timerRef = useRef(null)
@@ -66,7 +68,7 @@ export default function useTestCandidateSession({ testId }) {
     try {
       antiCheatRef.current = new AntiCheatService(testId, authData.email, (violation) => {
         if (violation.type === "tab_switch" || violation.type === "blur") {
-          toast.warning(`⚠️ ${violation.message}`)
+          toast.warning(violation.message)
         }
       })
       antiCheatRef.current.start()
@@ -122,20 +124,26 @@ export default function useTestCandidateSession({ testId }) {
     setTestAccessStatus("available")
   }, [updateCountdown])
 
-  const loadTestData = useCallback(async () => {
+  const applyLoadedTest = useCallback((test) => {
+    setTestData((prev) => ({
+      ...(prev || {}),
+      ...test,
+    }))
+    setTimeRemaining(test.duration * 60)
+    checkTestAvailability(test)
+  }, [checkTestAvailability])
+
+  const loadTestMetadata = useCallback(async () => {
     try {
       if (!testId) {
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}`)
+      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/public`)
       const result = await response.json()
 
       if (result.success && result.data) {
-        const test = result.data
-        setTestData(test)
-        setTimeRemaining(test.duration * 60)
-        checkTestAvailability(test)
+        applyLoadedTest(result.data)
       } else {
         toast.error("Test non trouvé")
         setTestData(null)
@@ -147,7 +155,37 @@ export default function useTestCandidateSession({ testId }) {
     } finally {
       setLoading(false)
     }
-  }, [checkTestAvailability, testId])
+  }, [applyLoadedTest, testId])
+
+  const ensureFullTestData = useCallback(async () => {
+    if (!testId) {
+      return null
+    }
+
+    if (Array.isArray(testData?.questions) && testData.questions.length > 0) {
+      return testData
+    }
+
+    setLoadingFullTest(true)
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}`)
+      const result = await response.json()
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Test non trouvé")
+      }
+
+      applyLoadedTest(result.data)
+      return result.data
+    } catch (error) {
+      console.error("Erreur lors du chargement complet du test:", error)
+      toast.error("Impossible de préparer le test. Veuillez réessayer.")
+      return null
+    } finally {
+      setLoadingFullTest(false)
+    }
+  }, [applyLoadedTest, testData, testId])
 
   const performAuthentication = useCallback(
     async ({ name, email, phone }, { silent = false, skipValidation = false } = {}) => {
@@ -339,7 +377,7 @@ export default function useTestCandidateSession({ testId }) {
     [confirmSubmitTest],
   )
 
-  const handleStartTest = useCallback(() => {
+  const handleStartTest = useCallback(async () => {
     if (typeof window !== "undefined" && localStorage.getItem(storageKeys.submitted) === "true") {
       toast.error("Vous avez déjà soumis ce test.")
       setTestCompleted(true)
@@ -347,7 +385,13 @@ export default function useTestCandidateSession({ testId }) {
       return
     }
 
-    const { isLateStart, remainingMinutes } = getTestStartState(testData)
+    const fullTestData = await ensureFullTestData()
+    if (!fullTestData || getQuestionCount(fullTestData) === 0) {
+      toast.error("Le contenu du test est indisponible pour le moment.")
+      return
+    }
+
+    const { isLateStart, remainingMinutes } = getTestStartState(fullTestData)
 
     setTimeRemaining(remainingMinutes * 60)
     setTestStarted(true)
@@ -363,7 +407,7 @@ export default function useTestCandidateSession({ testId }) {
     } else {
       toast.success("Le test a commencé. Bonne chance !")
     }
-  }, [startAntiCheat, storageKeys.startedAt, storageKeys.submitted, testData])
+  }, [ensureFullTestData, startAntiCheat, storageKeys.startedAt, storageKeys.submitted])
 
   const updateAuthField = useCallback((field, value) => {
     setAuthData((prev) => ({ ...prev, [field]: value }))
@@ -372,7 +416,7 @@ export default function useTestCandidateSession({ testId }) {
   const { handleSingleAnswerChange, handleMultipleAnswerChange, handleTextAnswerChange } = useMemo(() => createAnswerHandlers({ currentQuestion, setAnswers }), [currentQuestion])
 
   useEffect(() => {
-    loadTestData()
+    loadTestMetadata()
 
     return () => {
       clearInterval(timerRef.current)
@@ -381,7 +425,7 @@ export default function useTestCandidateSession({ testId }) {
       }
       stopAntiCheat()
     }
-  }, [loadTestData, stopAntiCheat])
+  }, [loadTestMetadata, stopAntiCheat])
 
   useRestoreStoredAuth({ setAuthData, storageKey: storageKeys.auth })
 
@@ -411,6 +455,18 @@ export default function useTestCandidateSession({ testId }) {
     }
   }, [isAuthenticated, resumeTestFromStorage])
 
+  useEffect(() => {
+    if (!isAuthenticated || !testStarted) {
+      return
+    }
+
+    if (Array.isArray(testData?.questions) && testData.questions.length > 0) {
+      return
+    }
+
+    ensureFullTestData()
+  }, [ensureFullTestData, isAuthenticated, testData, testStarted])
+
   useBeforeUnloadProtection({ testCompleted, testStarted })
   useVisibilityWarning({ testCompleted, testStarted })
   usePersistedAnswers({ answers, storageKey: storageKeys.answers, testStarted })
@@ -433,8 +489,9 @@ export default function useTestCandidateSession({ testId }) {
 
   const currentQuestionData = testData?.questions?.[currentQuestion]
   const answeredCount = Object.keys(answers).length
-  const progress = testData ? ((currentQuestion + 1) / testData.questions.length) * 100 : 0
-  const unansweredCount = testData ? testData.questions.length - answeredCount : 0
+  const questionCount = getQuestionCount(testData)
+  const progress = questionCount > 0 ? ((currentQuestion + 1) / questionCount) * 100 : 0
+  const unansweredCount = questionCount > 0 ? questionCount - answeredCount : 0
   const formattedTimeRemaining = formatTime(timeRemaining)
 
   return {
@@ -455,6 +512,7 @@ export default function useTestCandidateSession({ testId }) {
     showSuccessModal,
     authData,
     resuming,
+    loadingFullTest,
     answeredCount,
     progress,
     unansweredCount,

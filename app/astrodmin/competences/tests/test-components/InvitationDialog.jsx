@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,16 @@ export function InvitationDialog({
   sendingInvitations,
   handleConfirmAndSendInvitations,
 }) {
+  const [testLinkBase, setTestLinkBase] = useState("")
+  const [minTestDate, setMinTestDate] = useState("")
+
+  useEffect(() => {
+    setTestLinkBase(window.location.origin)
+    setMinTestDate(new Date().toISOString().split("T")[0])
+  }, [])
+
+  const testLink = invitationDetails.test_id ? `${testLinkBase}/test/${invitationDetails.test_id}` : ""
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -91,7 +102,7 @@ export function InvitationDialog({
                 type="date"
                 value={invitationDetails.test_date}
                 onChange={(e) => setInvitationDetails({ ...invitationDetails, test_date: e.target.value })}
-                min={new Date().toISOString().split("T")[0]}
+                min={minTestDate}
                 disabled={!!invitationDetails.test_id}
                 className={invitationDetails.test_id ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed" : ""}
               />
@@ -130,16 +141,16 @@ export function InvitationDialog({
                 <Input
                   id="test-link"
                   type="text"
-                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/test/${invitationDetails.test_id}`}
+                  value={testLink}
                   readOnly
                   className="bg-gray-50 dark:bg-gray-900"
                 />
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const link = `${window.location.origin}/test/${invitationDetails.test_id}`
-                    navigator.clipboard.writeText(link).then(() => toast.success("Lien copié !"))
+                    navigator.clipboard.writeText(testLink).then(() => toast.success("Lien copié !"))
                   }}
+                  disabled={!testLink}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>

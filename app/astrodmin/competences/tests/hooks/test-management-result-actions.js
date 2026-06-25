@@ -1,4 +1,5 @@
 import { toast } from "sonner"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import { API_BASE_URL } from "../constants"
 
 export function createResultHandlers({
@@ -34,7 +35,7 @@ export function createResultHandlers({
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/tests/results/${selectedResult.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ manualGrades: updatedGrades }),
       })
 

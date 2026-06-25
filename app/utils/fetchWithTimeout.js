@@ -14,6 +14,34 @@ function createTimeoutController(timeout = 30000) {
   return { controller, timeoutId }
 }
 
+function buildRequestHeaders(url, headers) {
+  const requestHeaders = new Headers(headers || {})
+
+  if (typeof window !== "undefined" && url.includes("/api/admin")) {
+    const adminToken = localStorage.getItem("admin_token")
+    if (adminToken && !requestHeaders.has("Authorization")) {
+      requestHeaders.set("Authorization", `Bearer ${adminToken}`)
+    }
+  }
+
+  return requestHeaders
+}
+
+function handleExpiredAdminSession(url) {
+  if (typeof window === "undefined" || !url.includes("/api/admin")) {
+    return
+  }
+
+  localStorage.removeItem("admin_token")
+  localStorage.removeItem("admin_type")
+  localStorage.removeItem("admin_email")
+  localStorage.removeItem("admin_user")
+
+  if (window.location.pathname !== "/astrodmin") {
+    window.location.href = "/astrodmin"
+  }
+}
+
 /**
  * Effectue une requête fetch avec timeout
  * @param {string} url - URL de la requête
@@ -36,10 +64,12 @@ export async function fetchWithTimeout(url, options = {}) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const { controller, timeoutId } = createTimeoutController(timeout)
+      const requestHeaders = buildRequestHeaders(url, fetchOptions.headers)
 
       try {
         const response = await fetch(url, {
           ...fetchOptions,
+          headers: Object.fromEntries(requestHeaders.entries()),
           signal: controller.signal,
         })
 
@@ -107,6 +137,11 @@ export async function fetchJsonWithTimeout(url, options = {}) {
       // Si la réponse n'est pas du JSON, utiliser le status
       errorMessage = `Erreur HTTP: ${response.status} ${response.statusText}`
     }
+
+    if (response.status === 401) {
+      handleExpiredAdminSession(url)
+    }
+
     throw new Error(errorMessage)
   }
 
@@ -116,4 +151,3 @@ export async function fetchJsonWithTimeout(url, options = {}) {
     throw new Error('Réponse invalide du serveur (pas de JSON)')
   }
 }
-

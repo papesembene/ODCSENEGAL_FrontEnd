@@ -50,28 +50,49 @@ export const createInitialEmailData = () => ({
 })
 
 export const validateQuestionBeforeSave = (question) => {
-  if (!question.question.trim()) {
-    return "Veuillez saisir la question"
-  }
+  const requirements = getQuestionValidationRequirements(question)
+  const failedRequirement = requirements.find((requirement) => !requirement.valid)
+  return failedRequirement ? failedRequirement.message : null
+}
+
+export const getQuestionValidationRequirements = (question) => {
+  const requirements = [
+    {
+      key: "question",
+      valid: question.question.trim() !== "",
+      message: "Veuillez saisir la question",
+    },
+  ]
 
   if (question.type === "texte_libre") {
-    return null
+    return requirements
   }
 
   const filledOptions = question.options.filter((option) => option.trim() !== "")
-  if (filledOptions.length < 2) {
-    return "Veuillez saisir au moins 2 options de réponse"
+
+  requirements.push({
+    key: "options",
+    valid: filledOptions.length >= 2,
+    message: "Veuillez saisir au moins 2 options de réponse",
+  })
+
+  if (question.type === "qcm_simple") {
+    requirements.push({
+      key: "correct-answer",
+      valid: question.correctAnswer !== null,
+      message: "Veuillez sélectionner la bonne réponse",
+    })
   }
 
-  if (question.type === "qcm_simple" && question.correctAnswer === null) {
-    return "Veuillez sélectionner la bonne réponse"
+  if (question.type === "qcm_multiple") {
+    requirements.push({
+      key: "correct-answers",
+      valid: question.correctAnswers.length > 0,
+      message: "Veuillez sélectionner au moins une bonne réponse",
+    })
   }
 
-  if (question.type === "qcm_multiple" && question.correctAnswers.length === 0) {
-    return "Veuillez sélectionner au moins une bonne réponse"
-  }
-
-  return null
+  return requirements
 }
 
 export const buildQuestionPayload = (question, questionIndex) => ({

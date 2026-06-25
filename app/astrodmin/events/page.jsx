@@ -27,6 +27,7 @@ import {
   Image as ImageIcon
 } from "lucide-react"
 import { toast } from "sonner"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 
 export default function EventsManagementPage() {
   const router = useRouter()
@@ -69,7 +70,9 @@ export default function EventsManagementPage() {
   const fetchEvents = async () => {
     try {
       setRefreshing(true)
-      const response = await fetch(`${API_BASE_URL}/api/admin/events`)
+      const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
+        headers: getAdminAuthHeaders(),
+      })
       const result = await response.json()
       
       if (result.success) {
@@ -113,7 +116,7 @@ export default function EventsManagementPage() {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body)
       })
       
@@ -150,7 +153,8 @@ export default function EventsManagementPage() {
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/events?id=${eventId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: getAdminAuthHeaders(),
       })
       
       const result = await response.json()

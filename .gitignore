@@ -190,6 +190,7 @@ uploads/
 # logs
 backend/logs/
 *.log
+tsconfig.tsbuildinfo
 
 # executables
 *.exe

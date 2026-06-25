@@ -31,7 +31,17 @@ import {
   Mail,
   Shield,
   RefreshCw,
+  ClipboardList,
+  Wifi,
+  UserRound,
+  BellRing,
+  Monitor,
+  ShieldAlert,
+  Copy,
+  MousePointerClick,
+  Camera,
 } from "lucide-react"
+import { getQuestionCount } from "./test-session-utils"
 
 export function TestLoadingState() {
   return (
@@ -82,6 +92,8 @@ function StatusCard({ icon, title, description, children, cardClassName = "max-w
 }
 
 export function TestTooEarlyState({ scheduledDateTime, countdown, testData, onReload }) {
+  const questionCount = getQuestionCount(testData)
+
   return (
     <StatusCard
       icon={Clock}
@@ -115,18 +127,21 @@ export function TestTooEarlyState({ scheduledDateTime, countdown, testData, onRe
             <p><strong>Test :</strong> {testData.title}</p>
             <p><strong>Référentiel :</strong> {testData.referentiel}</p>
             <p><strong>Durée :</strong> {testData.duration} minutes</p>
-            <p><strong>Nombre de questions :</strong> {testData.questions?.length || 0}</p>
+            <p><strong>Nombre de questions :</strong> {questionCount}</p>
           </div>
         </AlertDescription>
       </Alert>
 
       <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:bg-orange-900/20">
-        <h4 className="mb-2 text-sm font-semibold text-orange-900 dark:text-orange-100 sm:text-base">📋 Préparez-vous !</h4>
+        <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-orange-900 dark:text-orange-100 sm:text-base">
+          <ClipboardList className="h-4 w-4" />
+          Préparez-vous
+        </h4>
         <ul className="space-y-1 text-xs text-orange-800 dark:text-orange-200 sm:text-sm">
-          <li>✓ Vérifiez votre connexion internet</li>
-          <li>✓ Assurez-vous d&apos;avoir {testData.duration} minutes disponibles</li>
-          <li>✓ Préparez vos informations (nom, email, téléphone)</li>
-          <li>✓ Cette page se mettra à jour automatiquement</li>
+          <li className="flex items-center gap-2"><Wifi className="h-3.5 w-3.5 flex-shrink-0" /> Vérifiez votre connexion internet</li>
+          <li className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 flex-shrink-0" /> Assurez-vous d&apos;avoir {testData.duration} minutes disponibles</li>
+          <li className="flex items-center gap-2"><UserRound className="h-3.5 w-3.5 flex-shrink-0" /> Préparez vos informations (nom, email, téléphone)</li>
+          <li className="flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 flex-shrink-0" /> Cette page se mettra à jour automatiquement</li>
         </ul>
       </div>
 
@@ -259,7 +274,9 @@ export function TestAuthDialog({
   )
 }
 
-export function TestIntroductionCard({ testData, authData, onStart }) {
+export function TestIntroductionCard({ testData, authData, onStart, loadingFullTest }) {
+  const questionCount = getQuestionCount(testData)
+
   return (
     <Card>
       <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
@@ -280,7 +297,7 @@ export function TestIntroductionCard({ testData, authData, onStart }) {
             <FileText className="h-6 w-6 flex-shrink-0 text-blue-500 sm:h-8 sm:w-8" />
             <div>
               <p className="text-xs text-muted-foreground sm:text-sm">Questions</p>
-              <p className="text-base font-semibold sm:text-lg">{testData.questions.length}</p>
+              <p className="text-base font-semibold sm:text-lg">{questionCount}</p>
             </div>
           </div>
         </div>
@@ -288,7 +305,10 @@ export function TestIntroductionCard({ testData, authData, onStart }) {
         <Alert className="border-l-4 border-orange-500 bg-orange-50">
           <AlertCircle className="h-4 w-4 flex-shrink-0 text-orange-600" />
           <AlertDescription className="text-xs text-gray-800 sm:text-sm">
-            <strong className="text-sm text-gray-900 sm:text-base">📌 Instructions importantes</strong>
+            <strong className="inline-flex items-center gap-2 text-sm text-gray-900 sm:text-base">
+              <ClipboardList className="h-4 w-4 text-orange-600" />
+              Instructions importantes
+            </strong>
             <ul className="mt-2 list-inside list-disc space-y-1">
               <li>Vous <span className="font-medium">ne pouvez pas mettre le test en pause</span>.</li>
               <li>Le test sera <span className="font-medium">automatiquement soumis</span> à l’expiration du temps.</li>
@@ -297,15 +317,18 @@ export function TestIntroductionCard({ testData, authData, onStart }) {
               <li>Utilisation d&apos;ordinateur fortement recommandée.</li>
             </ul>
             <div className="my-4 border-t border-gray-300"></div>
-            <strong className="block text-sm text-red-700 sm:text-base">⚠️ Avertissement anti-triche</strong>
+            <strong className="flex items-center gap-2 text-sm text-red-700 sm:text-base">
+              <ShieldAlert className="h-4 w-4" />
+              Avertissement anti-triche
+            </strong>
             <p className="mt-2">Ce test est surveillé par un système avancé de détection.</p>
             <ul className="mt-3 list-inside list-disc space-y-1">
-              <li><span className="font-medium text-gray-900">Blocage du copier/coller</span> et des raccourcis suspects.</li>
-              <li><span className="font-medium text-gray-900">Désactivation du clic droit</span> et des outils de développement.</li>
-              <li><span className="font-medium text-gray-900">Détection des captures d’écran</span>.</li>
-              <li><span className="font-medium text-gray-900">Détection des changements d’onglet</span> ou perte de focus.</li>
-              <li><span className="font-medium">Avertissements visuels</span> déclenchés automatiquement.</li>
-              <li><span className="font-medium text-red-600">Avertissement sonore</span> en cas de comportement suspect.</li>
+              <li className="flex items-start gap-2"><Copy className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Blocage du copier/coller</span> et des raccourcis suspects.</span></li>
+              <li className="flex items-start gap-2"><MousePointerClick className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Désactivation du clic droit</span> et des outils de développement.</span></li>
+              <li className="flex items-start gap-2"><Camera className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Détection des captures d’écran</span>.</span></li>
+              <li className="flex items-start gap-2"><Monitor className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Détection des changements d’onglet</span> ou perte de focus.</span></li>
+              <li className="flex items-start gap-2"><Monitor className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium">Avertissements visuels</span> déclenchés automatiquement.</span></li>
+              <li className="flex items-start gap-2"><BellRing className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-red-600" /><span><span className="font-medium text-red-600">Avertissement sonore</span> en cas de comportement suspect.</span></li>
             </ul>
             <p className="mt-3 font-semibold text-red-700">
               Toute tentative de triche est enregistrée et transmise automatiquement à l’équipe d’évaluation.
@@ -323,8 +346,12 @@ export function TestIntroductionCard({ testData, authData, onStart }) {
           <Badge className="flex-shrink-0 bg-green-100 text-xs text-green-800 sm:text-sm">Prêt</Badge>
         </div>
 
-        <Button onClick={onStart} className="h-12 w-full bg-orange-500 text-base touch-manipulation hover:bg-orange-600 sm:h-14 sm:text-lg">
-          Commencer le test
+        <Button
+          onClick={onStart}
+          disabled={loadingFullTest}
+          className="h-12 w-full bg-orange-500 text-base touch-manipulation hover:bg-orange-600 sm:h-14 sm:text-lg"
+        >
+          {loadingFullTest ? "Préparation du test..." : "Commencer le test"}
         </Button>
       </CardContent>
     </Card>

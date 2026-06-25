@@ -32,7 +32,7 @@ export function useVisibilityWarning({ testStarted, testCompleted }) {
 
     const handleVisibility = () => {
       if (document.hidden && testStarted && !testCompleted) {
-        toast.warning("⚠️ Veuillez rester sur l'onglet du test.")
+        toast.warning("Veuillez rester sur l'onglet du test.")
       }
     }
 

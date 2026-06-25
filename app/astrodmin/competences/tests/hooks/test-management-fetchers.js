@@ -1,5 +1,6 @@
 import { toast } from "sonner"
 import { fetchJsonWithTimeout } from "@/app/utils/fetchWithTimeout"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import { API_BASE_URL } from "../constants"
 import { normalizeFormationName } from "../helpers"
 
@@ -83,14 +84,20 @@ export async function fetchViolationsData({ setTestViolations, testResults }) {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/violations/${candidateEmail}`)
+        const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/violations?candidateEmail=${encodeURIComponent(candidateEmail)}`, {
+          headers: getAdminAuthHeaders(),
+        })
         if (!response.ok) {
           continue
         }
 
         const data = await response.json()
         if (data.success && data.data) {
-          violationsMap[result.id] = data.data
+          const violationEntry = Array.isArray(data.data) ? data.data[0] : data.data
+
+          if (violationEntry) {
+            violationsMap[result.id] = violationEntry
+          }
         }
       } catch (error) {
         console.error(`Erreur violations pour ${candidateEmail}:`, error)
@@ -115,7 +122,9 @@ export async function fetchTestGroupsData({
       url += `formation=${groupFormationFilter}`
     }
 
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      headers: getAdminAuthHeaders(),
+    })
     const result = await response.json()
 
     if (!result.success) {
@@ -149,7 +158,9 @@ export async function fetchTestGroupsData({
 
 export async function fetchAvailableCandidatesData({ setAvailableCandidates }) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`)
+    const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`, {
+      headers: getAdminAuthHeaders(),
+    })
     const result = await response.json()
 
     if (!result.success) {

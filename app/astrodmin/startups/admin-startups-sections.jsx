@@ -1,4 +1,5 @@
 "use client"
+import { useEffect, useState } from "react"
 import {
   Bar,
   BarChart,
@@ -57,13 +58,19 @@ export function AdminStartupsOverview({
   startupsData,
   stats,
 }) {
+  const [lastUpdatedLabel, setLastUpdatedLabel] = useState("")
+
+  useEffect(() => {
+    setLastUpdatedLabel(new Date().toLocaleTimeString())
+  }, [stats.totalStartups])
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-4">
         <SummaryCard
           title="Total Startups"
           value={stats.totalStartups}
-          description={`Dernière mise à jour: ${new Date().toLocaleTimeString()}`}
+          description={`Dernière mise à jour: ${lastUpdatedLabel || "--:--:--"}`}
           progressClassName="bg-blue-500"
           progressValue={75}
         />

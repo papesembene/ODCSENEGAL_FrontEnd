@@ -1,7 +1,6 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { Toaster } from "sonner"
 import useTestCandidateSession from "./hooks/use-test-candidate-session"
 import {
   ActiveTestView,
@@ -63,7 +62,12 @@ export default function TestCandidatePage() {
         />
 
         {session.isAuthenticated && !session.testStarted ? (
-          <TestIntroductionCard testData={session.testData} authData={session.authData} onStart={session.handleStartTest} />
+          <TestIntroductionCard
+            testData={session.testData}
+            authData={session.authData}
+            onStart={session.handleStartTest}
+            loadingFullTest={session.loadingFullTest}
+          />
         ) : null}
 
         {session.testStarted && !session.testCompleted && session.currentQuestionData ? (
@@ -95,7 +99,6 @@ export default function TestCandidatePage() {
 
         <SubmissionSuccessDialog open={session.showSuccessModal} onBackHome={() => router.push("/")} />
       </div>
-      <Toaster position="top-right" richColors />
     </div>
   )
 }
