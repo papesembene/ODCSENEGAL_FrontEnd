@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { sanitizeRichTextHtml } from "./rich-text-sanitizer"
 
 interface RichTextDisplayProps {
   content: string
@@ -8,45 +9,16 @@ interface RichTextDisplayProps {
 }
 
 export function RichTextDisplay({ content, className = "" }: RichTextDisplayProps) {
-  // Injecter les styles CSS pour les listes
+  const [sanitizedContent, setSanitizedContent] = useState("")
+
   useEffect(() => {
-    const styleId = 'rich-text-display-list-styles'
-    if (document.getElementById(styleId)) return // Styles déjà injectés
-
-    const style = document.createElement('style')
-    style.id = styleId
-    style.textContent = `
-      .rich-text-display ul,
-      .rich-text-display ol {
-        margin: 0.5rem 0 !important;
-        padding-left: 2rem !important;
-        list-style-position: outside !important;
-      }
-      .rich-text-display ul {
-        list-style-type: disc !important;
-      }
-      .rich-text-display ol {
-        list-style-type: decimal !important;
-      }
-      .rich-text-display li {
-        margin: 0.25rem 0 !important;
-        display: list-item !important;
-      }
-    `
-    document.head.appendChild(style)
-
-    return () => {
-      const existingStyle = document.getElementById(styleId)
-      if (existingStyle) {
-        existingStyle.remove()
-      }
-    }
-  }, [])
+    setSanitizedContent(sanitizeRichTextHtml(content))
+  }, [content])
 
   return (
     <div
-      className={`rich-text-display whitespace-pre-wrap break-words ${className}`}
-      dangerouslySetInnerHTML={{ __html: content || "" }}
+      className={`rich-text-display whitespace-pre-wrap break-words [&_a]:text-orange-500 [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-orange-200 [&_blockquote]:pl-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-8 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-3 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-8 ${className}`}
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       style={{
         lineHeight: "1.6",
       }}

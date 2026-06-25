@@ -27,10 +27,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem("auth_token")
-      
+
       if (storedToken) {
         try {
-          const user = await verifyToken(storedToken)
+          // D'abord vérifier le token
+          await verifyToken(storedToken)
+          // Puis récupérer le profil complet
+          const user = await fetchFullProfile(storedToken)
+
           setAuthState(prev => ({
             ...prev,
             user,
@@ -64,35 +68,45 @@ export const AuthProvider = ({ children }) => {
   const handleAuthResponse = async (response) => {
     const data = await response.json()
     if (!response.ok) throw new Error(data.message || "Authentication failed")
-    
+
     localStorage.setItem("auth_token", data.token)
-    const user = await fetchUserProfile(data.token)
-    
+    const user = await fetchFullProfile(data.token)
+
     setAuthState({
       user,
       token: data.token,
       isLoading: false,
       error: null
     })
-    
+
     return { user, token: data.token }
   }
 
- // Ajoutez cette fonction pour récupérer le profil complet
-const fetchUserProfile = async (token) => {
+ // Fonction pour récupérer le profil complet
+const fetchFullProfile = async (token) => {
+  const authToken = token || authState.token
+  if (!authToken) return null
+
   const response = await fetch(`${API_URL}/api/auth/get-profile`, {
     headers: {
-      "Authorization": `Bearer ${token}`,
+      "Authorization": `Bearer ${authToken}`,
       "Content-Type": "application/json"
     }
   })
   const data = await response.json()
   if (!response.ok) throw new Error(data.message || "Failed to fetch profile")
+
+  setAuthState(prev => ({
+    ...prev,
+    user: data.user,
+    isLoading: false
+  }))
+
   return data.user
 }
   const login = async (email, password) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
-    
+
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
@@ -133,7 +147,7 @@ useEffect(() => {
 }, [])
   const register = async (formData) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
-    
+
     try {
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
@@ -152,22 +166,22 @@ useEffect(() => {
   }
   const updateProfile = async (profileData, files = {}) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
-    
+
     try {
       const formData = new FormData()
-      
+
       // Ajouter les données du profil
       Object.entries(profileData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, value)
         }
       })
-      
+
       // Ajouter les fichiers
       Object.entries(files).forEach(([fieldName, file]) => {
         if (file) formData.append(fieldName, file)
       })
-  
+
       const response = await fetch(`${API_URL}/api/auth/update-profile`, {
         method: "POST",
         headers: {
@@ -175,13 +189,13 @@ useEffect(() => {
         },
         body: formData
       })
-  
+
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Échec de la mise à jour")
       }
-  
+
       // Mettre à jour l'état avec les nouvelles données
       setAuthState(prev => ({
         ...prev,
@@ -195,7 +209,7 @@ useEffect(() => {
         },
         isLoading: false
       }))
-      
+
       return data.user
     } catch (error) {
       setAuthState(prev => ({
@@ -212,16 +226,16 @@ const handleOAuth = (provider) => {
   const width = 600, height = 600;
   const left = (window.innerWidth - width) / 2;
   const top = (window.innerHeight - height) / 2;
-  
+
   setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-  
+
   // Ouvrir la fenêtre popup
   const popup = window.open(
     `${API_URL}/api/auth/${provider}/authorize`,
     'oauthPopup',
     `width=${width},height=${height},top=${top},left=${left}`
   );
-  
+
   // Fonction pour vérifier si la popup est fermée
   const checkPopup = setInterval(() => {
     if (!popup || popup.closed) {
@@ -240,24 +254,24 @@ const handleOAuth = (provider) => {
 
     if (event.data.type === 'oauth-success') {
       clearInterval(checkPopup);
-      
+
       const { token } = event.data;
       localStorage.setItem("auth_token", token);
-      
-      fetchUserProfile(token).then(user => {
+
+      fetchFullProfile(token).then(user => {
         setAuthState({
           user,
           token,
           isLoading: false,
           error: null
         });
-        
+
         // Rediriger vers le dashboard après connexion réussie
         window.location.href = '/connect';
       });
     } else if (event.data.type === 'oauth-error') {
       clearInterval(checkPopup);
-      
+
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
@@ -284,9 +298,10 @@ const handleOAuth = (provider) => {
 
   const value = {
     ...authState,
+    API_URL,
     isAuthenticated: !!authState.user,
     login,
-    fetchUserProfile,
+    fetchFullProfile,
     register,
     updateProfile,
     loginWithGoogle: () => handleOAuth("google"),
