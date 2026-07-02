@@ -10,6 +10,14 @@ function buildOptionLabel(admin) {
   return fullName || admin.email
 }
 
+const EMPTY_EVALUATION_SUMMARY = {
+  status: {},
+  progress: {},
+  complete: 0,
+  incomplete: 0,
+  ready_for_decision: 0,
+}
+
 export default function useCompetencesInterviews({ filterBySelectedCampaign = true } = {}) {
   const { interviews } = useAdminApi()
   const [loading, setLoading] = useState(true)
@@ -35,12 +43,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     total: 0,
     total_pages: 1,
   })
-  const [evaluationSummary, setEvaluationSummary] = useState({
-    status: {},
-    progress: {},
-    complete: 0,
-    incomplete: 0,
-  })
+  const [evaluationSummary, setEvaluationSummary] = useState(EMPTY_EVALUATION_SUMMARY)
   const [campaignForm, setCampaignForm] = useState({
     name: "",
     formation: "dev-web-mobile",
@@ -68,7 +71,14 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       setAdmins(data.admins || [])
       setSlotOccupancy(data.slot_occupancy || {})
 
-      setSelectedCampaignId((currentCampaignId) => currentCampaignId || data.campaigns?.[0]?.id || "")
+      setSelectedCampaignId((currentCampaignId) => {
+        const campaigns = data.campaigns || []
+        const currentCampaignStillExists = campaigns.some(
+          (campaign) => campaign.id === currentCampaignId,
+        )
+
+        return currentCampaignStillExists ? currentCampaignId : campaigns[0]?.id || ""
+      })
     } catch (error) {
       console.error(error)
       toast.error(error.message || "Impossible de charger le module entretiens")
@@ -84,6 +94,13 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   const fetchEvaluations = useCallback(async () => {
     if (filterBySelectedCampaign && !selectedCampaignId) {
       setEvaluations([])
+      setPagination({
+        page: 1,
+        page_size: pageSize,
+        total: 0,
+        total_pages: 1,
+      })
+      setEvaluationSummary(EMPTY_EVALUATION_SUMMARY)
       return
     }
 
@@ -114,12 +131,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       setPage((currentPage) => (
         currentPage === nextPagination.page ? currentPage : nextPagination.page
       ))
-      setEvaluationSummary(result.summary || {
-        status: {},
-        progress: {},
-        complete: 0,
-        incomplete: 0,
-      })
+      setEvaluationSummary(result.summary || EMPTY_EVALUATION_SUMMARY)
     } catch (error) {
       console.error(error)
       toast.error(error.message || "Impossible de charger les fiches d'entretien")
@@ -169,6 +181,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       admins.map((admin) => ({
         value: admin.id,
         label: buildOptionLabel(admin),
+        interviewRole: admin.profile_data?.interview_role || "",
       })),
     [admins],
   )

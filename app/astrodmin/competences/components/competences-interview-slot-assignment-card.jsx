@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const ROLE_FIELDS = [
-  { key: "assigned_filter_ids", label: "Filtreurs" },
-  { key: "assigned_validator_ids", label: "Validateurs" },
-  { key: "assigned_motivation_ids", label: "Jury motivation" },
+  { key: "assigned_filter_ids", label: "Filtreurs", interviewRole: "filter" },
+  { key: "assigned_validator_ids", label: "Validateurs", interviewRole: "validator" },
+  { key: "assigned_motivation_ids", label: "Jury motivation", interviewRole: "motivation" },
 ]
 
 export default function CompetencesInterviewSlotAssignmentCard({
@@ -125,7 +125,7 @@ export default function CompetencesInterviewSlotAssignmentCard({
                 <div className="space-y-3">
                   <p className="text-sm font-medium">Admins disponibles</p>
                   <div className="grid gap-3 md:grid-cols-2">
-                  {adminOptions.map((admin) => {
+                  {adminOptions.filter((admin) => admin.interviewRole === role.interviewRole).map((admin) => {
                     const checkboxId = `${selectedSlot.id}-${role.key}-${admin.value}`
                     const checked = (draftAssignments[role.key] || []).includes(admin.value)
 
@@ -142,6 +142,11 @@ export default function CompetencesInterviewSlotAssignmentCard({
                       </div>
                     )
                   })}
+                  {adminOptions.filter((admin) => admin.interviewRole === role.interviewRole).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Aucun profil disponible pour ce rôle.
+                    </p>
+                  ) : null}
                   </div>
                 </div>
               </div>

@@ -146,7 +146,7 @@ export default function MyInterviewsPage() {
   const selectedCampaignScorecard = useMemo(
     () => interviews.campaigns.find(
       (campaign) => campaign.id === selectedEvaluation?.campaign_id,
-    )?.scorecard_config,
+    )?.scorecard_config || selectedEvaluation?.campaign_scorecard_config,
     [interviews.campaigns, selectedEvaluation?.campaign_id],
   )
   const selectedEvaluationRole = useMemo(() => {

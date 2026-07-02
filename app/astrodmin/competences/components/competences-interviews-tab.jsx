@@ -51,6 +51,16 @@ function formatTestScore(score) {
   return Number.isFinite(Number(score)) ? `${Number(score)} pts` : "Non disponible"
 }
 
+function SummaryStatCard({ label, value, description, className = "" }) {
+  return (
+    <div className={`rounded-lg border p-4 ${className}`}>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-semibold">{value}</p>
+      {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
+    </div>
+  )
+}
+
 export default function CompetencesInterviewsTab() {
   const interviews = useCompetencesInterviews()
   const [selectedEvaluationId, setSelectedEvaluationId] = useState("")
@@ -79,12 +89,45 @@ export default function CompetencesInterviewsTab() {
     liste_attente: interviews.evaluationSummary.status?.liste_attente || 0,
     rejete: interviews.evaluationSummary.status?.rejete || 0,
   }
-  const selectionSummary = {
-    official: statusSummary.retenu,
-    waiting: statusSummary.liste_attente,
-    rejected: statusSummary.rejete,
-    pending: statusSummary.en_attente,
-  }
+  const decisionStats = [
+    {
+      label: "À finaliser",
+      value: statusSummary.en_attente,
+      description: "Fiches sans décision finale.",
+    },
+    {
+      label: "Retenus",
+      value: statusSummary.retenu,
+      description: "Candidats validés pour la liste officielle.",
+    },
+    {
+      label: "Liste d'attente",
+      value: statusSummary.liste_attente,
+      description: "Candidats gardés en réserve.",
+    },
+    {
+      label: "Rejetés",
+      value: statusSummary.rejete,
+      description: "Candidats non retenus après décision.",
+    },
+  ]
+  const progressStats = [
+    {
+      label: "Complètes",
+      value: evaluationSummary.complete,
+      description: "Filtre, validation et motivation renseignés.",
+    },
+    {
+      label: "Incomplètes",
+      value: evaluationSummary.incomplete,
+      description: "Une étape jury reste à compléter.",
+    },
+    {
+      label: "Prêtes à décision",
+      value: evaluationSummary.readyForDecision,
+      description: "Fiches complètes avec entretien passé.",
+    },
+  ]
 
   if (interviews.loading) {
     return (
@@ -416,82 +459,31 @@ export default function CompetencesInterviewsTab() {
             <CardHeader>
               <CardTitle>Viviers d&apos;entretien</CardTitle>
               <CardDescription>
-                Les fiches générées servent de base à la liste officielle, à la liste d&apos;attente et aux validations.
+                Suivi simple des décisions finales et des fiches encore à compléter.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {decisionStats.map((stat) => (
+                  <SummaryStatCard
+                    key={stat.label}
+                    label={stat.label}
+                    value={stat.value}
+                    description={stat.description}
+                  />
+                ))}
+              </div>
+
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Fiches complètes</p>
-                  <p className="mt-1 text-2xl font-semibold">{evaluationSummary.complete}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Fiches entièrement renseignées par les 3 étapes.
-                  </p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Fiches incomplètes</p>
-                  <p className="mt-1 text-2xl font-semibold">{evaluationSummary.incomplete}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Fiches encore en cours côté filtre, validation ou motivation.
-                  </p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Prêtes à décision</p>
-                  <p className="mt-1 text-2xl font-semibold">{evaluationSummary.readyForDecision}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Fiches complètes avec entretien marqué comme passé.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">En attente</p>
-                  <p className="mt-1 text-2xl font-semibold">{statusSummary.en_attente}</p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Retenus</p>
-                  <p className="mt-1 text-2xl font-semibold">{statusSummary.retenu}</p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Liste d&apos;attente</p>
-                  <p className="mt-1 text-2xl font-semibold">{statusSummary.liste_attente}</p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Rejetés</p>
-                  <p className="mt-1 text-2xl font-semibold">{statusSummary.rejete}</p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Liste officielle</p>
-                  <p className="mt-1 text-2xl font-semibold">{selectionSummary.official}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Fiches finalisées et retenues.
-                  </p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Liste d&apos;attente</p>
-                  <p className="mt-1 text-2xl font-semibold">{selectionSummary.waiting}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Fiches finalisées avec décision d&apos;attente.
-                  </p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Rejetés</p>
-                  <p className="mt-1 text-2xl font-semibold">{selectionSummary.rejected}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Fiches finalisées et non retenues.
-                  </p>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Décision à finaliser</p>
-                  <p className="mt-1 text-2xl font-semibold">{selectionSummary.pending}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Fiches encore incomplètes ou sans décision finale.
-                  </p>
-                </div>
+                {progressStats.map((stat) => (
+                  <SummaryStatCard
+                    key={stat.label}
+                    label={stat.label}
+                    value={stat.value}
+                    description={stat.description}
+                    className="bg-muted/30"
+                  />
+                ))}
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -649,7 +641,7 @@ export default function CompetencesInterviewsTab() {
         }}
         evaluation={selectedEvaluation}
         slots={interviews.campaignSlots}
-        campaignScorecard={interviews.selectedCampaign?.scorecard_config}
+        campaignScorecard={interviews.selectedCampaign?.scorecard_config || selectedEvaluation?.campaign_scorecard_config}
         viewerRole="super_admin"
         submitting={interviews.submitting}
         onSave={interviews.handleUpdateEvaluation}
