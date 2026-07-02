@@ -169,6 +169,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       admins.map((admin) => ({
         value: admin.id,
         label: buildOptionLabel(admin),
+        role: admin.profile_data?.interview_role || null,
       })),
     [admins],
   )

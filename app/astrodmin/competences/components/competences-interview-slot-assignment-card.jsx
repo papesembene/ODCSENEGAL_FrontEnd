@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const ROLE_FIELDS = [
-  { key: "assigned_filter_ids", label: "Filtreurs" },
-  { key: "assigned_validator_ids", label: "Validateurs" },
-  { key: "assigned_motivation_ids", label: "Jury motivation" },
+  { key: "assigned_filter_ids", label: "Filtreurs", role: "filter" },
+  { key: "assigned_validator_ids", label: "Validateurs", role: "validator" },
+  { key: "assigned_motivation_ids", label: "Jury motivation", role: "motivation" },
 ]
 
 export default function CompetencesInterviewSlotAssignmentCard({
@@ -98,52 +98,66 @@ export default function CompetencesInterviewSlotAssignmentCard({
 
             {ROLE_FIELDS.map((role) => (
               <div key={role.key} className="space-y-4 rounded-lg border p-4">
-                <div>
-                  <h3 className="font-medium">{role.label}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {(draftAssignments[role.key] || []).length} personne(s) affectée(s)
-                  </p>
-                </div>
+                {(() => {
+                  const roleAdmins = adminOptions.filter((admin) => admin.role === role.role)
 
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Personnes affectées</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(draftAssignments[role.key] || []).length === 0 ? (
-                      <span className="text-sm text-muted-foreground">Aucune personne affectée pour le moment.</span>
-                    ) : (
-                      adminOptions
-                        .filter((admin) => (draftAssignments[role.key] || []).includes(admin.value))
-                        .map((admin) => (
-                          <Badge key={`${role.key}-${admin.value}-selected`} variant="secondary">
-                            {admin.label}
-                          </Badge>
-                        ))
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Admins disponibles</p>
-                  <div className="grid gap-3 md:grid-cols-2">
-                  {adminOptions.map((admin) => {
-                    const checkboxId = `${selectedSlot.id}-${role.key}-${admin.value}`
-                    const checked = (draftAssignments[role.key] || []).includes(admin.value)
-
-                    return (
-                      <div key={checkboxId} className="flex items-center space-x-3 rounded-md border p-3">
-                        <Checkbox
-                          id={checkboxId}
-                          checked={checked}
-                          onCheckedChange={(value) => toggleUser(role.key, admin.value, Boolean(value))}
-                        />
-                        <Label htmlFor={checkboxId} className="flex-1 cursor-pointer">
-                          {admin.label}
-                        </Label>
+                  return (
+                    <>
+                      <div>
+                        <h3 className="font-medium">{role.label}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {(draftAssignments[role.key] || []).length} personne(s) affectée(s)
+                        </p>
                       </div>
-                    )
-                  })}
-                  </div>
-                </div>
+
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Personnes affectées</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(draftAssignments[role.key] || []).length === 0 ? (
+                            <span className="text-sm text-muted-foreground">Aucune personne affectée pour le moment.</span>
+                          ) : (
+                            roleAdmins
+                              .filter((admin) => (draftAssignments[role.key] || []).includes(admin.value))
+                              .map((admin) => (
+                                <Badge key={`${role.key}-${admin.value}-selected`} variant="secondary">
+                                  {admin.label}
+                                </Badge>
+                              ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium">Admins disponibles</p>
+                        {roleAdmins.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            Aucun jury disponible pour ce rôle pour le moment.
+                          </p>
+                        ) : (
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {roleAdmins.map((admin) => {
+                              const checkboxId = `${selectedSlot.id}-${role.key}-${admin.value}`
+                              const checked = (draftAssignments[role.key] || []).includes(admin.value)
+
+                              return (
+                                <div key={checkboxId} className="flex items-center space-x-3 rounded-md border p-3">
+                                  <Checkbox
+                                    id={checkboxId}
+                                    checked={checked}
+                                    onCheckedChange={(value) => toggleUser(role.key, admin.value, Boolean(value))}
+                                  />
+                                  <Label htmlFor={checkboxId} className="flex-1 cursor-pointer">
+                                    {admin.label}
+                                  </Label>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             ))}
 

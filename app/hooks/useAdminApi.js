@@ -139,10 +139,19 @@ export const useAdminApi = () => {
       }),
   }), [makeRequest])
 
+  const juryMembers = useMemo(() => ({
+    create: async (payload) =>
+      makeRequest("/api/admin/interview-members", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  }), [makeRequest])
+
   return {
     makeRequest,
     candidatures,
     testGroups,
     interviews,
+    juryMembers,
   }
 }

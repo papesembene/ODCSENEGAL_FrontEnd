@@ -10,7 +10,6 @@ import {
   LogOut, 
   LayoutDashboard, 
   Users, 
-  Briefcase, 
   Calendar, 
   FileText, 
   Settings,
@@ -143,6 +142,13 @@ export default function AdminLayout({ children }) {
       href: "/astrodmin/competences/tests",
       color: "text-indigo-500",
       show: !isInterviewMember
+    },
+    {
+      label: "Paramètres",
+      icon: Settings,
+      href: "/astrodmin/parametres",
+      color: "text-slate-500",
+      show: !isInterviewMember,
     },
     /*{
       label: "Log Connexions",
