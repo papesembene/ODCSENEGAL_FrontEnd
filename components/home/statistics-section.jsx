@@ -59,11 +59,13 @@ const StatisticsSection = () => {
   }, [])
  
   return (
-    <section ref={sectionRef} className="bg-[#FF7900] py-16 text-white">
+    <section ref={sectionRef} className="bg-orange-50 py-20 text-gray-950 dark:bg-gray-950 dark:text-white">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold sm:text-4xl"> <span className="text-black">Orange</span> Digital Center en chiffres</h2>
-          <p className="mt-4 text-lg">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Orange Digital Center en chiffres
+          </h2>
+          <p className="mt-4 text-lg leading-8 text-gray-600 dark:text-gray-300">
             Des chiffres qui témoignent de notre engagement pour le développement numérique au Sénégal.
           </p>
         </div>
@@ -72,10 +74,10 @@ const StatisticsSection = () => {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="flex flex-col items-center rounded-lg bg-white/10 p-6 text-center backdrop-blur-sm"
+              className="group flex flex-col items-center rounded-2xl border border-orange-100 bg-white p-7 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-white/5"
             >
-              <div className="mb-4 rounded-full bg-white/30 p-3">{stat.icon}</div>
-              <div className="text-4xl font-bold">
+              <div className="mb-5 rounded-2xl bg-orange-100 p-4 text-orange-700 transition group-hover:bg-orange-1 group-hover:text-black dark:bg-orange-500/10 dark:text-orange-300">{stat.icon}</div>
+              <div className="text-4xl font-bold tracking-tight">
                 {isVisible ? (
                   <>
                     <CountUp end={stat.value} duration={2} />
@@ -85,7 +87,7 @@ const StatisticsSection = () => {
                   "0"
                 )}
               </div>
-              <div className="mt-2 text-lg">{stat.label}</div>
+              <div className="mt-3 text-base font-medium text-gray-600 dark:text-gray-300">{stat.label}</div>
             </div>
           ))}
         </div>

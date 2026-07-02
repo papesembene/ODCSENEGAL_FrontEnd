@@ -159,6 +159,10 @@ export default function AdminLayout({ children }) {
   ]
 
   const isDarkTheme = isMounted && theme === "dark"
+  const visibleMenuItems = menuItems.filter(item => item.show !== false)
+  const activeMenuHref = visibleMenuItems
+    .filter((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+    .sort((currentItem, nextItem) => nextItem.href.length - currentItem.href.length)[0]?.href
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
@@ -180,8 +184,8 @@ export default function AdminLayout({ children }) {
 
         <ScrollArea className="flex-1 px-3 py-4">
           <nav className="space-y-1">
-            {menuItems.filter(item => item.show !== false).map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+            {visibleMenuItems.map((item) => {
+              const isActive = activeMenuHref === item.href
               return (
                 <Link
                   key={item.href}
@@ -254,8 +258,8 @@ export default function AdminLayout({ children }) {
 
             <ScrollArea className="flex-1 px-3 py-4">
               <nav className="space-y-1">
-                {menuItems.filter(item => item.show !== false).map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+                {visibleMenuItems.map((item) => {
+                  const isActive = activeMenuHref === item.href
                   return (
                     <Link
                       key={item.href}
