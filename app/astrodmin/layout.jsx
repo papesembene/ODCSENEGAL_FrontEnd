@@ -18,7 +18,8 @@ import {
   Moon,
   Sun,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Megaphone
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -142,6 +143,13 @@ export default function AdminLayout({ children }) {
       href: "/astrodmin/competences/tests",
       color: "text-indigo-500",
       show: !isInterviewMember
+    },
+    {
+      label: "Portail",
+      icon: Megaphone,
+      href: "/astrodmin/portail",
+      color: "text-orange-500",
+      show: !isInterviewMember && adminType === "super_admin",
     },
     {
       label: "Paramètres",

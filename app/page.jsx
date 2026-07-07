@@ -16,6 +16,7 @@ import {
   Rocket,
 } from "lucide-react"
 import HeroSection from "@/components/home/hero-section"
+import PortalNewsSection from "@/components/home/portal-news-section"
 import StatisticsSection from "@/components/home/statistics-section"
 import TestimonialsSection from "@/components/home/testimonials-section"
 import PartnersSection from "@/components/home/partners-section"
@@ -56,6 +57,7 @@ export default function Home() {
       </motion.div>
 
       <HeroSection />
+      <PortalNewsSection />
 
       <motion.section 
         ref={objectifsRef}

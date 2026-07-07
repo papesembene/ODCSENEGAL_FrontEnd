@@ -7,6 +7,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { getPublicMediaUrl, getPublishedPortalContent } from "@/lib/public-api"
 
 const SLIDES = [
   {
@@ -38,31 +39,65 @@ const SLIDES = [
   },
 ]
 
+function mapPortalContentToSlide(content) {
+  return {
+    title: content.title,
+    description: content.summary || content.body || "",
+    image: getPublicMediaUrl(content.imageUrl) || "/odc1Accueil.jpg",
+    cta: {
+      text: content.linkLabel || "En savoir plus",
+      link: content.linkUrl || "/actualites",
+    },
+  }
+}
+
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [slides, setSlides] = useState(SLIDES)
+
+  useEffect(() => {
+    let isActive = true
+
+    getPublishedPortalContent({ type: "banner", placement: "home" })
+      .then((contents) => {
+        if (isActive && contents.length > 0) {
+          setSlides(contents.map(mapPortalContentToSlide))
+          setCurrentSlide(0)
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setSlides(SLIDES)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev === SLIDES.length - 1 ? 0 : prev + 1))
+      setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
     }, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [slides.length])
 
   const goToSlide = (index) => {
     setCurrentSlide(index)
   }
 
   const goToPreviousSlide = () => {
-    setCurrentSlide((prev) => (prev === 0 ? SLIDES.length - 1 : prev - 1))
+    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1))
   }
 
   const goToNextSlide = () => {
-    setCurrentSlide((prev) => (prev === SLIDES.length - 1 ? 0 : prev + 1))
+    setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
   }
 
   return (
     <section className="relative isolate h-[430px] overflow-hidden bg-black sm:h-[560px] lg:h-[640px]">
-      {SLIDES.map((slide, index) => (
+      {slides.map((slide, index) => (
         <div
           key={index}
           className={`absolute inset-0 transition-all duration-1000 ease-out ${
@@ -73,6 +108,7 @@ const HeroSection = () => {
             src={slide.image || "/placeholder.svg"}
             alt={slide.title}
             fill
+            unoptimized={slide.image?.startsWith("http")}
             className={`object-cover ${
               slide.image.includes("odc2Accueil") ? "object-[center_40%]" : "object-center"
               }`}
@@ -85,7 +121,7 @@ const HeroSection = () => {
       <div className="absolute inset-x-0 bottom-0 z-10 h-32 bg-gradient-to-t from-black/70 to-transparent" />
       <div className="container relative z-20 mx-auto flex h-full items-center px-4">
         <div className="max-w-3xl">
-          {SLIDES.map((slide, index) => (
+          {slides.map((slide, index) => (
             <div
               key={slide.title}
               className={`transition-all duration-700 ${
@@ -118,7 +154,7 @@ const HeroSection = () => {
       <div className="absolute bottom-7 left-0 right-0 z-30">
         <div className="container mx-auto flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            {SLIDES.map((_, index) => (
+            {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
@@ -152,7 +188,7 @@ const HeroSection = () => {
       </div>
 
       <div className="pointer-events-none absolute right-8 top-8 z-20 hidden rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md sm:block">
-        {String(currentSlide + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}
+        {String(currentSlide + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
       </div>
     </section>
   )

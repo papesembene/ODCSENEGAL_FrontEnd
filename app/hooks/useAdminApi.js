@@ -157,11 +157,39 @@ export const useAdminApi = () => {
       }),
   }), [makeRequest])
 
+  const portalContent = useMemo(() => ({
+    getAll: async (filters = {}) => {
+      const params = new URLSearchParams()
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== "all") {
+          params.set(key, String(value))
+        }
+      })
+      const query = params.toString() ? `?${params.toString()}` : ""
+      return makeRequest(`/api/admin/portal-content${query}`)
+    },
+    create: async (payload) =>
+      makeRequest("/api/admin/portal-content", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    update: async (id, payload) =>
+      makeRequest(`/api/admin/portal-content/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    remove: async (id) =>
+      makeRequest(`/api/admin/portal-content/${id}`, {
+        method: "DELETE",
+      }),
+  }), [makeRequest])
+
   return {
     makeRequest,
     candidatures,
     testGroups,
     interviews,
     juryMembers,
+    portalContent,
   }
 }
