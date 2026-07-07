@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,9 +37,10 @@ export function CreateGroupDialog({
   setNewGroup,
   testsData,
   availableCandidates,
+  availableCandidatesTotal = 0,
   assignedCandidateIds,
-  candidateToGroupMap,
   selectedCandidatesForGroup,
+  fetchAvailableCandidates,
   handleSelectCandidateForGroup,
   handleCreateGroup,
   setSelectedCandidatesForGroup,
@@ -50,27 +51,43 @@ export function CreateGroupDialog({
   const availableCandidatesForFormation = availableCandidates.filter(
     (candidate) => normalizeFormationName(candidate.desired_training) === newGroup.formation,
   )
+  const selectableCandidatesForFormation = availableCandidatesForFormation.filter(
+    (candidate) => !assignedCandidateIds.includes(candidate.id),
+  )
   const filteredCandidates = useMemo(() => {
     const normalizedSearch = candidateSearch.trim().toLowerCase()
 
     if (!normalizedSearch) {
-      return availableCandidatesForFormation
+      return selectableCandidatesForFormation
     }
 
-    return availableCandidatesForFormation.filter((candidate) => {
+    return selectableCandidatesForFormation.filter((candidate) => {
       const fullName = `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim().toLowerCase()
       const email = (candidate.email || "").toLowerCase()
       return fullName.includes(normalizedSearch) || email.includes(normalizedSearch)
     })
-  }, [availableCandidatesForFormation, candidateSearch])
+  }, [selectableCandidatesForFormation, candidateSearch])
 
-  const selectableCandidateIds = filteredCandidates
-    .filter((candidate) => !assignedCandidateIds.includes(candidate.id))
-    .map((candidate) => candidate.id)
+  const selectableCandidateIds = filteredCandidates.map((candidate) => candidate.id)
 
   const selectedVisibleCount = selectableCandidateIds.filter((candidateId) =>
     selectedCandidatesForGroup.includes(candidateId),
   ).length
+
+  useEffect(() => {
+    if (!open || !newGroup.formation) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      fetchAvailableCandidates?.({
+        formation: newGroup.formation,
+        search: candidateSearch,
+      })
+    }, 250)
+
+    return () => window.clearTimeout(timer)
+  }, [candidateSearch, fetchAvailableCandidates, newGroup.formation, open])
 
   const handleSelectVisibleCandidates = () => {
     setSelectedCandidatesForGroup((previous) => Array.from(new Set([...previous, ...selectableCandidateIds])))
@@ -233,8 +250,8 @@ export function CreateGroupDialog({
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <Badge variant="outline">{availableCandidatesForFormation.length} candidat(s)</Badge>
                   <Badge variant="outline">{filteredCandidates.length} affiché(s)</Badge>
+                  <Badge variant="outline">{availableCandidatesTotal} disponible(s) trouvé(s)</Badge>
                   <Badge variant="outline">{selectedCandidatesForGroup.length} sélectionné(s)</Badge>
                 </div>
               </div>
@@ -243,6 +260,10 @@ export function CreateGroupDialog({
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Aucun candidat trouvé pour cette formation
                   </p>
+                ) : selectableCandidatesForFormation.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Tous les candidats de cette formation sont déjà dans un groupe actif.
+                  </p>
                 ) : filteredCandidates.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Aucun candidat ne correspond à votre recherche
@@ -250,20 +271,16 @@ export function CreateGroupDialog({
                 ) : (
                   <div className="space-y-2">
                     {filteredCandidates.map((candidate) => {
-                        const isAssigned = assignedCandidateIds.includes(candidate.id)
                         const isSelected = selectedCandidatesForGroup.includes(candidate.id)
-                        const groupName = candidateToGroupMap[candidate.id]
                         return (
                           <div
                             key={candidate.id}
                             className={`flex items-center justify-between p-3 rounded border cursor-pointer transition-colors ${
-                              isAssigned
-                                ? "bg-gray-50 dark:bg-gray-900/30 opacity-70 border-gray-200 dark:border-gray-800"
-                                : isSelected
+                              isSelected
                                   ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
                                   : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50"
                             }`}
-                            onClick={() => !isAssigned && handleSelectCandidateForGroup(candidate.id)}
+                            onClick={() => handleSelectCandidateForGroup(candidate.id)}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm sm:text-base truncate">
@@ -272,11 +289,7 @@ export function CreateGroupDialog({
                               <div className="text-xs sm:text-sm text-muted-foreground truncate">{candidate.email}</div>
                             </div>
                             <div className="flex-shrink-0 ml-2">
-                              {isAssigned ? (
-                                <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 whitespace-nowrap">
-                                  {groupName}
-                                </Badge>
-                              ) : isSelected ? (
+                              {isSelected ? (
                                 <Badge className="bg-blue-500">Sélectionné</Badge>
                               ) : (
                                 <Badge variant="outline" className="text-xs text-gray-500 whitespace-nowrap">

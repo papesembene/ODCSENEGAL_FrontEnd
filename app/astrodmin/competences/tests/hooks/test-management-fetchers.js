@@ -156,14 +156,38 @@ export async function fetchTestGroupsData({
   }
 }
 
-export async function fetchAvailableCandidatesData({ setAvailableCandidates }) {
+export async function fetchAvailableCandidatesData({
+  formation = "",
+  page = 1,
+  perPage = 100,
+  search = "",
+  setAvailableCandidates,
+  setAvailableCandidatesTotal,
+}) {
+  if (!formation) {
+    setAvailableCandidates([])
+    setAvailableCandidatesTotal?.(0)
+    return
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`, {
+    const params = new URLSearchParams({
+      formation,
+      page: String(page),
+      per_page: String(perPage),
+    })
+    if (search.trim()) {
+      params.set("search", search.trim())
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/test-groups/available-candidates?${params.toString()}`, {
       headers: getAdminAuthHeaders(),
     })
     const result = await response.json()
 
     if (!result.success) {
+      setAvailableCandidates([])
+      setAvailableCandidatesTotal?.(0)
       return
     }
 
@@ -173,7 +197,10 @@ export async function fetchAvailableCandidatesData({ setAvailableCandidates }) {
     }))
 
     setAvailableCandidates(normalizedCandidates)
+    setAvailableCandidatesTotal?.(result.total || 0)
   } catch (error) {
     console.error("Erreur:", error)
+    setAvailableCandidates([])
+    setAvailableCandidatesTotal?.(0)
   }
 }

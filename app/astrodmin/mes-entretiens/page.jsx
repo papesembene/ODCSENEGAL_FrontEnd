@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CalendarClock, Users } from "lucide-react"
+import { CalendarClock, CheckCircle2, ClipboardList } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -99,21 +99,6 @@ export default function MyInterviewsPage() {
   const myEvaluations = useMemo(() => {
     return interviews.evaluations.filter((evaluation) => evaluation.slot_id && assignedSlotIds.has(evaluation.slot_id))
   }, [assignedSlotIds, interviews.evaluations])
-  const roleSummary = useMemo(() => {
-    return assignedSlots.reduce(
-      (accumulator, slot) => {
-        getSlotRoles(slot, currentAdminId).forEach((role) => {
-          accumulator[role] = (accumulator[role] || 0) + 1
-        })
-        return accumulator
-      },
-      {
-        Filtreur: 0,
-        Validateur: 0,
-        Motivation: 0,
-      },
-    )
-  }, [assignedSlots, currentAdminId])
   const evaluationSummary = useMemo(() => {
     return myEvaluations.reduce(
       (accumulator, evaluation) => {
@@ -182,115 +167,57 @@ export default function MyInterviewsPage() {
 
   return (
     <div className="space-y-6 p-4 pt-4 sm:p-6 sm:pt-6 md:p-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Mes entretiens</h1>
-        <p className="text-sm text-muted-foreground">
-          Vue personnelle des créneaux et candidatures qui vous sont affectés comme filtreur, validateur ou jury motivation.
-        </p>
-      </div>
+      <section className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-700">Espace jury</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Mes entretiens à traiter</h1>
+            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+              Ouvrez une fiche, renseignez uniquement votre section, puis enregistrez. Le reste est masqué pour garder l’écran simple.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit">
+            {assignedSlots.length} créneau(x)
+          </Badge>
+        </div>
+      </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-amber-200 bg-amber-50/60">
           <CardHeader className="pb-3">
-            <CardDescription>Mes créneaux</CardDescription>
-            <CardTitle className="text-2xl">{assignedSlots.length}</CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              À renseigner
+            </CardDescription>
+            <CardTitle className="text-3xl">{evaluationSummary.todo}</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Sessions auxquelles vous êtes affecté.
-          </CardContent>
         </Card>
-
-        <Card>
+        <Card className="border-emerald-200 bg-emerald-50/60">
           <CardHeader className="pb-3">
-            <CardDescription>Mes candidats</CardDescription>
-            <CardTitle className="text-2xl">{interviews.pagination.total}</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Fiches rattachées à vos créneaux.
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>À traiter</CardDescription>
-            <CardTitle className="text-2xl">{evaluationSummary.todo}</CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Complétées
+            </CardDescription>
+            <CardTitle className="text-3xl">{evaluationSummary.completed}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>Clôturés</CardDescription>
-            <CardTitle className="text-2xl">{evaluationSummary.completed}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Créneaux filtreur</CardDescription>
-            <CardTitle className="text-2xl">{roleSummary.Filtreur}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Créneaux validateur</CardDescription>
-            <CardTitle className="text-2xl">{roleSummary.Validateur}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Créneaux motivation</CardDescription>
-            <CardTitle className="text-2xl">{roleSummary.Motivation}</CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <CalendarClock className="h-4 w-4" />
+              Créneaux affectés
+            </CardDescription>
+            <CardTitle className="text-3xl">{assignedSlots.length}</CardTitle>
           </CardHeader>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Mes créneaux affectés</CardTitle>
-          <CardDescription>Chaque créneau rappelle le ou les rôles que vous y tenez.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Créneau</TableHead>
-                <TableHead>Début</TableHead>
-                <TableHead>Rôles</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assignedSlots.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground">
-                    Aucun créneau ne vous est encore affecté.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                assignedSlots.map((slot) => (
-                  <TableRow key={slot.id}>
-                    <TableCell className="font-medium">{slot.label}</TableCell>
-                    <TableCell>{slot.start_at ? new Date(slot.start_at).toLocaleString("fr-FR") : "-"}</TableCell>
-                    <TableCell className="flex flex-wrap gap-2">
-                      {getSlotRoles(slot, currentAdminId).map((role) => (
-                        <Badge key={role} variant="outline">
-                          {role}
-                        </Badge>
-                      ))}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle>Mes candidats</CardTitle>
-              <CardDescription>Vous ne voyez ici que les candidats rattachés à vos créneaux.</CardDescription>
+              <CardTitle>File de candidats</CardTitle>
+              <CardDescription>La liste ne contient que les candidats affectés à vos créneaux.</CardDescription>
             </div>
             <PageSizeSelector
               value={interviews.pageSize}

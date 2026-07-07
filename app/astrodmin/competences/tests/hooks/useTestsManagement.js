@@ -70,6 +70,7 @@ export const useTestsManagement = (router) => {
   const [selectedCandidatesForGroup, setSelectedCandidatesForGroup] = useState([])
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
   const [availableCandidates, setAvailableCandidates] = useState([])
+  const [availableCandidatesTotal, setAvailableCandidatesTotal] = useState(0)
   const [assignedCandidateIds, setAssignedCandidateIds] = useState([])
   const [candidateToGroupMap, setCandidateToGroupMap] = useState({})
 
@@ -142,8 +143,12 @@ export const useTestsManagement = (router) => {
     })
   }, [groupFormationFilter])
 
-  const fetchAvailableCandidates = useCallback(async () => {
-    await fetchAvailableCandidatesData({ setAvailableCandidates })
+  const fetchAvailableCandidates = useCallback(async (filters = {}) => {
+    await fetchAvailableCandidatesData({
+      ...filters,
+      setAvailableCandidates,
+      setAvailableCandidatesTotal,
+    })
   }, [])
 
   useEffect(() => {
@@ -158,7 +163,6 @@ export const useTestsManagement = (router) => {
     fetchResults()
     fetchStatistics()
     fetchTestGroups()
-    fetchAvailableCandidates()
   }, [router, fetchTests, fetchResults, fetchStatistics, fetchTestGroups, fetchAvailableCandidates])
 
   useEffect(() => {
@@ -318,6 +322,7 @@ export const useTestsManagement = (router) => {
     selectedCandidatesForGroup, setSelectedCandidatesForGroup,
     showCreateGroupDialog, setShowCreateGroupDialog,
     availableCandidates, setAvailableCandidates,
+    availableCandidatesTotal, setAvailableCandidatesTotal,
     assignedCandidateIds, setAssignedCandidateIds,
     candidateToGroupMap, setCandidateToGroupMap,
     testsPage, setTestsPage,
@@ -360,6 +365,7 @@ export const useTestsManagement = (router) => {
     fetchResults,
     fetchStatistics,
     fetchAllViolations,
+    fetchAvailableCandidates,
     handleCreateTest: testHandlers.handleCreateTest,
     handleEditTest: testHandlers.handleEditTest,
     handleDeleteTestClick,

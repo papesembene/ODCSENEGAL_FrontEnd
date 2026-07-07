@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { AntiCheatService } from "../antiCheat"
+import { fetchJsonWithTimeout, fetchWithTimeout } from "@/app/utils/fetchWithTimeout"
 import {
   API_BASE_URL,
   buildResultPayload,
@@ -139,8 +140,10 @@ export default function useTestCandidateSession({ testId }) {
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/public`)
-      const result = await response.json()
+      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testId}/public`, {
+        timeout: 15000,
+        retries: 1,
+      })
 
       if (result.success && result.data) {
         applyLoadedTest(result.data)
@@ -169,8 +172,10 @@ export default function useTestCandidateSession({ testId }) {
     setLoadingFullTest(true)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}`)
-      const result = await response.json()
+      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testId}`, {
+        timeout: 20000,
+        retries: 1,
+      })
 
       if (!result.success || !result.data) {
         throw new Error(result.error || "Test non trouvé")
@@ -211,18 +216,18 @@ export default function useTestCandidateSession({ testId }) {
       setLoading(true)
 
       try {
-        const verifyResponse = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/verify-access`, {
+        const verifyResult = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testId}/verify-access`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          timeout: 15000,
+          retries: 1,
           body: JSON.stringify({
             email: cleanedEmail,
             phone: rawPhone,
           }),
         })
 
-        const verifyResult = await verifyResponse.json()
-
-        if (!verifyResponse.ok || !verifyResult.success || !verifyResult.authorized) {
+        if (!verifyResult.success || !verifyResult.authorized) {
           const error = verifyResult.error || "❌ Accès non autorisé"
           setAuthError(error)
           if (!silent) toast.error(error)
@@ -314,20 +319,22 @@ export default function useTestCandidateSession({ testId }) {
     async (finalScore) => {
       try {
         const resultData = buildResultPayload({ testData, authData, answers, finalScore })
-        const response = await fetch(`${API_BASE_URL}/api/admin/tests/results`, {
+        const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/results`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          timeout: 20000,
+          retries: 1,
           body: JSON.stringify(resultData),
         })
-
-        const result = await response.json()
 
         if (!result.success) {
           throw new Error(result.error || "Erreur lors de l'enregistrement des résultats")
         }
 
-        await fetch(`${API_BASE_URL}/api/admin/tests/${testData.id}/update-status`, {
+        await fetchWithTimeout(`${API_BASE_URL}/api/admin/tests/${testData.id}/update-status`, {
           method: "POST",
+          timeout: 10000,
+          retries: 0,
         })
       } catch (error) {
         console.error("Erreur lors de l'envoi des résultats:", error)

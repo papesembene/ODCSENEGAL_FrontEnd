@@ -140,10 +140,20 @@ export const useAdminApi = () => {
   }), [makeRequest])
 
   const juryMembers = useMemo(() => ({
+    getAll: async () => makeRequest("/api/admin/interview-members"),
     create: async (payload) =>
       makeRequest("/api/admin/interview-members", {
         method: "POST",
         body: JSON.stringify(payload),
+      }),
+    update: async (id, payload) =>
+      makeRequest(`/api/admin/interview-members/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    remove: async (id) =>
+      makeRequest(`/api/admin/interview-members/${id}`, {
+        method: "DELETE",
       }),
   }), [makeRequest])
 

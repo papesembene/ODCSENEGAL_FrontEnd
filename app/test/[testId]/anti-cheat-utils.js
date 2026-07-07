@@ -1,5 +1,7 @@
 "use client"
 
+import { fetchWithTimeout } from "@/app/utils/fetchWithTimeout"
+
 export function createSessionId() {
   return `${Date.now()}_${Math.random()}`
 }
@@ -73,9 +75,11 @@ export async function sendViolationToBackend({ candidateEmail, elapsedTime, mess
         ? "http://localhost:5000"
         : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
-    const response = await fetch(`${apiBaseUrl}/api/admin/tests/${testId}/log-violation`, {
+    const response = await fetchWithTimeout(`${apiBaseUrl}/api/admin/tests/${testId}/log-violation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      timeout: 5000,
+      retries: 0,
       body: JSON.stringify(buildViolationPayload({ candidateEmail, elapsedTime, message, testId, type })),
     })
 

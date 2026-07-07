@@ -283,26 +283,26 @@ export default function CompetencesInterviewEvaluationDialog({
   const decisionSummary = useMemo(() => {
     if (!isEvaluationComplete) {
       return {
-        label: "Fiche incomplète",
-        description: "La décision finale reste provisoire tant que les 3 étapes ne sont pas renseignées.",
+        label: "À compléter",
+        description: "Toutes les sections doivent être renseignées avant la décision finale.",
         tone: "text-amber-600",
       }
     }
 
-    if (form.interview_progress_status !== "passe") {
+    if (form.final_status === "en_attente") {
       return {
-        label: "Entretien non finalisé",
-        description: "La fiche est complète, mais le statut entretien doit passer à 'Passé' pour clôturer proprement.",
+        label: "Décision à choisir",
+        description: "La fiche est complète. Choisissez Retenu, Liste d'attente ou Rejeté.",
         tone: "text-blue-600",
       }
     }
 
     return {
-      label: "Prête à décision",
-      description: "La fiche est complète et l'entretien est marqué comme passé.",
+      label: "Décision enregistrée",
+      description: "La fiche est complète et la décision finale est renseignée.",
       tone: "text-green-600",
     }
-  }, [form.interview_progress_status, isEvaluationComplete])
+  }, [form.final_status, isEvaluationComplete])
 
   if (!evaluation) {
     return null
@@ -406,20 +406,16 @@ export default function CompetencesInterviewEvaluationDialog({
           <div className="grid gap-6 lg:grid-cols-2">
             {canManagePlanning ? (
               <div className="space-y-4 rounded-lg border p-4">
-                <h3 className="font-semibold">Suivi administratif</h3>
+                <h3 className="font-semibold">État de la fiche</h3>
 
-                <div className="rounded-lg border p-3 text-sm">
-                  <p className="text-muted-foreground">Lecture rapide</p>
-                  <p className={`mt-1 font-medium ${decisionSummary.tone}`}>{decisionSummary.label}</p>
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  <p className={`font-medium ${decisionSummary.tone}`}>{decisionSummary.label}</p>
                   <p className="mt-1 text-muted-foreground">{decisionSummary.description}</p>
                 </div>
 
                 <div className="rounded-lg border p-3 text-sm">
                   <p>
                     Créneau: <span className="font-medium">{slots.find((slot) => slot.id === evaluation.slot_id)?.label || "Non attribué"}</span>
-                  </p>
-                  <p>
-                    Avancement: <span className="font-medium">{getOptionLabel(INTERVIEW_PROGRESS_OPTIONS, form.interview_progress_status)}</span>
                   </p>
                 </div>
 

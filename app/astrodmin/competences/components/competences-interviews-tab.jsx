@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CalendarClock, ClipboardCheck, Plus, RefreshCw, Search, Users } from "lucide-react"
+import { CalendarClock, ClipboardCheck, ListChecks, Plus, RefreshCw, Search, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -61,10 +61,31 @@ function SummaryStatCard({ label, value, description, className = "" }) {
   )
 }
 
+function WorkflowStep({ icon: Icon, title, description, value, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+        active ? "border-orange-300 bg-orange-50 shadow-sm" : "bg-white hover:border-orange-200"
+      } dark:bg-white/5`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
+          <Icon className="h-5 w-5" />
+        </div>
+        <Badge variant={active ? "default" : "outline"}>{value}</Badge>
+      </div>
+      <h3 className="mt-4 font-semibold">{title}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+    </button>
+  )
+}
+
 export default function CompetencesInterviewsTab() {
   const interviews = useCompetencesInterviews()
   const [selectedEvaluationId, setSelectedEvaluationId] = useState("")
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState("campaigns")
 
   const slotOccupancy = interviews.slotOccupancy
 
@@ -128,6 +149,36 @@ export default function CompetencesInterviewsTab() {
       description: "Fiches complètes avec entretien passé.",
     },
   ]
+  const workflowSteps = [
+    {
+      tab: "campaigns",
+      icon: ClipboardCheck,
+      title: "1. Campagne",
+      description: "Créer ou choisir le référentiel à traiter.",
+      value: interviews.campaigns.length,
+    },
+    {
+      tab: "campaigns",
+      icon: ListChecks,
+      title: "2. Critères",
+      description: "Définir les champs filtre, validation et motivation.",
+      value: `${interviews.selectedCampaign?.evaluation_count || 0} fiche(s)`,
+    },
+    {
+      tab: "slots",
+      icon: CalendarClock,
+      title: "3. Créneaux",
+      description: "Planifier les vagues et affecter les jurys.",
+      value: interviews.campaignSlots.length,
+    },
+    {
+      tab: "evaluations",
+      icon: Users,
+      title: "4. Fiches",
+      description: "Générer, suivre et finaliser les décisions.",
+      value: interviews.pagination.total,
+    },
+  ]
 
   if (interviews.loading) {
     return (
@@ -139,12 +190,42 @@ export default function CompetencesInterviewsTab() {
 
   return (
     <div className="space-y-6">
+      <section className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-700">Module entretiens</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">Piloter les entretiens sans surcharge</h2>
+            <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
+              Suivez le parcours dans l&apos;ordre: campagne, critères, créneaux, puis fiches. Chaque écran garde une action principale.
+            </p>
+          </div>
+          <Button variant="outline" onClick={interviews.fetchBootstrap}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualiser
+          </Button>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {workflowSteps.map((step) => (
+            <WorkflowStep
+              key={`${step.tab}-${step.title}`}
+              icon={step.icon}
+              title={step.title}
+              description={step.description}
+              value={step.value}
+              active={activeTab === step.tab}
+              onClick={() => setActiveTab(step.tab)}
+            />
+          ))}
+        </div>
+      </section>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="flex h-auto flex-wrap justify-start gap-2 rounded-lg bg-transparent p-0">
+        <TabsList className="hidden">
           <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
-          <TabsTrigger value="campaigns">Campagnes</TabsTrigger>
-          <TabsTrigger value="slots">Créneaux</TabsTrigger>
-          <TabsTrigger value="evaluations">Évaluations</TabsTrigger>
+          <TabsTrigger value="campaigns">Campagnes et critères</TabsTrigger>
+          <TabsTrigger value="slots">Créneaux et jurys</TabsTrigger>
+          <TabsTrigger value="evaluations">Fiches et décisions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -191,9 +272,9 @@ export default function CompetencesInterviewsTab() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Piloter la campagne</CardTitle>
+              <CardTitle>Reprendre rapidement</CardTitle>
               <CardDescription>
-                Choisissez une campagne active pour accéder à ses critères, créneaux et fiches d&apos;entretien.
+                Sélectionnez la campagne puis passez directement à l&apos;étape utile.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -230,14 +311,15 @@ export default function CompetencesInterviewsTab() {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={interviews.fetchBootstrap}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Actualiser
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Button variant="outline" onClick={() => setActiveTab("campaigns")}>
+                  Définir les critères
                 </Button>
-                <Button onClick={interviews.handleSeedEvaluations} disabled={interviews.submitting || !interviews.selectedCampaign}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Planifier les candidats
+                <Button variant="outline" onClick={() => setActiveTab("slots")}>
+                  Gérer les créneaux
+                </Button>
+                <Button onClick={() => setActiveTab("evaluations")}>
+                  Voir les fiches
                 </Button>
               </div>
             </CardContent>
@@ -245,12 +327,12 @@ export default function CompetencesInterviewsTab() {
         </TabsContent>
 
         <TabsContent value="campaigns" className="space-y-6">
-          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid gap-6 xl:grid-cols-[1fr_0.8fr]">
             <Card>
               <CardHeader>
-                <CardTitle>Créer une campagne d&apos;entretiens</CardTitle>
+                <CardTitle>Créer une campagne</CardTitle>
                 <CardDescription>
-                  Une campagne définit un référentiel, ses critères et ses créneaux de sélection.
+                  Une campagne correspond à un référentiel et à une vague d&apos;entretiens.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -302,11 +384,11 @@ export default function CompetencesInterviewsTab() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-orange-200 bg-orange-50/60">
               <CardHeader>
-                <CardTitle>Campagne active</CardTitle>
+                <CardTitle>Campagne de travail</CardTitle>
                 <CardDescription>
-                  Sélectionnez la campagne sur laquelle vous voulez travailler.
+                  Tout ce que vous faites ensuite concerne cette campagne.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -457,12 +539,20 @@ export default function CompetencesInterviewsTab() {
         <TabsContent value="evaluations" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Viviers d&apos;entretien</CardTitle>
-              <CardDescription>
-                Suivi simple des décisions finales et des fiches encore à compléter.
-              </CardDescription>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle>Fiches et décisions</CardTitle>
+                  <CardDescription>
+                    Générez les fiches puis suivez uniquement ce qui reste à décider.
+                  </CardDescription>
+                </div>
+                <Button onClick={interviews.handleSeedEvaluations} disabled={interviews.submitting || !interviews.selectedCampaign}>
+                  <Users className="mr-2 h-4 w-4" />
+                  Planifier automatiquement
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {decisionStats.map((stat) => (
                   <SummaryStatCard
@@ -474,22 +564,26 @@ export default function CompetencesInterviewsTab() {
                 ))}
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="flex flex-wrap gap-2 rounded-xl border bg-muted/30 p-3 text-sm text-muted-foreground">
                 {progressStats.map((stat) => (
-                  <SummaryStatCard
-                    key={stat.label}
-                    label={stat.label}
-                    value={stat.value}
-                    description={stat.description}
-                    className="bg-muted/30"
-                  />
+                  <span key={stat.label} className="rounded-full bg-white px-3 py-1">
+                    {stat.label}: <strong className="text-foreground">{stat.value}</strong>
+                  </span>
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <Label>Statut</Label>
+              <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_220px_220px_auto]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={interviews.searchTerm}
+                    onChange={(event) => interviews.setSearchTerm(event.target.value)}
+                    className="pl-9"
+                    placeholder="Nom, email ou téléphone"
+                  />
+                </div>
                 <Select value={interviews.statusFilter} onValueChange={interviews.setStatusFilter}>
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -502,17 +596,17 @@ export default function CompetencesInterviewsTab() {
                   </SelectContent>
                 </Select>
                 <Select value={interviews.completionFilter} onValueChange={interviews.setCompletionFilter}>
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Toutes les fiches</SelectItem>
-                    <SelectItem value="complete">Fiches complètes</SelectItem>
-                    <SelectItem value="incomplete">Fiches incomplètes</SelectItem>
+                    <SelectItem value="complete">Complètes</SelectItem>
+                    <SelectItem value="incomplete">Incomplètes</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={interviews.progressFilter} onValueChange={interviews.setProgressFilter}>
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -520,35 +614,6 @@ export default function CompetencesInterviewsTab() {
                     {Object.entries(INTERVIEW_PROGRESS_LABELS).map(([value, label]) => (
                       <SelectItem key={value} value={value}>
                         {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button onClick={interviews.handleSeedEvaluations} disabled={interviews.submitting || !interviews.selectedCampaign}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Planifier automatiquement
-                </Button>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-[minmax(240px,1fr)_240px_auto]">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={interviews.searchTerm}
-                    onChange={(event) => interviews.setSearchTerm(event.target.value)}
-                    className="pl-9"
-                    placeholder="Rechercher par nom, email ou téléphone"
-                  />
-                </div>
-                <Select value={interviews.formationFilter} onValueChange={interviews.setFormationFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les référentiels</SelectItem>
-                    {FORMATION_OPTIONS.map((formation) => (
-                      <SelectItem key={formation.value} value={formation.value}>
-                        {formation.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

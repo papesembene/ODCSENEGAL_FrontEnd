@@ -192,9 +192,11 @@ export default function TestsManagementPage() {
         newGroup={m.newGroup} setNewGroup={m.setNewGroup}
         testsData={m.testsData}
         availableCandidates={m.availableCandidates}
+        availableCandidatesTotal={m.availableCandidatesTotal}
         assignedCandidateIds={m.assignedCandidateIds}
         candidateToGroupMap={m.candidateToGroupMap}
         selectedCandidatesForGroup={m.selectedCandidatesForGroup}
+        fetchAvailableCandidates={m.fetchAvailableCandidates}
         handleSelectCandidateForGroup={m.handleSelectCandidateForGroup}
         handleCreateGroup={m.handleCreateGroup}
         setSelectedCandidatesForGroup={m.setSelectedCandidatesForGroup}
