@@ -14,6 +14,7 @@ import { DASHBOARD_COLORS } from "./dashboard-config"
 import { getGenderLabel, getStatusColor, getStatusLabel } from "./dashboard-utils"
 import CompetencesAutoGroupDialog from "./components/competences-auto-group-dialog"
 import CompetencesCandidateDetailsModal from "./components/competences-candidate-details-modal"
+import CompetencesCampaignsTab from "./components/competences-campaigns-tab"
 import CompetencesCandidatesTab from "./components/competences-candidates-tab"
 import CompetencesFormationCandidatesDialog from "./components/competences-formation-candidates-dialog"
 import CompetencesFormationsTab from "./components/competences-formations-tab"
@@ -83,6 +84,7 @@ export default function CompetencesAdminDashboard() {
             <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
             <TabsTrigger value="candidates">Candidats</TabsTrigger>
             <TabsTrigger value="formations">Formations</TabsTrigger>
+            <TabsTrigger value="campaigns">Campagnes</TabsTrigger>
             <TabsTrigger value="statistics">Statistiques</TabsTrigger>
           </TabsList>
 
@@ -128,6 +130,10 @@ export default function CompetencesAdminDashboard() {
 
           <TabsContent value="formations" className="space-y-4">
             <CompetencesFormationsTab formationData={dashboard.formationData} handleManageCandidates={dashboard.handleManageCandidates} />
+          </TabsContent>
+
+          <TabsContent value="campaigns" className="space-y-4">
+            <CompetencesCampaignsTab />
           </TabsContent>
 
           <TabsContent value="statistics" className="space-y-4">

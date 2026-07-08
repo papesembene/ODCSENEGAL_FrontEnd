@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { CONTENT_TYPES } from "./portal-content-config"
+import { getPublicMediaUrl } from "@/lib/public-api"
+import { HOME_LINK_OPTIONS } from "./portal-content-config"
 
 export default function PortalContentDialog({
   open,
@@ -28,119 +29,111 @@ export default function PortalContentDialog({
   editingItem,
   formData,
   saving,
+  uploadingImage,
   onFieldChange,
+  onImageUpload,
   onSubmit,
 }) {
+  const isCandidatureSlide = formData.slotKey === "candidature" || editingItem?.slotKey === "candidature"
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingItem ? "Modifier le contenu" : "Ajouter un contenu"}</DialogTitle>
+          <DialogTitle>Modifier le slide d'accueil</DialogTitle>
           <DialogDescription>
-            Un contenu publié devient visible automatiquement sur le portail public.
+            Changez le texte, l'image et le bouton affichés sur la page d'accueil.
           </DialogDescription>
         </DialogHeader>
 
         <form className="space-y-5" onSubmit={onSubmit}>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select value={formData.type} onValueChange={(value) => onFieldChange("type", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONTENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Statut</Label>
-              <Select value={formData.status} onValueChange={(value) => onFieldChange("status", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Brouillon</SelectItem>
-                  <SelectItem value="published">Publié</SelectItem>
-                  <SelectItem value="archived">Archivé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Priorité</Label>
-              <Input
-                type="number"
-                value={formData.priority}
-                onChange={(event) => onFieldChange("priority", event.target.value)}
-              />
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <Label>Titre</Label>
+            <Label>Titre du slide</Label>
             <Input value={formData.title} onChange={(event) => onFieldChange("title", event.target.value)} />
           </div>
 
           <div className="space-y-2">
-            <Label>Résumé court</Label>
+            <Label>Texte affiché sous le titre</Label>
             <Textarea
               value={formData.summary}
               onChange={(event) => onFieldChange("summary", event.target.value)}
-              placeholder="Texte court visible dans le slider ou le bandeau nouveauté"
+              placeholder="Exemple : Du 03 au 17 novembre 2025..."
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Contenu détaillé</Label>
-            <Textarea
-              className="min-h-32"
-              value={formData.body}
-              onChange={(event) => onFieldChange("body", event.target.value)}
-            />
+          <div className="grid gap-4 md:grid-cols-[1fr_220px]">
+            <div className="space-y-3">
+              <FieldInput
+                label="Image"
+                value={formData.imageUrl}
+                placeholder="/odc1Accueil.jpg"
+                onChange={(value) => onFieldChange("imageUrl", value)}
+              />
+              <div className="space-y-2">
+                <Label>Changer l'image</Label>
+                <Input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                  disabled={uploadingImage}
+                  onChange={(event) => onImageUpload(event.target.files?.[0])}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {uploadingImage ? "Upload en cours..." : "Formats acceptés : JPG, PNG, WEBP, GIF."}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Aperçu</Label>
+              <div className="overflow-hidden rounded-lg border bg-muted">
+                {formData.imageUrl ? (
+                  <img src={getPublicMediaUrl(formData.imageUrl)} alt="Aperçu du slide" className="h-40 w-full object-cover" />
+                ) : (
+                  <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+                    Aucune image
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <FieldInput
-              label="Image"
-              value={formData.imageUrl}
-              placeholder="/odc1Accueil.jpg"
-              onChange={(value) => onFieldChange("imageUrl", value)}
-            />
-            <FieldInput
-              label="Catégorie"
-              value={formData.category}
-              placeholder="Formation, Événement, Opportunité..."
-              onChange={(value) => onFieldChange("category", value)}
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className={`grid gap-4 ${isCandidatureSlide ? "" : "md:grid-cols-2"}`}>
             <FieldInput
               label="Texte du bouton"
               value={formData.linkLabel}
-              placeholder="Postuler, En savoir plus..."
+              placeholder="Exemple : Postuler"
               onChange={(value) => onFieldChange("linkLabel", value)}
             />
-            <FieldInput
-              label="Lien du bouton"
-              value={formData.linkUrl}
-              placeholder="/odc/candidatures"
-              onChange={(value) => onFieldChange("linkUrl", value)}
-            />
+            {isCandidatureSlide ? (
+              <div className="rounded-lg border bg-orange-50 p-3 text-sm text-orange-900">
+                La destination du bouton est automatique: elle dépend de la campagne de candidature définie par
+                l'admin compétences ou le super admin.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Destination du bouton</Label>
+                <Select value={formData.linkUrl} onValueChange={(value) => onFieldChange("linkUrl", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir une page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HOME_LINK_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <FieldInput
-              label="Début d'affichage"
+              label="Afficher à partir du"
               type="datetime-local"
               value={formData.startsAt}
               onChange={(value) => onFieldChange("startsAt", value)}
             />
             <FieldInput
-              label="Fin d'affichage"
+              label="Afficher jusqu'au"
               type="datetime-local"
               value={formData.endsAt}
               onChange={(value) => onFieldChange("endsAt", value)}
@@ -149,9 +142,9 @@ export default function PortalContentDialog({
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <Label>Mettre en avant</Label>
+              <Label>Mettre ce slide en premier</Label>
               <p className="text-sm text-muted-foreground">
-                Le contenu prioritaire remonte en premier.
+                Utile lorsqu'une candidature ou annonce importante est en cours.
               </p>
             </div>
             <Switch
@@ -165,8 +158,8 @@ export default function PortalContentDialog({
               Annuler
             </Button>
             <Button type="submit" disabled={saving} className="bg-orange-500 text-black hover:bg-orange-600">
-              {saving ? "Enregistrement..." : "Enregistrer"}
-            </Button>
+                {saving ? "Enregistrement..." : "Enregistrer le slide"}
+              </Button>
           </DialogFooter>
         </form>
       </DialogContent>

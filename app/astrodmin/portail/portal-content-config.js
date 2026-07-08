@@ -1,5 +1,14 @@
 import { Eye, Megaphone, Newspaper } from "lucide-react"
 
+export const HOME_LINK_OPTIONS = [
+  { value: "/candidatures/fermees", label: "Page candidature fermée" },
+  { value: "/odc/candidatures", label: "Formulaire candidature formation" },
+  { value: "/competences", label: "Page formations" },
+  { value: "/startups", label: "Page startups" },
+  { value: "/startups/evenements", label: "Page événements" },
+  { value: "/actualites", label: "Page actualités" },
+]
+
 export const CONTENT_TYPES = [
   { value: "banner", label: "Bannière", icon: Megaphone },
   { value: "news", label: "Nouveauté", icon: Newspaper },
@@ -14,6 +23,7 @@ export const STATUS_LABELS = {
 
 export const EMPTY_PORTAL_CONTENT_FORM = {
   type: "banner",
+  slotKey: "",
   title: "",
   summary: "",
   body: "",
@@ -49,6 +59,7 @@ export function normalizePortalContentForm(content) {
   }
   return {
     type: content.type || "banner",
+    slotKey: content.slotKey || "",
     title: content.title || "",
     summary: content.summary || "",
     body: content.body || "",

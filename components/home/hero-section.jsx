@@ -7,37 +7,10 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
-import { getPublicMediaUrl, getPublishedPortalContent } from "@/lib/public-api"
+import { getCandidatureStatus, getPublicMediaUrl, getPublishedPortalContent } from "@/lib/public-api"
+import { applyCandidatureStatusToSlides, buildHomeSlides } from "@/lib/home-content-defaults"
 
-const SLIDES = [
-  {
-    title: "Appel à Candidature – Promotion 2026 | École du Code Sonatel Academy",
-    description: "Du 03 au 17 novembre 2025, saisissez l’opportunité de vous former gratuitement aux métiers du numérique",
-    image: "/odcCadidature.jpg?height=600&width=1200",
-    cta: {
-      text: "Postuler",
-      link: "/candidatures/fermees",
-    },
-  },
-  {
-    title: "Développez vos compétences numériques",
-    description: "Des formations gratuites et de qualité pour booster votre employabilité dans les métiers du numérique.",
-    image: "/odc1Accueil.jpg?height=600&width=1200",
-    cta: {
-      text: "Découvrir nos formations",
-      link: "/competences",
-    },
-  },
-  {
-    title: "Faites décoller votre startup",
-    description: "Un accompagnement sur mesure pour transformer votre idée en entreprise viable et scalable.",
-    image: "/odc2Accueil.jpg?height=600&width=1200",
-    cta: {
-      text: "Explorer nos programmes",
-      link: "/startups",
-    },
-  },
-]
+const SLIDES = buildHomeSlides().map(mapPortalContentToSlide)
 
 function mapPortalContentToSlide(content) {
   return {
@@ -58,10 +31,17 @@ const HeroSection = () => {
   useEffect(() => {
     let isActive = true
 
-    getPublishedPortalContent({ type: "banner", placement: "home" })
-      .then((contents) => {
-        if (isActive && contents.length > 0) {
-          setSlides(contents.map(mapPortalContentToSlide))
+    Promise.all([
+      getPublishedPortalContent({ type: "banner", placement: "home" }),
+      getCandidatureStatus(),
+    ])
+      .then(([contents, candidatureStatus]) => {
+        if (isActive) {
+          const homeSlides = applyCandidatureStatusToSlides(
+            buildHomeSlides(contents),
+            candidatureStatus,
+          )
+          setSlides(homeSlides.map(mapPortalContentToSlide))
           setCurrentSlide(0)
         }
       })

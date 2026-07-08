@@ -27,14 +27,17 @@ export const useAdminApi = () => {
 
     let response
 
+    const headers = new Headers(options.headers || {})
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData
+    if (!isFormData && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json")
+    }
+    headers.set("Authorization", `Bearer ${token}`)
+
     try {
       response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          ...options.headers,
-        },
+        headers,
         credentials: 'include',
       })
     } catch (error) {
@@ -67,6 +70,17 @@ export const useAdminApi = () => {
     getAll: async () => makeRequest("/api/admin/candidatures"),
     update: async (id, payload) =>
       makeRequest(`/api/admin/candidatures/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    getCampaigns: async () => makeRequest("/api/admin/candidature-campaigns"),
+    createCampaign: async (payload) =>
+      makeRequest("/api/admin/candidature-campaigns", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    updateCampaign: async (id, payload) =>
+      makeRequest(`/api/admin/candidature-campaigns/${id}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
@@ -182,6 +196,40 @@ export const useAdminApi = () => {
       makeRequest(`/api/admin/portal-content/${id}`, {
         method: "DELETE",
       }),
+    uploadImage: async (file) => {
+      const formData = new FormData()
+      formData.append("image", file)
+      return makeRequest("/api/admin/portal-content/media", {
+        method: "POST",
+        body: formData,
+      })
+    },
+  }), [makeRequest])
+
+  const adminProfiles = useMemo(() => ({
+    getAll: async (type) => {
+      const query = type && type !== "all" ? `?type=${encodeURIComponent(type)}` : ""
+      return makeRequest(`/api/admin/admin-profiles${query}`)
+    },
+    create: async (payload) =>
+      makeRequest("/api/admin/admin-profiles", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    update: async (id, payload) =>
+      makeRequest(`/api/admin/admin-profiles/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    resetPassword: async (id) =>
+      makeRequest(`/api/admin/admin-profiles/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ reset_password: true }),
+      }),
+    remove: async (id) =>
+      makeRequest(`/api/admin/admin-profiles/${id}`, {
+        method: "DELETE",
+      }),
   }), [makeRequest])
 
   return {
@@ -191,5 +239,6 @@ export const useAdminApi = () => {
     interviews,
     juryMembers,
     portalContent,
+    adminProfiles,
   }
 }

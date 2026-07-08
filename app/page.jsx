@@ -16,6 +16,7 @@ import {
   Rocket,
 } from "lucide-react"
 import HeroSection from "@/components/home/hero-section"
+import PortalAnnouncementsSection from "@/components/home/portal-announcements-section"
 import PortalNewsSection from "@/components/home/portal-news-section"
 import StatisticsSection from "@/components/home/statistics-section"
 import TestimonialsSection from "@/components/home/testimonials-section"
@@ -57,6 +58,7 @@ export default function Home() {
       </motion.div>
 
       <HeroSection />
+      <PortalAnnouncementsSection />
       <PortalNewsSection />
 
       <motion.section 

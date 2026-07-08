@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, Settings, ShieldCheck, Users } from "lucide-react"
+import { ArrowRight, Settings, ShieldCheck, UserCog, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,16 +10,43 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const parameterModules = [
   {
+    title: "Profils administrateurs",
+    description:
+      "Créez et gérez les accès internes : Community Manager, compétences, startups et super admin.",
+    noteTitle: "Gestion des accès internes",
+    noteDescription:
+      "Créez les comptes administrateurs, activez ou désactivez les accès, sans mélanger avec les membres du jury.",
+    href: "/astrodmin/parametres/profils-admin",
+    badge: "Super admin",
+    icon: UserCog,
+    allowedTypes: ["super_admin"],
+  },
+  {
     title: "Inscription des rôles jury",
     description:
       "Préparez l'affectation des trois rôles requis pour compléter un créneau d'entretien : filtre, validation et motivation.",
+    noteTitle: "Membres du jury",
+    noteDescription:
+      "Enregistrez uniquement les personnes qui interviennent dans les entretiens : filtreur, validateur ou jury motivation.",
     href: "/astrodmin/parametres/inscription-roles-jury",
     badge: "Disponible",
     icon: Users,
+    allowedTypes: ["competences", "super_admin"],
   },
 ]
 
 export default function ParametresPage() {
+  const [adminType, setAdminType] = useState("")
+
+  useEffect(() => {
+    setAdminType(localStorage.getItem("admin_type") || "")
+  }, [])
+
+  const visibleModules = useMemo(
+    () => parameterModules.filter((module) => module.allowedTypes.includes(adminType)),
+    [adminType],
+  )
+
   return (
     <div className="space-y-6">
       <section className="flex flex-col gap-3 rounded-2xl border bg-card p-6 shadow-sm">
@@ -36,7 +64,7 @@ export default function ParametresPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        {parameterModules.map((module) => {
+        {visibleModules.map((module) => {
           const Icon = module.icon
 
           return (
@@ -60,12 +88,9 @@ export default function ParametresPage() {
                 <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2 font-medium text-foreground">
                     <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                    Gestion initiale des membres du jury
+                    {module.noteTitle}
                   </div>
-                  <p className="mt-2">
-                    Cette section servira de point d&apos;entrée pour enregistrer les personnes pouvant occuper chaque
-                    rôle dans les entretiens.
-                  </p>
+                  <p className="mt-2">{module.noteDescription}</p>
                 </div>
 
                 <Button asChild className="w-full sm:w-auto">

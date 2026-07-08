@@ -13,6 +13,7 @@ import {
   Calendar, 
   FileText, 
   Settings,
+  Briefcase,
   Menu,
   X,
   Moon,
@@ -54,12 +55,23 @@ export default function AdminLayout({ children }) {
       setAdminEmail(email)
       setAdminScope(scope)
 
+      const isContentManager = type === "cm"
+      const defaultAdminRoute = isContentManager
+        ? "/astrodmin/portail"
+        : scope === "interview_member"
+          ? "/astrodmin/mes-entretiens"
+          : "/astrodmin/dashboard"
+
       // Si l'utilisateur n'est pas authentifié et n'est pas sur la page de connexion, rediriger
       if (!authenticated && pathname !== "/astrodmin") {
         router.push("/astrodmin")
       } else if (authenticated && pathname === "/astrodmin") {
         // Si l'utilisateur est authentifié et sur la page de connexion, rediriger vers le dashboard
-        router.push(scope === "interview_member" ? "/astrodmin/mes-entretiens" : "/astrodmin/dashboard")
+        router.push(defaultAdminRoute)
+      } else if (authenticated && isContentManager && !pathname.startsWith("/astrodmin/portail")) {
+        router.replace("/astrodmin/portail")
+      } else if (authenticated && !isContentManager && pathname.startsWith("/astrodmin/portail")) {
+        router.replace(defaultAdminRoute)
       } else if (authenticated && scope === "interview_member" && !pathname.startsWith("/astrodmin/mes-entretiens")) {
         router.replace("/astrodmin/mes-entretiens")
       } else if (authenticated && scope !== "interview_member" && pathname.startsWith("/astrodmin/mes-entretiens")) {
@@ -94,6 +106,7 @@ export default function AdminLayout({ children }) {
   }
 
   const isInterviewMember = adminScope === "interview_member"
+  const isContentManager = adminType === "cm"
 
   const menuItems = [
     {
@@ -101,7 +114,7 @@ export default function AdminLayout({ children }) {
       icon: LayoutDashboard,
       href: "/astrodmin/dashboard",
       color: "text-blue-500",
-      show: !isInterviewMember,
+      show: !isInterviewMember && !isContentManager,
     },
     {
       label: "Compétences",
@@ -124,12 +137,12 @@ export default function AdminLayout({ children }) {
       color: "text-teal-500",
       show: isInterviewMember,
     },
-    /*{
+    {
       label: "Startups",
       icon: Briefcase,
       href: "/astrodmin/startups",
       color: "text-purple-500",
-      show: adminType === "startups" || !adminType
+      show: !isInterviewMember && (adminType === "startups" || adminType === "super_admin" || !adminType)
     },
     /*{
       label: "Événements",
@@ -142,21 +155,21 @@ export default function AdminLayout({ children }) {
       icon: FileText,
       href: "/astrodmin/competences/tests",
       color: "text-indigo-500",
-      show: !isInterviewMember
+      show: !isInterviewMember && !isContentManager && (adminType === "competences" || adminType === "super_admin" || !adminType)
     },
     {
       label: "Portail",
       icon: Megaphone,
       href: "/astrodmin/portail",
       color: "text-orange-500",
-      show: !isInterviewMember && adminType === "super_admin",
+      show: !isInterviewMember && adminType === "cm",
     },
     {
       label: "Paramètres",
       icon: Settings,
       href: "/astrodmin/parametres",
       color: "text-slate-500",
-      show: !isInterviewMember,
+      show: !isInterviewMember && !isContentManager && (adminType === "competences" || adminType === "super_admin"),
     },
     /*{
       label: "Log Connexions",
@@ -182,7 +195,7 @@ export default function AdminLayout({ children }) {
               ODC Admin
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : "Dashboard"}
+              {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : adminType === "cm" ? "Community Manager" : "Dashboard"}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} aria-label="Basculer la taille du menu">
@@ -256,7 +269,7 @@ export default function AdminLayout({ children }) {
                   ODC Admin
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : "Dashboard"}
+                  {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : adminType === "cm" ? "Community Manager" : "Dashboard"}
                 </p>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
