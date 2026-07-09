@@ -36,6 +36,7 @@ export default function AdminLayout({ children }) {
   const [adminType, setAdminType] = useState(null)
   const [adminEmail, setAdminEmail] = useState(null)
   const [adminScope, setAdminScope] = useState(null)
+  const [adminInterviewRole, setAdminInterviewRole] = useState(null)
 
   useEffect(() => {
     setIsMounted(true)
@@ -49,13 +50,16 @@ export default function AdminLayout({ children }) {
       const email = localStorage.getItem("admin_email")
       const admin = JSON.parse(localStorage.getItem("admin_user") || "{}")
       const scope = admin?.profile_data?.admin_scope || null
+      const interviewRole = admin?.profile_data?.interview_role || null
       
       setIsAuthenticated(authenticated)
       setAdminType(type)
       setAdminEmail(email)
       setAdminScope(scope)
+      setAdminInterviewRole(interviewRole)
 
       const isContentManager = type === "cm"
+      const isValidatorInterviewMember = scope === "interview_member" && interviewRole === "validator"
       const defaultAdminRoute = isContentManager
         ? "/astrodmin/portail"
         : scope === "interview_member"
@@ -72,8 +76,27 @@ export default function AdminLayout({ children }) {
         router.replace("/astrodmin/portail")
       } else if (authenticated && !isContentManager && pathname.startsWith("/astrodmin/portail")) {
         router.replace(defaultAdminRoute)
-      } else if (authenticated && scope === "interview_member" && !pathname.startsWith("/astrodmin/mes-entretiens")) {
+      } else if (
+        authenticated
+        && scope === "interview_member"
+        && !pathname.startsWith("/astrodmin/mes-entretiens")
+        && !(isValidatorInterviewMember && pathname.startsWith("/astrodmin/entretiens/questions"))
+      ) {
         router.replace("/astrodmin/mes-entretiens")
+      } else if (
+        authenticated
+        && scope === "interview_member"
+        && !isValidatorInterviewMember
+        && pathname.startsWith("/astrodmin/entretiens/questions")
+      ) {
+        router.replace("/astrodmin/mes-entretiens")
+      } else if (
+        authenticated
+        && scope !== "interview_member"
+        && pathname.startsWith("/astrodmin/entretiens/questions")
+        && type !== "competences"
+      ) {
+        router.replace("/astrodmin/entretiens")
       } else if (authenticated && scope !== "interview_member" && pathname.startsWith("/astrodmin/mes-entretiens")) {
         router.replace("/astrodmin/entretiens")
       }
@@ -107,6 +130,7 @@ export default function AdminLayout({ children }) {
 
   const isInterviewMember = adminScope === "interview_member"
   const isContentManager = adminType === "cm"
+  const canManageInterviewQuestions = adminInterviewRole === "validator"
 
   const menuItems = [
     {
@@ -131,11 +155,25 @@ export default function AdminLayout({ children }) {
       show: !isInterviewMember && (adminType === "competences" || adminType === "super_admin" || !adminType)
     },
     {
+      label: "Questions entretien",
+      icon: FileText,
+      href: "/astrodmin/entretiens/questions",
+      color: "text-emerald-500",
+      show: !isInterviewMember && adminType === "competences"
+    },
+    {
       label: "Mes entretiens",
       icon: Calendar,
       href: "/astrodmin/mes-entretiens",
       color: "text-teal-500",
       show: isInterviewMember,
+    },
+    {
+      label: "Questions entretien",
+      icon: FileText,
+      href: "/astrodmin/entretiens/questions",
+      color: "text-emerald-500",
+      show: isInterviewMember && canManageInterviewQuestions,
     },
     {
       label: "Startups",

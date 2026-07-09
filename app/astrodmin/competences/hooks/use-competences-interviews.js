@@ -34,6 +34,8 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   const [completionFilter, setCompletionFilter] = useState("all")
   const [formationFilter, setFormationFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [planningMode, setPlanningMode] = useState("auto")
+  const [candidatesPerSlot, setCandidatesPerSlot] = useState(50)
   const deferredSearchTerm = useDeferredValue(searchTerm)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
@@ -54,7 +56,6 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     label: "",
     start_at: "",
     end_at: "",
-    capacity: 10,
   })
 
   const fetchBootstrap = useCallback(async () => {
@@ -214,7 +215,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     }
   }, [campaignForm, fetchBootstrap, interviews])
 
-  const handleUpdateCampaignScorecard = useCallback(async (scorecardConfig) => {
+	  const handleUpdateCampaignScorecard = useCallback(async (scorecardConfig) => {
     if (!selectedCampaign) {
       toast.error("Veuillez sélectionner une campagne")
       return
@@ -239,7 +240,34 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     } finally {
       setSubmitting(false)
     }
-  }, [fetchBootstrap, interviews, selectedCampaign])
+	  }, [fetchBootstrap, interviews, selectedCampaign])
+
+  const handleUpdateCampaignFilterQuestions = useCallback(async (campaignId, filterQuestions) => {
+    if (!campaignId) {
+      toast.error("Veuillez sélectionner une campagne")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const result = await interviews.updateCampaign(campaignId, {
+        filter_questions: filterQuestions,
+      })
+      if (!result.success) {
+        throw new Error(result.error || "Erreur lors de la mise à jour des questions")
+      }
+
+      toast.success("Questions destinées aux filtreurs enregistrées")
+      await fetchBootstrap()
+      return result.data
+    } catch (error) {
+      console.error(error)
+      toast.error(error.message || "Impossible d'enregistrer les questions")
+      throw error
+    } finally {
+      setSubmitting(false)
+    }
+  }, [fetchBootstrap, interviews])
 
   const handleCreateSlot = useCallback(async () => {
     if (!selectedCampaign) {
@@ -263,7 +291,6 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
         label: "",
         start_at: "",
         end_at: "",
-        capacity: 10,
       })
       await fetchBootstrap()
     } catch (error) {
@@ -274,20 +301,27 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     }
   }, [fetchBootstrap, interviews, selectedCampaign, slotForm])
 
-  const handleUpdateSlotAssignments = useCallback(async (slotId, payload) => {
+  const handleUpdateSlotAssignments = useCallback(async (slotIds, payload) => {
+    const ids = Array.isArray(slotIds) ? slotIds : [slotIds]
+    if (ids.length === 0) {
+      toast.error("Veuillez sélectionner au moins un créneau")
+      return
+    }
+
     try {
       setSubmitting(true)
-      const result = await interviews.updateSlot(slotId, payload)
-      if (!result.success) {
-        throw new Error(result.error || "Erreur lors de la mise à jour du créneau")
+      const results = await Promise.all(ids.map((slotId) => interviews.updateSlot(slotId, payload)))
+      const failedResult = results.find((result) => !result.success)
+      if (failedResult) {
+        throw new Error(failedResult.error || "Erreur lors de la mise à jour des créneaux")
       }
 
-      toast.success("Affectations du créneau mises à jour")
+      toast.success(ids.length > 1 ? "Affectations des créneaux mises à jour" : "Affectations du créneau mises à jour")
       await fetchBootstrap()
-      return result.data
+      return results.map((result) => result.data)
     } catch (error) {
       console.error(error)
-      toast.error(error.message || "Impossible de mettre à jour le créneau")
+      toast.error(error.message || "Impossible de mettre à jour les créneaux")
       throw error
     } finally {
       setSubmitting(false)
@@ -305,6 +339,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       const result = await interviews.seedEvaluations({
         campaign_id: selectedCampaign.id,
         formation: selectedCampaign.formation,
+        ...(planningMode === "manual" ? { candidates_per_slot: candidatesPerSlot } : {}),
       })
       if (!result.success) {
         throw new Error(result.error || "Erreur lors de la génération des fiches")
@@ -319,7 +354,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     } finally {
       setSubmitting(false)
     }
-  }, [fetchBootstrap, fetchEvaluations, interviews, selectedCampaign])
+  }, [candidatesPerSlot, fetchBootstrap, fetchEvaluations, interviews, planningMode, selectedCampaign])
 
   const handleUpdateEvaluation = useCallback(async (evaluationId, payload) => {
     try {
@@ -369,6 +404,10 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     setProgressFilter,
     completionFilter,
     setCompletionFilter,
+    planningMode,
+    setPlanningMode,
+    candidatesPerSlot,
+    setCandidatesPerSlot,
     campaignForm,
     setCampaignForm,
     slotForm,
@@ -376,9 +415,10 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     adminOptions,
     fetchBootstrap,
     fetchEvaluations,
-    handleCreateCampaign,
-    handleUpdateCampaignScorecard,
-    handleCreateSlot,
+	    handleCreateCampaign,
+	    handleUpdateCampaignScorecard,
+	    handleUpdateCampaignFilterQuestions,
+	    handleCreateSlot,
     handleUpdateSlotAssignments,
     handleSeedEvaluations,
     handleUpdateEvaluation,

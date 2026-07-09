@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 const SECTIONS = [
   { key: "filter", label: "Filtreur" },
@@ -21,6 +22,8 @@ const CRITERION_TYPES = [
   { value: "checkbox", label: "Case à cocher" },
   { value: "number", label: "Note" },
 ]
+
+const CANDIDATE_PREVIEW_COLUMNS = ["Nom", "Email", "Téléphone", "Score test", "Sexe"]
 
 function createEmptyScorecard() {
   const standardCriteria = {
@@ -78,6 +81,7 @@ function createEmptyScorecard() {
 
 function normalizeScorecard(scorecard) {
   const fallback = createEmptyScorecard()
+  const sourceSections = scorecard?.sections || fallback.sections
   return {
     source: scorecard?.source || fallback.source,
     source_label: scorecard?.source_label || fallback.source_label,
@@ -85,8 +89,8 @@ function normalizeScorecard(scorecard) {
       SECTIONS.map((section) => [
         section.key,
         {
-          title: scorecard?.sections?.[section.key]?.title || section.label,
-          criteria: (scorecard?.sections?.[section.key]?.criteria || []).map((criterion) => ({
+          title: sourceSections?.[section.key]?.title || section.label,
+          criteria: (sourceSections?.[section.key]?.criteria || []).map((criterion) => ({
             ...criterion,
             required: Boolean(criterion.required),
             options: [...(criterion.options || [])],
@@ -105,6 +109,16 @@ function createCriterion(sectionKey) {
     required: false,
     system: false,
   }
+}
+
+function getEditableCriteria(section) {
+  return (section?.criteria || [])
+    .map((criterion, index) => ({ criterion, index }))
+    .filter(({ criterion }) => !criterion.system && criterion.type !== "computed")
+}
+
+function getPreviewCriteria(section) {
+  return (section?.criteria || []).filter((criterion) => !criterion.system || criterion.type === "computed")
 }
 
 export default function CompetencesInterviewScorecardEditor({
@@ -179,9 +193,7 @@ export default function CompetencesInterviewScorecardEditor({
         ) : null}
         {SECTIONS.map((sectionDefinition) => {
           const section = draft.sections[sectionDefinition.key]
-          const editableCriteria = section.criteria
-            .map((criterion, index) => ({ criterion, index }))
-            .filter(({ criterion }) => !criterion.system && criterion.type !== "computed")
+          const editableCriteria = getEditableCriteria(section)
 
           return (
             <div key={sectionDefinition.key} className="space-y-4 rounded-lg border p-4">
@@ -323,6 +335,82 @@ export default function CompetencesInterviewScorecardEditor({
             </div>
           )
         })}
+
+        <div className="space-y-3 rounded-lg border p-4">
+          <div>
+            <h3 className="font-semibold">Aperçu de la fiche</h3>
+            <p className="text-sm text-muted-foreground">
+              Les colonnes ci-dessous seront utilisées pour les candidats de ce référentiel.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border">
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow>
+                  {CANDIDATE_PREVIEW_COLUMNS.map((column) => (
+                    <TableHead key={column} rowSpan={2} className="align-bottom">
+                      {column}
+                    </TableHead>
+                  ))}
+                  {SECTIONS.map((sectionDefinition) => {
+                    const criteria = getPreviewCriteria(draft.sections[sectionDefinition.key])
+                    return (
+                      <TableHead
+                        key={sectionDefinition.key}
+                        colSpan={Math.max(criteria.length, 1)}
+                        className="text-center"
+                      >
+                        {draft.sections[sectionDefinition.key]?.title || sectionDefinition.label}
+                      </TableHead>
+                    )
+                  })}
+                </TableRow>
+                <TableRow>
+                  {SECTIONS.flatMap((sectionDefinition) => {
+                    const criteria = getPreviewCriteria(draft.sections[sectionDefinition.key])
+                    if (criteria.length === 0) {
+                      return [
+                        <TableHead key={`${sectionDefinition.key}-empty`} className="text-center text-muted-foreground">
+                          Aucun critère
+                        </TableHead>,
+                      ]
+                    }
+                    return criteria.map((criterion) => (
+                      <TableHead key={`${sectionDefinition.key}-${criterion.key}`}>
+                        {criterion.label}
+                      </TableHead>
+                    ))
+                  })}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  {CANDIDATE_PREVIEW_COLUMNS.map((column) => (
+                    <TableCell key={column} className="text-muted-foreground">
+                      Exemple
+                    </TableCell>
+                  ))}
+                  {SECTIONS.flatMap((sectionDefinition) => {
+                    const criteria = getPreviewCriteria(draft.sections[sectionDefinition.key])
+                    if (criteria.length === 0) {
+                      return [
+                        <TableCell key={`${sectionDefinition.key}-empty`} className="text-center text-muted-foreground">
+                          -
+                        </TableCell>,
+                      ]
+                    }
+                    return criteria.map((criterion) => (
+                      <TableCell key={`${sectionDefinition.key}-${criterion.key}`} className="text-muted-foreground">
+                        {criterion.type === "checkbox" ? "Oui / Non" : criterion.type === "number" ? "Note" : "Texte"}
+                      </TableCell>
+                    ))
+                  })}
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
 
         <div className="flex justify-end">
           <Button onClick={() => onSave(draft)} disabled={submitting || locked}>
