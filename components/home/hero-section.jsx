@@ -6,10 +6,11 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
 import { getCandidatureStatus, getPublicMediaUrl, getPublishedPortalContent } from "@/lib/public-api"
 import { applyCandidatureStatusToSlides, buildHomeSlides } from "@/lib/home-content-defaults"
 
+const SLIDE_AUTOPLAY_DELAY = 10000
 const SLIDES = buildHomeSlides().map(mapPortalContentToSlide)
 
 function mapPortalContentToSlide(content) {
@@ -27,6 +28,7 @@ function mapPortalContentToSlide(content) {
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState(SLIDES)
+  const [isAutoplayPaused, setIsAutoplayPaused] = useState(false)
 
   useEffect(() => {
     let isActive = true
@@ -57,11 +59,15 @@ const HeroSection = () => {
   }, [])
 
   useEffect(() => {
+    if (isAutoplayPaused || slides.length <= 1) {
+      return undefined
+    }
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
-    }, 5000)
+    }, SLIDE_AUTOPLAY_DELAY)
     return () => clearInterval(interval)
-  }, [slides.length])
+  }, [isAutoplayPaused, slides.length])
 
   const goToSlide = (index) => {
     setCurrentSlide(index)
@@ -76,7 +82,13 @@ const HeroSection = () => {
   }
 
   return (
-    <section className="relative isolate h-[430px] overflow-hidden bg-black sm:h-[560px] lg:h-[640px]">
+    <section
+      className="relative isolate h-[430px] overflow-hidden bg-black sm:h-[560px] lg:h-[640px]"
+      onMouseEnter={() => setIsAutoplayPaused(true)}
+      onMouseLeave={() => setIsAutoplayPaused(false)}
+      onFocus={() => setIsAutoplayPaused(true)}
+      onBlur={() => setIsAutoplayPaused(false)}
+    >
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -147,6 +159,14 @@ const HeroSection = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsAutoplayPaused((value) => !value)}
+              className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-md transition hover:bg-white hover:text-black"
+              aria-label={isAutoplayPaused ? "Relancer le slider" : "Mettre le slider en pause"}
+            >
+              {isAutoplayPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            </button>
             <button
               type="button"
               onClick={goToPreviousSlide}
