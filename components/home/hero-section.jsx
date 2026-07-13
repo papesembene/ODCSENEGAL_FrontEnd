@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
 import { getCandidatureStatus, getPublicMediaUrl, getPublishedPortalContent } from "@/lib/public-api"
 import { applyCandidatureStatusToSlides, buildHomeSlides } from "@/lib/home-content-defaults"
 
@@ -159,14 +159,6 @@ const HeroSection = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsAutoplayPaused((value) => !value)}
-              className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-md transition hover:bg-white hover:text-black"
-              aria-label={isAutoplayPaused ? "Relancer le slider" : "Mettre le slider en pause"}
-            >
-              {isAutoplayPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-            </button>
             <button
               type="button"
               onClick={goToPreviousSlide}
