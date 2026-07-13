@@ -44,7 +44,7 @@ export default function AdminInterviewQuestionsPage() {
 
   const visibleCampaigns = useMemo(() => {
     if (currentAdmin.scope !== "interview_member") {
-      return interviews.campaigns
+      return []
     }
 
     const campaignIds = new Set(

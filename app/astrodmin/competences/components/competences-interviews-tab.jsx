@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { CalendarClock, ClipboardCheck, ListChecks, Plus, RefreshCw, Search, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -15,7 +15,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { PageSizeSelector, PaginationControls } from "@/components/ui/data-pagination"
 
 import CompetencesInterviewEvaluationDialog from "./competences-interview-evaluation-dialog"
-import CompetencesInterviewFilterQuestionsEditor from "./competences-interview-filter-questions-editor"
 import CompetencesInterviewScorecardEditor from "./competences-interview-scorecard-editor"
 import CompetencesInterviewSlotAssignmentCard from "./competences-interview-slot-assignment-card"
 import useCompetencesInterviews from "../hooks/use-competences-interviews"
@@ -147,14 +146,8 @@ export default function CompetencesInterviewsTab() {
   const interviews = useCompetencesInterviews()
   const [selectedEvaluationId, setSelectedEvaluationId] = useState("")
   const [activeTab, setActiveTab] = useState("campaigns")
-  const [adminType, setAdminType] = useState("")
-  const canManageQuestions = adminType === "competences"
 
   const slotOccupancy = interviews.slotOccupancy
-
-  useEffect(() => {
-    setAdminType(localStorage.getItem("admin_type") || "")
-  }, [])
 
   const selectedEvaluation = useMemo(
     () => interviews.evaluations.find((evaluation) => evaluation.id === selectedEvaluationId) || null,
@@ -238,24 +231,17 @@ export default function CompetencesInterviewsTab() {
       description: "Définir les champs filtre, validation et motivation.",
       value: `${interviews.selectedCampaign?.evaluation_count || 0} fiche(s)`,
     },
-    canManageQuestions ? {
-      tab: "questions",
-      icon: CalendarClock,
-      title: "3. Questions",
-      description: "Préparer les questions et réponses attendues.",
-      value: interviews.selectedCampaign?.filter_questions?.length || 0,
-    } : null,
     {
       tab: "slots",
       icon: CalendarClock,
-      title: canManageQuestions ? "4. Créneaux" : "3. Créneaux",
+      title: "3. Créneaux",
       description: "Planifier les vagues et affecter les jurys.",
       value: interviews.campaignSlots.length,
     },
     {
       tab: "evaluations",
       icon: Users,
-      title: canManageQuestions ? "5. Fiches" : "4. Fiches",
+      title: "4. Fiches",
       description: "Générer, suivre et finaliser les décisions.",
       value: interviews.pagination.total,
     },
@@ -305,7 +291,6 @@ export default function CompetencesInterviewsTab() {
         <TabsList className="hidden">
           <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
           <TabsTrigger value="campaigns">Campagnes et critères</TabsTrigger>
-          {canManageQuestions ? <TabsTrigger value="questions">Questions d&apos;entretien</TabsTrigger> : null}
           <TabsTrigger value="slots">Créneaux et jurys</TabsTrigger>
           <TabsTrigger value="evaluations">Fiches et décisions</TabsTrigger>
         </TabsList>
@@ -400,11 +385,6 @@ export default function CompetencesInterviewsTab() {
                 <Button variant="outline" onClick={() => setActiveTab("slots")}>
                   Gérer les créneaux
                 </Button>
-                {canManageQuestions ? (
-                  <Button variant="outline" onClick={() => setActiveTab("questions")}>
-                    Préparer les questions
-                  </Button>
-                ) : null}
                 <Button onClick={() => setActiveTab("evaluations")}>
                   Voir les fiches
                 </Button>
@@ -505,18 +485,6 @@ export default function CompetencesInterviewsTab() {
             onSave={interviews.handleUpdateCampaignScorecard}
           />
         </TabsContent>
-
-        {canManageQuestions ? (
-          <TabsContent value="questions" className="space-y-6">
-            <CompetencesInterviewFilterQuestionsEditor
-              campaigns={interviews.campaigns}
-              selectedCampaignId={interviews.selectedCampaignId}
-              onSelectedCampaignChange={interviews.setSelectedCampaignId}
-              onSave={interviews.handleUpdateCampaignFilterQuestions}
-              submitting={interviews.submitting}
-            />
-          </TabsContent>
-        ) : null}
 
         <TabsContent value="slots" className="space-y-6">
           <Card>

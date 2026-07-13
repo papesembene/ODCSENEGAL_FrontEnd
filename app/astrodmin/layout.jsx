@@ -24,6 +24,8 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
+
 export default function AdminLayout({ children }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -36,7 +38,7 @@ export default function AdminLayout({ children }) {
   const [adminType, setAdminType] = useState(null)
   const [adminEmail, setAdminEmail] = useState(null)
   const [adminScope, setAdminScope] = useState(null)
-  const [adminInterviewRole, setAdminInterviewRole] = useState(null)
+  const [canManageInterviewQuestions, setCanManageInterviewQuestions] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
@@ -44,22 +46,38 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     // Vérifier l'authentification
-    const checkAuth = () => {
-      const authenticated = !!localStorage.getItem("admin_token")
+    const checkAuth = async () => {
+      const token = localStorage.getItem("admin_token")
+      const authenticated = !!token
       const type = localStorage.getItem("admin_type")
       const email = localStorage.getItem("admin_email")
       const admin = JSON.parse(localStorage.getItem("admin_user") || "{}")
       const scope = admin?.profile_data?.admin_scope || null
-      const interviewRole = admin?.profile_data?.interview_role || null
+      let canManageQuestions = false
+
+      if (authenticated && scope === "interview_member") {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/admin/interviews/capabilities`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          const payload = await response.json()
+          canManageQuestions = Boolean(payload?.data?.can_manage_questions)
+        } catch {
+          canManageQuestions = false
+        }
+      } else {
+        canManageQuestions = type === "competences"
+      }
       
       setIsAuthenticated(authenticated)
       setAdminType(type)
       setAdminEmail(email)
       setAdminScope(scope)
-      setAdminInterviewRole(interviewRole)
+      setCanManageInterviewQuestions(canManageQuestions)
 
       const isContentManager = type === "cm"
-      const isValidatorInterviewMember = scope === "interview_member" && interviewRole === "validator"
       const defaultAdminRoute = isContentManager
         ? "/astrodmin/portail"
         : scope === "interview_member"
@@ -80,13 +98,13 @@ export default function AdminLayout({ children }) {
         authenticated
         && scope === "interview_member"
         && !pathname.startsWith("/astrodmin/mes-entretiens")
-        && !(isValidatorInterviewMember && pathname.startsWith("/astrodmin/entretiens/questions"))
+        && !(canManageQuestions && pathname.startsWith("/astrodmin/entretiens/questions"))
       ) {
         router.replace("/astrodmin/mes-entretiens")
       } else if (
         authenticated
         && scope === "interview_member"
-        && !isValidatorInterviewMember
+        && !canManageQuestions
         && pathname.startsWith("/astrodmin/entretiens/questions")
       ) {
         router.replace("/astrodmin/mes-entretiens")
@@ -94,7 +112,6 @@ export default function AdminLayout({ children }) {
         authenticated
         && scope !== "interview_member"
         && pathname.startsWith("/astrodmin/entretiens/questions")
-        && type !== "competences"
       ) {
         router.replace("/astrodmin/entretiens")
       } else if (authenticated && scope !== "interview_member" && pathname.startsWith("/astrodmin/mes-entretiens")) {
@@ -130,7 +147,6 @@ export default function AdminLayout({ children }) {
 
   const isInterviewMember = adminScope === "interview_member"
   const isContentManager = adminType === "cm"
-  const canManageInterviewQuestions = adminInterviewRole === "validator"
 
   const menuItems = [
     {
@@ -159,7 +175,7 @@ export default function AdminLayout({ children }) {
       icon: FileText,
       href: "/astrodmin/entretiens/questions",
       color: "text-emerald-500",
-      show: !isInterviewMember && adminType === "competences"
+      show: false,
     },
     {
       label: "Mes entretiens",

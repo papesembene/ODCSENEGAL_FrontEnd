@@ -165,6 +165,11 @@ export const useAdminApi = () => {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
+    resetPassword: async (id) =>
+      makeRequest(`/api/admin/interview-members/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ reset_password: true }),
+      }),
     remove: async (id) =>
       makeRequest(`/api/admin/interview-members/${id}`, {
         method: "DELETE",

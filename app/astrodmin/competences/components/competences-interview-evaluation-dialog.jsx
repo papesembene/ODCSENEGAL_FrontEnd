@@ -192,6 +192,10 @@ function isFilledValue(value) {
   return value !== null && value !== undefined && String(value).trim() !== ""
 }
 
+function getVisibleCriteria(section) {
+  return section?.criteria || []
+}
+
 function buildSectionReview(form, sectionKey, section, currentReview) {
   const review = { ...(currentReview || {}) }
 
@@ -227,6 +231,8 @@ function criterionColumnClass(type) {
 
 function renderCriterionControl({
   canEdit,
+  currentAdminName,
+  evaluation,
   criterion,
   form,
   sectionKey,
@@ -234,6 +240,16 @@ function renderCriterionControl({
 }) {
   const fieldId = `${sectionKey}-${criterion.key}`
   const value = getFieldValue(form, sectionKey, criterion.key)
+
+  if (criterion.key === "interviewer") {
+    const review = evaluation?.section_reviews?.[sectionKey] || evaluation?.[REVIEW_FIELD_BY_SECTION[sectionKey]] || {}
+    const displayName = review?._owner_name || value || (canEdit ? currentAdminName : "") || "-"
+    return (
+      <div className="min-w-[150px] rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
+        {displayName}
+      </div>
+    )
+  }
 
   if (criterion.type === "textarea") {
     return (
@@ -486,8 +502,9 @@ export default function CompetencesInterviewEvaluationDialog({
         return accumulator
       }
 
-      const requiredCriteria = section.criteria.filter((criterion) => criterion.required)
-      accumulator[sectionKey] = section.criteria.length > 0 && requiredCriteria.every((criterion) =>
+      const visibleCriteria = getVisibleCriteria(section)
+      const requiredCriteria = visibleCriteria.filter((criterion) => criterion.required)
+      accumulator[sectionKey] = visibleCriteria.length > 0 && requiredCriteria.every((criterion) =>
         isFilledValue(getFieldValue(form, sectionKey, criterion.key)),
       )
 
@@ -685,7 +702,7 @@ export default function CompetencesInterviewEvaluationDialog({
                         .map(([sectionKey, section]) => (
                           <TableHead
                             key={sectionKey}
-                            colSpan={(section.criteria || []).length}
+                            colSpan={getVisibleCriteria(section).length}
                             className="border-l bg-orange-50 text-center font-semibold text-orange-900"
                           >
                             {section.title || sectionKey}
@@ -696,7 +713,7 @@ export default function CompetencesInterviewEvaluationDialog({
                       {Object.entries(scorecard || {})
                         .filter(([sectionKey]) => visibleSections.includes(sectionKey))
                         .flatMap(([sectionKey, section]) =>
-                          (section.criteria || []).map((criterion) => (
+                          getVisibleCriteria(section).map((criterion) => (
                             <TableHead
                               key={`${sectionKey}-${criterion.key}`}
                               className={`border-l text-center ${criterionColumnClass(criterion.type)}`}
@@ -719,13 +736,15 @@ export default function CompetencesInterviewEvaluationDialog({
                       {Object.entries(scorecard || {})
                         .filter(([sectionKey]) => visibleSections.includes(sectionKey))
                         .flatMap(([sectionKey, section]) =>
-                          (section.criteria || []).map((criterion) => (
+                          getVisibleCriteria(section).map((criterion) => (
                             <TableCell
                               key={`${sectionKey}-${criterion.key}`}
                               className={`border-l align-top ${criterionColumnClass(criterion.type)}`}
                             >
                               {renderCriterionControl({
 	                                canEdit: editableSections.includes(sectionKey),
+                                currentAdminName,
+                                evaluation,
                                 criterion,
                                 form,
                                 sectionKey,

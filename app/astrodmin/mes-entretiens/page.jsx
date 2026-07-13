@@ -68,7 +68,9 @@ function isCoachRecommendationCriterion(criterion) {
 }
 
 function getVisibleCriteria(section) {
-  return (section?.criteria || []).filter((criterion) => !isCoachRecommendationCriterion(criterion))
+  return (section?.criteria || []).filter(
+    (criterion) => !isCoachRecommendationCriterion(criterion),
+  )
 }
 
 function getCoachRecommendationLabels(evaluation) {
@@ -125,9 +127,13 @@ function setCriterionValue(setDrafts, evaluationId, sectionKey, criterionKey, va
   }))
 }
 
-function buildInlineReview(evaluation, drafts, sectionKey, section) {
+function buildInlineReview(evaluation, drafts, sectionKey, section, currentAdminName) {
   const currentReview = getEvaluationSectionReview(evaluation, sectionKey)
   const review = { ...currentReview }
+
+  if ((section?.criteria || []).some((criterion) => criterion.key === "interviewer")) {
+    review.interviewer = currentAdminName || currentReview.interviewer || currentReview._owner_name || ""
+  }
 
   getVisibleCriteria(section).forEach((criterion) => {
     if (criterion.type === "computed") {
@@ -163,14 +169,28 @@ function formatCriterionValue(value, criterion) {
   return value || "-"
 }
 
+function getInterviewerDisplayName(evaluation, sectionKey, canEdit, currentAdminName) {
+  const review = getEvaluationSectionReview(evaluation, sectionKey)
+  return review?._owner_name || review?.interviewer || (canEdit ? currentAdminName : "") || "-"
+}
+
 function renderCriterionCell({
   canEdit,
   criterion,
+  currentAdminName,
   drafts,
   evaluation,
   sectionKey,
   setDrafts,
 }) {
+  if (criterion.key === "interviewer") {
+    return (
+      <span className="block min-w-[150px] rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
+        {getInterviewerDisplayName(evaluation, sectionKey, canEdit, currentAdminName)}
+      </span>
+    )
+  }
+
   const value = getCriterionValue(drafts, evaluation, sectionKey, criterion)
 
   if (!canEdit) {
@@ -471,6 +491,7 @@ function InterviewEvaluationTable({
   activeEvaluationId,
   assignedSlots,
   currentAdminId,
+  currentAdminName,
   evaluations,
   inlineDrafts,
   onOpenCoachOpinion,
@@ -587,6 +608,7 @@ function InterviewEvaluationTable({
                           {renderCriterionCell({
                             canEdit: editableSectionKeys.includes(sectionKey),
                             criterion,
+                            currentAdminName,
                             drafts: inlineDrafts,
                             evaluation,
                             sectionKey,
@@ -939,6 +961,7 @@ export default function MyInterviewsPage() {
     const currentReview = getEvaluationSectionReview(evaluation, "validator")
     const validatorReview = {
       ...currentReview,
+      interviewer: currentAdminName || currentReview.interviewer || currentReview._owner_name || "",
       coach_pick: Boolean(draft.coach_pick),
       strong_potential: Boolean(draft.strong_potential),
       cohort_balance: Boolean(draft.cohort_balance),
@@ -962,7 +985,13 @@ export default function MyInterviewsPage() {
       if (!reviewField || !sections[sectionKey]) {
         return
       }
-      payload[reviewField] = buildInlineReview(evaluation, inlineDrafts, sectionKey, sections[sectionKey])
+      payload[reviewField] = buildInlineReview(
+        evaluation,
+        inlineDrafts,
+        sectionKey,
+        sections[sectionKey],
+        currentAdminName,
+      )
     })
 
     try {
@@ -1199,6 +1228,7 @@ export default function MyInterviewsPage() {
                                     activeEvaluationId={activeEvaluationId}
                                     assignedSlots={assignedSlots}
                                     currentAdminId={currentAdminId}
+                                    currentAdminName={currentAdminName}
                                     evaluations={slotEvaluations}
 	                                    inlineDrafts={inlineDrafts}
 	                                    onOpenCoachOpinion={(evaluation) => setCoachOpinionEvaluationId(evaluation.id)}

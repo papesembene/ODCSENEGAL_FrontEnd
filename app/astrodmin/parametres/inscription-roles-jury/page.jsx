@@ -7,8 +7,11 @@ import {
   CheckCircle2,
   ChevronRight,
   Copy,
+  Eye,
+  KeyRound,
   Mail,
   Pencil,
+  Search,
   ShieldCheck,
   Trash2,
   UserPlus,
@@ -47,17 +50,17 @@ const juryRoles = [
   {
     title: "Filtre",
     value: "filter",
-    description: "Premier regard sur le dossier et cohérence générale de l'évaluation.",
+    description: "Profil par défaut pour les personnes souvent chargées du premier échange.",
   },
   {
-    title: "Validation",
+    title: "Validation / coach",
     value: "validator",
-    description: "Vérification métier et validation de la décision finale du jury.",
+    description: "Profil par défaut pour les coachs qui préparent les questions du référentiel.",
   },
   {
     title: "Motivation",
     value: "motivation",
-    description: "Appréciation de la motivation, du projet et de l'engagement du candidat.",
+    description: "Profil par défaut pour l'appréciation de la motivation du candidat.",
   },
 ]
 
@@ -65,14 +68,6 @@ const initialFormData = {
   firstName: "",
   lastName: "",
   email: "",
-}
-
-function generateTemporaryPassword(length = 12) {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
-  const values = new Uint32Array(length)
-  window.crypto.getRandomValues(values)
-
-  return Array.from(values, (value) => alphabet[value % alphabet.length]).join("")
 }
 
 export default function JuryRolesRegistrationPage() {
@@ -92,15 +87,41 @@ export default function JuryRolesRegistrationPage() {
   const [membersPage, setMembersPage] = useState(1)
   const [membersPageSize, setMembersPageSize] = useState(10)
   const [createError, setCreateError] = useState("")
+  const [memberSearch, setMemberSearch] = useState("")
+  const [selectedMemberId, setSelectedMemberId] = useState("")
+  const [passwordResettingId, setPasswordResettingId] = useState("")
 
   const activeRole = useMemo(
     () => juryRoles.find((role) => role.value === selectedRole) || juryRoles[0],
     [selectedRole],
   )
+  const filteredMembers = useMemo(() => {
+    const search = memberSearch.trim().toLowerCase()
+    if (!search) return members
+
+    return members.filter((member) =>
+      [
+        member.first_name,
+        member.last_name,
+        member.email,
+        member.role_label,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(search),
+    )
+  }, [memberSearch, members])
+
   const paginatedMembers = useMemo(() => {
     const start = (membersPage - 1) * membersPageSize
-    return members.slice(start, start + membersPageSize)
-  }, [members, membersPage, membersPageSize])
+    return filteredMembers.slice(start, start + membersPageSize)
+  }, [filteredMembers, membersPage, membersPageSize])
+
+  const selectedMember = useMemo(
+    () => members.find((member) => member.id === selectedMemberId) || null,
+    [members, selectedMemberId],
+  )
 
   const updateField = (field, value) => {
     setFormData((previous) => ({ ...previous, [field]: value }))
@@ -129,11 +150,11 @@ export default function JuryRolesRegistrationPage() {
   }, [fetchMembers])
 
   useEffect(() => {
-    const totalPages = Math.max(Math.ceil(members.length / membersPageSize), 1)
+    const totalPages = Math.max(Math.ceil(filteredMembers.length / membersPageSize), 1)
     if (membersPage > totalPages) {
       setMembersPage(totalPages)
     }
-  }, [members.length, membersPage, membersPageSize])
+  }, [filteredMembers.length, membersPage, membersPageSize])
 
   const handleCopyCredentials = async () => {
     if (!createdCredentials) return
@@ -143,6 +164,7 @@ export default function JuryRolesRegistrationPage() {
         `Email : ${createdCredentials.email}`,
         `Mot de passe temporaire : ${createdCredentials.password}`,
         `Rôle : ${createdCredentials.roleLabel}`,
+        `Email envoyé : ${createdCredentials.emailSent ? "Oui" : "Non"}`,
       ].join("\n"),
     )
 
@@ -169,21 +191,22 @@ export default function JuryRolesRegistrationPage() {
     try {
       setIsSubmitting(true)
       setCreatedCredentials(null)
-      const temporaryPassword = generateTemporaryPassword()
 
       const response = await juryMembers.create({
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         email: formData.email.trim(),
-        password: temporaryPassword,
         role: activeRole.value,
       })
 
       setCreatedCredentials({
-        email: response.user?.email || formData.email.trim(),
-        password: response.temporary_password || temporaryPassword,
+        email: response.data?.email || response.user?.email || formData.email.trim(),
+        password: response.temporary_password || "",
         roleLabel: response.role_label || activeRole.title,
+        emailSent: Boolean(response.credentials_email_sent),
+        emailMessage: response.credentials_email_message || "",
       })
+      setSelectedMemberId(response.data?.id || "")
       setFormData(initialFormData)
       setCreateDialogOpen(false)
       setCredentialsModalOpen(true)
@@ -191,7 +214,7 @@ export default function JuryRolesRegistrationPage() {
 
       toast({
         title: "Utilisateur créé",
-        description: `${response.user?.email || "Le compte"} a été ajouté avec le rôle ${response.role_label || activeRole.title}.`,
+        description: `${response.user?.email || "Le compte"} a été ajouté. Le rôle réel se règle ensuite par créneau.`,
       })
     } catch (error) {
       setCreateError(error.message || "Une erreur est survenue pendant la création.")
@@ -246,6 +269,45 @@ export default function JuryRolesRegistrationPage() {
     }
   }
 
+  const handleShowDetails = (member) => {
+    setSelectedMemberId(member.id)
+  }
+
+  const handleResetPassword = async (member) => {
+    const confirmed = window.confirm(
+      `Générer un nouveau mot de passe temporaire pour ${member.email} ? L'ancien mot de passe ne fonctionnera plus.`,
+    )
+    if (!confirmed) return
+
+    try {
+      setPasswordResettingId(member.id)
+      const response = await juryMembers.resetPassword(member.id)
+      setCreatedCredentials({
+        email: response.data?.email || member.email,
+        password: response.temporary_password || "",
+        roleLabel: response.data?.role_label || member.role_label,
+        emailSent: Boolean(response.credentials_email_sent),
+        emailMessage: response.credentials_email_message || "",
+      })
+      setCredentialsModalOpen(true)
+      await fetchMembers()
+      toast({
+        title: "Mot de passe réinitialisé",
+        description: response.credentials_email_sent
+          ? "Les nouveaux identifiants ont été envoyés par email."
+          : "Le mot de passe est affiché ici, l'email n'a pas été envoyé.",
+      })
+    } catch (error) {
+      toast({
+        title: "Réinitialisation impossible",
+        description: error.message || "Impossible de générer un nouveau mot de passe.",
+        variant: "destructive",
+      })
+    } finally {
+      setPasswordResettingId("")
+    }
+  }
+
   const handleDeleteMember = async (member) => {
     if (!window.confirm(`Supprimer ou désactiver le compte ${member.email} ?`)) {
       return
@@ -287,7 +349,7 @@ export default function JuryRolesRegistrationPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Inscription des rôles jury</h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                Créez les comptes des membres du jury et attribuez directement leur rôle d'entretien.
+                Créez les comptes des membres du jury. Le rôle par défaut aide l'organisation, mais le rôle réel se décide par créneau et par référentiel.
               </p>
             </div>
           </div>
@@ -304,7 +366,7 @@ export default function JuryRolesRegistrationPage() {
             <div>
               <CardTitle>Comptes jury créés</CardTitle>
               <CardDescription>
-                Retrouvez ici les filtreurs, validateurs et jurys motivation déjà créés.
+            Retrouvez ici les membres d'entretien. Une même personne peut être coach sur un référentiel et filtreur sur un autre selon ses affectations.
               </CardDescription>
             </div>
             <Button type="button" onClick={() => setCreateDialogOpen(true)} className="gap-2">
@@ -314,6 +376,19 @@ export default function JuryRolesRegistrationPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="relative max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={memberSearch}
+              onChange={(event) => {
+                setMemberSearch(event.target.value)
+                setMembersPage(1)
+              }}
+              className="pl-9"
+              placeholder="Rechercher par nom, email ou rôle..."
+            />
+          </div>
+
           {membersLoading ? (
             <p className="text-sm text-muted-foreground">Chargement des membres...</p>
           ) : membersError ? (
@@ -322,73 +397,148 @@ export default function JuryRolesRegistrationPage() {
             </div>
           ) : members.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aucun membre du jury créé pour le moment.</p>
+          ) : filteredMembers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun membre ne correspond à cette recherche.</p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[760px] text-sm">
-                <thead className="bg-muted/50 text-left">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Membre</th>
-                    <th className="px-4 py-3 font-medium">Rôle</th>
-                    <th className="px-4 py-3 font-medium">Statut</th>
-                    <th className="px-4 py-3 text-right font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedMembers.map((member) => (
-                    <tr key={member.id} className="border-t">
-                      <td className="px-4 py-3">
-                        <p className="font-medium">
-                          {member.first_name} {member.last_name}
-                        </p>
-                        <p className="text-muted-foreground">{member.email}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        {editingMemberId === member.id ? (
-                          <div className="flex items-center gap-2">
-                            <Select value={memberRoleDraft} onValueChange={setMemberRoleDraft}>
-                              <SelectTrigger className="w-[170px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {juryRoles.map((role) => (
-                                  <SelectItem key={role.value} value={role.value}>
-                                    {role.title}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button size="sm" onClick={() => handleSaveRole(member.id)}>
-                              OK
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="overflow-x-auto rounded-xl border">
+                <table className="w-full min-w-[860px] text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Membre</th>
+                    <th className="px-4 py-3 font-medium">Profil par défaut</th>
+                      <th className="px-4 py-3 font-medium">Statut</th>
+                      <th className="px-4 py-3 font-medium">Email accès</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedMembers.map((member) => (
+                      <tr
+                        key={member.id}
+                        className={`border-t ${selectedMemberId === member.id ? "bg-orange-50/60" : ""}`}
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-medium">
+                            {member.first_name} {member.last_name}
+                          </p>
+                          <p className="text-muted-foreground">{member.email}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingMemberId === member.id ? (
+                            <div className="flex items-center gap-2">
+                              <Select value={memberRoleDraft} onValueChange={setMemberRoleDraft}>
+                                <SelectTrigger className="w-[170px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {juryRoles.map((role) => (
+                                    <SelectItem key={role.value} value={role.value}>
+                                      {role.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="sm" onClick={() => handleSaveRole(member.id)}>
+                                OK
+                              </Button>
+                            </div>
+                          ) : (
+                            <Badge variant="outline">{member.role_label}</Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={member.is_active ? "default" : "secondary"}>
+                            {member.is_active ? "Actif" : "Désactivé"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={member.credentials_email_sent ? "outline" : "secondary"}>
+                            {member.credentials_email_sent ? "Envoyé" : "À transmettre"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-2">
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleShowDetails(member)}>
+                              <Eye className="mr-1 h-4 w-4" />
+                              Détails
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleStartEditRole(member)}>
+                              <Pencil className="mr-1 h-4 w-4" />
+                              Rôle
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleToggleMember(member)}>
+                              {member.is_active ? "Désactiver" : "Activer"}
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleDeleteMember(member)}>
+                              <Trash2 className="mr-1 h-4 w-4" />
+                              Supprimer
                             </Button>
                           </div>
-                        ) : (
-                          <Badge variant="outline">{member.role_label}</Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={member.is_active ? "default" : "secondary"}>
-                          {member.is_active ? "Actif" : "Désactivé"}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <Button type="button" size="sm" variant="outline" onClick={() => handleStartEditRole(member)}>
-                            <Pencil className="mr-1 h-4 w-4" />
-                            Rôle
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => handleToggleMember(member)}>
-                            {member.is_active ? "Désactiver" : "Activer"}
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={() => handleDeleteMember(member)}>
-                            <Trash2 className="mr-1 h-4 w-4" />
-                            Supprimer
-                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>Détail du jury</CardTitle>
+                  <CardDescription>
+                    Accès, rôle et mot de passe temporaire en cas de reset.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {selectedMember ? (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-lg font-semibold">
+                          {selectedMember.first_name} {selectedMember.last_name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{selectedMember.email}</p>
+                      </div>
+                      <div className="grid gap-3 text-sm">
+                        <div className="rounded-lg border p-3">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">Profil par défaut</p>
+                          <p className="mt-1 font-medium">{selectedMember.role_label}</p>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <div className="rounded-lg border p-3">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">Statut</p>
+                          <p className="mt-1 font-medium">{selectedMember.is_active ? "Actif" : "Désactivé"}</p>
+                        </div>
+                        <div className="rounded-lg border p-3">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">Identifiants email</p>
+                          <p className="mt-1 font-medium">
+                            {selectedMember.credentials_email_sent ? "Envoyés" : "Non envoyés / à transmettre"}
+                          </p>
+                          {selectedMember.credentials_email_message ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {selectedMember.credentials_email_message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-center gap-2"
+                        disabled={passwordResettingId === selectedMember.id}
+                        onClick={() => handleResetPassword(selectedMember)}
+                      >
+                        <KeyRound className="h-4 w-4" />
+                        {passwordResettingId === selectedMember.id
+                          ? "Génération..."
+                          : "Réinitialiser et envoyer"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+                      Cliquez sur “Détails” pour consulter un compte jury.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -402,7 +552,7 @@ export default function JuryRolesRegistrationPage() {
             <PaginationControls
               page={membersPage}
               pageSize={membersPageSize}
-              totalItems={members.length}
+              totalItems={filteredMembers.length}
               itemLabel="membres"
               onPageChange={setMembersPage}
             />
@@ -423,7 +573,7 @@ export default function JuryRolesRegistrationPage() {
           <DialogHeader>
             <DialogTitle>Ajouter un jury</DialogTitle>
             <DialogDescription>
-              Choisissez un rôle puis renseignez les informations du membre. Le mot de passe est généré automatiquement.
+              Choisissez un profil par défaut puis renseignez les informations. Le rôle opérationnel sera défini dans les créneaux de chaque référentiel.
             </DialogDescription>
           </DialogHeader>
 
@@ -465,7 +615,7 @@ export default function JuryRolesRegistrationPage() {
             </section>
 
             <div className="rounded-xl bg-orange-50 p-4 dark:bg-orange-950/20">
-              <p className="text-sm text-muted-foreground">Rôle sélectionné</p>
+              <p className="text-sm text-muted-foreground">Profil par défaut sélectionné</p>
               <div className="mt-2 flex items-center gap-3">
                 <Badge className="bg-orange-500 text-white hover:bg-orange-500">{activeRole.title}</Badge>
                 <span className="text-sm text-muted-foreground">{activeRole.description}</span>
@@ -511,7 +661,7 @@ export default function JuryRolesRegistrationPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="jury-role">Type de rôle</Label>
+                <Label htmlFor="jury-role">Profil par défaut</Label>
                 <Input id="jury-role" value={activeRole.title} readOnly className="bg-muted" />
               </div>
             </div>
@@ -548,16 +698,29 @@ export default function JuryRolesRegistrationPage() {
           </AlertDialogHeader>
 
           {createdCredentials ? (
-            <div className="rounded-xl border bg-muted/40 p-4 text-sm">
-              <p>
-                <strong>Email :</strong> {createdCredentials.email}
-              </p>
-              <p className="mt-2">
-                <strong>Rôle :</strong> {createdCredentials.roleLabel}
-              </p>
-              <p className="mt-2">
-                <strong>Mot de passe temporaire :</strong> {createdCredentials.password}
-              </p>
+            <div className="space-y-3">
+              <div className="rounded-xl border bg-muted/40 p-4 text-sm">
+                <p>
+                  <strong>Email :</strong> {createdCredentials.email}
+                </p>
+                <p className="mt-2">
+                  <strong>Rôle :</strong> {createdCredentials.roleLabel}
+                </p>
+                <p className="mt-2">
+                  <strong>Mot de passe temporaire :</strong> {createdCredentials.password || "-"}
+                </p>
+              </div>
+              <div
+                className={`rounded-xl border p-3 text-sm ${
+                  createdCredentials.emailSent
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : "border-amber-200 bg-amber-50 text-amber-800"
+                }`}
+              >
+                {createdCredentials.emailSent
+                  ? "Email envoyé automatiquement au membre du jury."
+                  : createdCredentials.emailMessage || "Email non envoyé. Copiez les identifiants et transmettez-les manuellement."}
+              </div>
             </div>
           ) : null}
 
