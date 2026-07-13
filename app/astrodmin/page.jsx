@@ -23,7 +23,16 @@ export default function AdminLogin() {
     // Vérifier si l'utilisateur est déjà authentifié
     const isAuthenticated = !!localStorage.getItem("admin_token")
     if (isAuthenticated) {
-      router.push("/astrodmin/dashboard")
+      const admin = JSON.parse(localStorage.getItem("admin_user") || "{}")
+      const adminScope = admin?.profile_data?.admin_scope
+      const adminType = admin?.admin_type || localStorage.getItem("admin_type")
+      router.push(
+        adminType === "cm"
+          ? "/astrodmin/portail"
+          : adminScope === "interview_member"
+            ? "/astrodmin/mes-entretiens"
+            : "/astrodmin/dashboard"
+      )
     }
   }, [router])
 
@@ -111,7 +120,13 @@ export default function AdminLogin() {
       localStorage.setItem("admin_user", JSON.stringify(data.user))
 
       // Rediriger vers le tableau de bord approprié
-      router.push("/astrodmin/dashboard")
+      router.push(
+        data.user?.admin_type === "cm"
+          ? "/astrodmin/portail"
+          : data.user?.profile_data?.admin_scope === "interview_member"
+            ? "/astrodmin/mes-entretiens"
+            : "/astrodmin/dashboard"
+      )
     } catch (err) {
       // Gérer différents types d'erreurs
       let errorMessage = "Une erreur est survenue lors de la connexion"

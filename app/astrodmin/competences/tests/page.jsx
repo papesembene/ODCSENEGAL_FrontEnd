@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Plus, 
-  RefreshCw, 
+import {
+  Plus,
+  RefreshCw,
   AlertCircle,
-  Wand2 
+  Wand2
 } from "lucide-react"
 
 // Hooks
@@ -22,7 +22,7 @@ import { GroupsTab } from "./groups-tab"
 import { ResultsTab } from "./results-tab"
 
 // Components and Dialogs
-import { 
+import {
   CreateTestDialog,
   CreateGroupDialog,
   GroupCandidatesDialog,
@@ -37,10 +37,10 @@ import {
 export default function TestsManagementPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
-  
+
   const m = useTestsManagement(router)
 
-  if (m.loading) {
+  if (!m.isAuthenticated || m.loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <RefreshCw className="h-12 w-12 animate-spin text-orange-500" />
@@ -50,10 +50,16 @@ export default function TestsManagementPage() {
   }
 
   const getViolationSeverityBadge = (violations) => {
-    if (!violations || violations.totalViolations === 0) {
+    const count = Number(
+      violations?.totalViolations
+        ?? violations?.violations?.length
+        ?? 0
+    )
+
+    if (!violations || count === 0) {
       return <Badge variant="outline" className="text-green-600 border-green-200">Aucune</Badge>
     }
-    const count = violations.totalViolations
+
     if (count < 3) return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Faible ({count})</Badge>
     if (count < 6) return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Moyenne ({count})</Badge>
     return <Badge variant="destructive">Élevée ({count})</Badge>
@@ -103,13 +109,13 @@ export default function TestsManagementPage() {
           </TabsList>
         </div>
 
-        <OverviewTab 
-          stats={m.stats} 
+        <OverviewTab
+          stats={m.stats}
           testResults={m.testResults}
           fetchResults={m.fetchResults}
           refreshing={m.refreshing}
-          scoreDistributionData={m.scoreDistributionData} 
-          statusDistributionData={m.statusDistributionData} 
+          scoreDistributionData={m.scoreDistributionData}
+          statusDistributionData={m.statusDistributionData}
           setShowUploadDialog={m.setShowUploadDialog}
           setShowEmailDialog={m.setShowEmailDialog}
           setShowResultsDialog={m.setShowResultsDialog}
@@ -117,8 +123,8 @@ export default function TestsManagementPage() {
           handleCopyTestLink={m.handleCopyTestLink}
           handleOpenTest={m.handleOpenTest}
         />
-        
-        <TestsTab 
+
+        <TestsTab
           searchTerm={m.searchTerm} setSearchTerm={m.setSearchTerm}
           testsItemsPerPage={m.testsItemsPerPage} setTestsItemsPerPage={m.setTestsItemsPerPage}
           testsPage={m.testsPage} setTestsPage={m.setTestsPage}
@@ -129,7 +135,7 @@ export default function TestsManagementPage() {
           handleDeleteTestClick={m.handleDeleteTestClick}
         />
 
-        <GroupsTab 
+        <GroupsTab
           groupFormationFilter={m.groupFormationFilter} setGroupFormationFilter={m.setGroupFormationFilter}
           testGroups={m.testGroups}
           groupsItemsPerPage={m.groupsItemsPerPage} setGroupsItemsPerPage={m.setGroupsItemsPerPage}
@@ -140,7 +146,7 @@ export default function TestsManagementPage() {
           handleViewGroupCandidates={m.handleViewGroupCandidates}
         />
 
-        <ResultsTab 
+        <ResultsTab
           testResults={m.testResults}
           refreshing={m.refreshing}
           setShowImportResultsDialog={m.setShowImportResultsDialog}
@@ -165,7 +171,7 @@ export default function TestsManagementPage() {
       </Tabs>
 
       {/* Dialogs Components */}
-      <CreateTestDialog 
+      <CreateTestDialog
         open={m.showCreateDialog} onOpenChange={m.setShowCreateDialog}
         editingTest={m.editingTest}
         newTest={m.newTest} setNewTest={m.setNewTest}
@@ -181,28 +187,30 @@ export default function TestsManagementPage() {
         setShowImportQuestionsDialog={m.setShowImportQuestionsDialog}
       />
 
-      <CreateGroupDialog 
+      <CreateGroupDialog
         open={m.showCreateGroupDialog} onOpenChange={m.setShowCreateGroupDialog}
         newGroup={m.newGroup} setNewGroup={m.setNewGroup}
         testsData={m.testsData}
         availableCandidates={m.availableCandidates}
+        availableCandidatesTotal={m.availableCandidatesTotal}
         assignedCandidateIds={m.assignedCandidateIds}
         candidateToGroupMap={m.candidateToGroupMap}
         selectedCandidatesForGroup={m.selectedCandidatesForGroup}
+        fetchAvailableCandidates={m.fetchAvailableCandidates}
         handleSelectCandidateForGroup={m.handleSelectCandidateForGroup}
         handleCreateGroup={m.handleCreateGroup}
         setSelectedCandidatesForGroup={m.setSelectedCandidatesForGroup}
         handleCancelCreateGroup={m.handleCancelCreateGroup}
       />
 
-      <GroupCandidatesDialog 
+      <GroupCandidatesDialog
         open={m.showGroupCandidatesDialog} onOpenChange={m.setShowGroupCandidatesDialog}
         selectedGroup={m.selectedGroupForView}
         candidates={m.groupCandidatesDetails}
         loading={m.loadingGroupCandidates}
       />
 
-      <ResultDetailsDialog 
+      <ResultDetailsDialog
         open={m.showDetailsDialog} onOpenChange={m.setShowDetailsDialog}
         selectedResult={m.selectedResult}
         testsData={m.testsData}
@@ -212,7 +220,7 @@ export default function TestsManagementPage() {
         fetchResults={m.fetchResults}
       />
 
-      <EmailDialog 
+      <EmailDialog
         open={m.showEmailResultsDialog} onOpenChange={m.setShowEmailResultsDialog}
         selectedResults={m.selectedResults}
         emailType={m.emailResultsType} setEmailType={m.setEmailResultsType}
@@ -221,12 +229,12 @@ export default function TestsManagementPage() {
         handleSendEmails={m.handleSendResultsEmails}
       />
 
-      <ViolationsDialog 
+      <ViolationsDialog
         open={m.showViolationsDialog} onOpenChange={m.setShowViolationsDialog}
         selectedResultViolations={m.selectedResultViolations}
       />
 
-      <InvitationDialog 
+      <InvitationDialog
         open={m.showSendInvitationDialog} onOpenChange={m.setShowSendInvitationDialog}
         selectedGroupForInvitation={m.selectedGroupForInvitation}
         invitationDetails={m.invitationDetails} setInvitationDetails={m.setInvitationDetails}
@@ -236,7 +244,7 @@ export default function TestsManagementPage() {
         handleConfirmAndSendInvitations={m.handleConfirmAndSendInvitations}
       />
 
-      <ImportDialog 
+      <ImportDialog
         open={m.showImportQuestionsDialog} onOpenChange={m.setShowImportQuestionsDialog}
         title="Importer des questions"
         description="Chargez un fichier CSV pour ajouter des questions au test."
@@ -244,7 +252,7 @@ export default function TestsManagementPage() {
         templateUrl="/templates/questions_template.csv" templateName="modele_questions.csv"
       />
 
-      <ImportDialog 
+      <ImportDialog
         open={m.showImportResultsDialog} onOpenChange={m.setShowImportResultsDialog}
         title="Importer des résultats"
         description="Chargez un fichier CSV pour importer des résultats de tests externes."

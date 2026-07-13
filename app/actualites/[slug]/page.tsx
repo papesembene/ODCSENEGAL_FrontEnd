@@ -11,8 +11,9 @@ const actualites = [
   }
 ]
 
-export default function Page({ params }: { params: { slug: string } }) {
-  const actualite = actualites.find(a => a.slug === params.slug)
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const actualite = actualites.find((a) => a.slug === slug)
   
   if (!actualite) return notFound()
 

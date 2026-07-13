@@ -1,13 +1,13 @@
-import { Inter } from "next/font/google"
 import "./globals.css"
-import AppProviders from "@/components/app-providers"
+import { ThemeProvider } from "@/components/theme-provider"
+import ChatbotWrapper from "@/components/ChatbotWrapper"
+import AppToaster from "@/components/app-toaster"
 import SiteShell from "@/components/site-shell"
-import { siteMetadata } from "@/lib/site-config"
-
-const inter = Inter({ subsets: ["latin"] })
+import { AuthProvider } from "./contexts/AuthContext"
 
 export const metadata = {
-  ...siteMetadata,
+  title: "Orange Digital Center Sénégal",
+  description: "Développement des compétences numériques, accompagnement des startups et open innovation",
   generator: "v0.dev",
   icons: {
     icon: "/favicon.ico",
@@ -27,10 +27,14 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body className={inter.className}>
-        <AppProviders>
-          <SiteShell>{children}</SiteShell>
-        </AppProviders>
+      <body className="antialiased">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <SiteShell>{children}</SiteShell>
+            <ChatbotWrapper />
+            <AppToaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

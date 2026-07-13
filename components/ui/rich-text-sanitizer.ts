@@ -39,6 +39,8 @@ const DROP_CONTENT_TAGS = new Set([
   "textarea",
 ])
 
+type SanitizedNode = HTMLElement | Text | DocumentFragment
+
 function isSafeHref(value: string) {
   const href = value.trim()
 
@@ -56,7 +58,10 @@ function isSafeHref(value: string) {
   }
 }
 
-function sanitizeNode(node: ChildNode, targetDocument: Document) {
+function sanitizeNode(
+  node: ChildNode,
+  targetDocument: Document,
+): SanitizedNode | null {
   if (node.nodeType === Node.TEXT_NODE) {
     return targetDocument.createTextNode(node.textContent || "")
   }
@@ -74,7 +79,7 @@ function sanitizeNode(node: ChildNode, targetDocument: Document) {
 
   const sanitizedChildren = Array.from(element.childNodes)
     .map((child) => sanitizeNode(child, targetDocument))
-    .filter(Boolean)
+    .filter((child): child is SanitizedNode => child !== null)
 
   if (!ALLOWED_TAGS.has(tagName)) {
     const fragment = targetDocument.createDocumentFragment()

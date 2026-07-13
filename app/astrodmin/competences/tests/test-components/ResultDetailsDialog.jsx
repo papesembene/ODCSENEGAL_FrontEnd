@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, AlertCircle } from "lucide-react"
 import { API_BASE_URL } from "../constants"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import { toast } from "sonner"
 
 export function ResultDetailsDialog({
@@ -217,7 +218,7 @@ export function ResultDetailsDialog({
               try {
                 const response = await fetch(`${API_BASE_URL}/api/admin/tests/results/${selectedResult.id}`, {
                   method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
+                  headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
                   body: JSON.stringify({
                     score: finalScore,
                     status: newStatus,

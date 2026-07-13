@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAdminApi } from "@/app/hooks/useAdminApi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,11 +27,11 @@ import {
   Image as ImageIcon
 } from "lucide-react"
 import { toast } from "sonner"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 
 export default function EventsManagementPage() {
   const router = useRouter()
-  const { events } = useAdminApi()
-  
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -54,27 +53,30 @@ export default function EventsManagementPage() {
     image: ""
   })
 
-  const [stats, setStats] = useState({
-    total: 0,
-    upcoming: 0,
-    completed: 0,
-    totalParticipants: 0
-  })
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
-  const fetchEvents = useCallback(async () => {
+  useEffect(() => {
+    const authenticated = !!localStorage.getItem("admin_token")
+    
+    if (!authenticated) {
+      router.push("/astrodmin")
+      return
+    }
+
+    setIsAuthenticated(true)
+    fetchEvents()
+  }, [router])
+
+  const fetchEvents = async () => {
     try {
       setRefreshing(true)
-      const result = await events.getAll()
+      const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
+        headers: getAdminAuthHeaders(),
+      })
+      const result = await response.json()
       
       if (result.success) {
-        const data = result.events || result.data || []
-        setEventsData(data)
-        setStats({
-          total: data.length,
-          upcoming: data.filter(e => e.status === "upcoming").length,
-          completed: data.filter(e => e.status === "completed").length,
-          totalParticipants: data.reduce((sum, e) => sum + (e.currentParticipants || 0), 0)
-        })
+        setEventsData(result.data || [])
       }
     } catch (error) {
       console.error("Erreur lors du chargement des événements:", error)
@@ -83,12 +85,7 @@ export default function EventsManagementPage() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [events])
-
-  useEffect(() => {
-    fetchEvents()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
   const resetForm = () => {
     setFormData({
@@ -105,26 +102,31 @@ export default function EventsManagementPage() {
   }
 
   const handleSubmit = async () => {
+    // Validation
     if (!formData.title || !formData.date || !formData.time) {
       toast.error("Veuillez remplir tous les champs obligatoires")
       return
     }
 
     try {
-      let result
-      if (editingEvent) {
-        result = await events.update(editingEvent.id, formData)
-      } else {
-        result = await events.create(formData)
-      }
+      const method = editingEvent ? "PATCH" : "POST"
+      const body = editingEvent 
+        ? { id: editingEvent.id, ...formData }
+        : formData
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
+        method,
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(body)
+      })
+      
+      const result = await response.json()
       
       if (result.success) {
         toast.success(editingEvent ? "Événement modifié avec succès" : "Événement créé avec succès")
         setShowDialog(false)
         resetForm()
         fetchEvents()
-      } else {
-        throw new Error(result.message)
       }
     } catch (error) {
       toast.error("Erreur lors de l'enregistrement de l'événement")
@@ -150,7 +152,12 @@ export default function EventsManagementPage() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) return
     
     try {
-      const result = await events.delete(eventId)
+      const response = await fetch(`${API_BASE_URL}/api/admin/events?id=${eventId}`, {
+        method: "DELETE",
+        headers: getAdminAuthHeaders(),
+      })
+      
+      const result = await response.json()
       
       if (result.success) {
         toast.success("Événement supprimé avec succès")
@@ -193,7 +200,14 @@ export default function EventsManagementPage() {
     return matchesSearch && matchesCategory && matchesStatus
   })
 
-  if (loading) {
+  const stats = {
+    total: eventsData.length,
+    upcoming: eventsData.filter(e => e.status === "upcoming").length,
+    completed: eventsData.filter(e => e.status === "completed").length,
+    totalParticipants: eventsData.reduce((sum, e) => sum + (e.currentParticipants || 0), 0)
+  }
+
+  if (!isAuthenticated || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>

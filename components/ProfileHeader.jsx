@@ -5,8 +5,8 @@ const ProfileHeader = ({ user, onEditAvatar, apiUrl }) => {
     if (!user.profile_picture) return null
     if (user.profile_picture.startsWith('http')) return user.profile_picture
     // Prepend API_URL and ensure uploads/ is present
-    const path = user.profile_picture.startsWith('uploads/') 
-      ? user.profile_picture 
+    const path = user.profile_picture.startsWith('uploads/')
+      ? user.profile_picture
       : 'uploads/' + user.profile_picture
     return `${apiUrl}/${path}`
   }
@@ -19,9 +19,9 @@ const ProfileHeader = ({ user, onEditAvatar, apiUrl }) => {
         <div className="relative group">
           <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow-lg">
             {avatarUrl ? (
-              <img 
-                src={avatarUrl} 
-                alt="Profile" 
+              <img
+                src={avatarUrl}
+                alt="Profile"
                 className="w-full h-full object-cover"
               />
             ) : (

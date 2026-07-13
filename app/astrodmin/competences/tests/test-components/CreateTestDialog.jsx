@@ -28,14 +28,24 @@ import { Badge } from "@/components/ui/badge"
 import { 
   Plus, 
   Trash, 
-  ChevronUp, 
-  ChevronDown, 
   Save, 
   FileUp, 
   Upload, 
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Circle,
+  CheckCircle2
 } from "lucide-react"
+import { getQuestionValidationRequirements } from "../helpers"
+
+function parseNumberInput(value, fallback) {
+  if (value === "") {
+    return fallback
+  }
+
+  const parsedValue = Number.parseInt(value, 10)
+  return Number.isNaN(parsedValue) ? fallback : parsedValue
+}
 
 export function CreateTestDialog({
   open,
@@ -55,6 +65,9 @@ export function CreateTestDialog({
   handleCreateTest,
   setShowImportQuestionsDialog,
 }) {
+  const questionValidationRequirements = getQuestionValidationRequirements(currentQuestion)
+  const questionValidationError = questionValidationRequirements.find((requirement) => !requirement.valid)?.message ?? null
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -112,7 +125,7 @@ export function CreateTestDialog({
                       id="duration"
                       type="number"
                       value={newTest.duration}
-                      onChange={(e) => setNewTest({ ...newTest, duration: Number.parseInt(e.target.value) })}
+                      onChange={(e) => setNewTest({ ...newTest, duration: parseNumberInput(e.target.value, 60) })}
                     />
                   </div>
                 </div>
@@ -145,7 +158,7 @@ export function CreateTestDialog({
                       id="passingScore"
                       type="number"
                       value={newTest.passingScore}
-                      onChange={(e) => setNewTest({ ...newTest, passingScore: Number.parseInt(e.target.value) })}
+                      onChange={(e) => setNewTest({ ...newTest, passingScore: parseNumberInput(e.target.value, 70) })}
                     />
                   </div>
                 </div>
@@ -171,7 +184,7 @@ export function CreateTestDialog({
                   </CardTitle>
                   <CardDescription>Créez vos questions une par une ou importez-les</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setShowImportQuestionsDialog(true)}>
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowImportQuestionsDialog(true)}>
                   <FileUp className="mr-2 h-4 w-4" />
                   Importer CSV
                 </Button>
@@ -221,7 +234,7 @@ export function CreateTestDialog({
                       id="q-score"
                       type="number"
                       value={currentQuestion.score}
-                      onChange={(e) => setCurrentQuestion({ ...currentQuestion, score: Number.parseInt(e.target.value) })}
+                      onChange={(e) => setCurrentQuestion({ ...currentQuestion, score: parseNumberInput(e.target.value, 5) })}
                     />
                   </div>
                 </div>
@@ -237,10 +250,11 @@ export function CreateTestDialog({
                           alt="Aperçu"
                           className="w-full h-auto rounded-lg border shadow-sm transition-transform group-hover:scale-[1.02]"
                         />
-                        <button
-                          onClick={handleRemoveImage}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors"
-                        >
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors"
+                          >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
@@ -289,22 +303,29 @@ export function CreateTestDialog({
                           className="flex-1"
                         />
                         {currentQuestion.type === "qcm_simple" ? (
-                          <div
-                            className={`flex-shrink-0 cursor-pointer p-2 rounded-full transition-colors ${
+                          <button
+                            type="button"
+                            className={`flex-shrink-0 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
                               currentQuestion.correctAnswer === idx
-                                ? "bg-green-100 text-green-600"
-                                : "bg-gray-100 text-gray-400 hover:bg-green-50"
+                                ? "border-green-300 bg-green-50 text-green-700"
+                                : "border-gray-200 bg-white text-gray-500 hover:border-green-200 hover:bg-green-50"
                             }`}
                             onClick={() => setCurrentQuestion({ ...currentQuestion, correctAnswer: idx })}
                           >
-                            <Save className={`h-5 w-5 ${currentQuestion.correctAnswer === idx ? "fill-current" : ""}`} />
-                          </div>
+                            {currentQuestion.correctAnswer === idx ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : (
+                              <Circle className="h-4 w-4" />
+                            )}
+                            Bonne réponse
+                          </button>
                         ) : (
-                          <div
-                            className={`flex-shrink-0 cursor-pointer p-2 rounded-full transition-colors ${
+                          <button
+                            type="button"
+                            className={`flex-shrink-0 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
                               currentQuestion.correctAnswers.includes(idx)
-                                ? "bg-green-100 text-green-600"
-                                : "bg-gray-100 text-gray-400 hover:bg-green-50"
+                                ? "border-green-300 bg-green-50 text-green-700"
+                                : "border-gray-200 bg-white text-gray-500 hover:border-green-200 hover:bg-green-50"
                             }`}
                             onClick={() => {
                               const newCorrects = currentQuestion.correctAnswers.includes(idx)
@@ -313,14 +334,18 @@ export function CreateTestDialog({
                               setCurrentQuestion({ ...currentQuestion, correctAnswers: newCorrects })
                             }}
                           >
-                            <Save
-                              className={`h-5 w-5 ${currentQuestion.correctAnswers.includes(idx) ? "fill-current" : ""}`}
-                            />
-                          </div>
+                            {currentQuestion.correctAnswers.includes(idx) ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : (
+                              <Circle className="h-4 w-4" />
+                            )}
+                            Réponse correcte
+                          </button>
                         )}
                       </div>
                     ))}
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       className="w-full mt-2"
@@ -330,19 +355,37 @@ export function CreateTestDialog({
                     >
                       <Plus className="mr-2 h-4 w-4" /> Ajouter une option
                     </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Pour un QCM, sélectionnez clairement la ou les bonnes réponses avant d'ajouter la question.
+                    </p>
+                    <div className="space-y-1 rounded-md border border-dashed border-gray-200 bg-gray-50 p-3 text-xs">
+                      {questionValidationRequirements.map((requirement) => (
+                        <p
+                          key={requirement.key}
+                          className={requirement.valid ? "text-green-700" : "text-red-600"}
+                        >
+                          {requirement.valid ? "OK" : "A faire"} - {requirement.message}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={handleAddQuestion} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  <Button type="button" onClick={handleAddQuestion} className="flex-1 bg-blue-600 hover:bg-blue-700">
                     {editingQuestionIndex !== null ? "Mettre à jour" : "Ajouter la question"}
                   </Button>
                   {editingQuestionIndex !== null && (
-                    <Button variant="ghost" onClick={handleCancelEditQuestion}>
+                    <Button type="button" variant="ghost" onClick={handleCancelEditQuestion}>
                       Annuler
                     </Button>
                   )}
                 </div>
+                {questionValidationError && (
+                  <p className="text-sm font-medium text-red-600">
+                    Validation en attente: {questionValidationError}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -390,6 +433,7 @@ export function CreateTestDialog({
                       </div>
                       <div className="flex gap-1 ml-2">
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-blue-600 hover:bg-blue-50"
@@ -398,6 +442,7 @@ export function CreateTestDialog({
                           <Save className="h-4 w-4" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-red-500 hover:bg-red-50"
@@ -436,10 +481,10 @@ export function CreateTestDialog({
         </div>
 
         <DialogFooter className="mt-8 pt-4 border-t gap-3">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={handleCreateTest} className="px-10 bg-blue-600 hover:bg-blue-700 shadow-lg font-bold">
+          <Button type="button" onClick={handleCreateTest} className="px-10 bg-blue-600 hover:bg-blue-700 shadow-lg font-bold">
             {editingTest ? "Mettre à jour le test" : "Finaliser et créer le test"}
           </Button>
         </DialogFooter>

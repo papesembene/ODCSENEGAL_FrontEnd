@@ -1,3 +1,5 @@
+"use client"
+
 // Fonction pour convertir les données en CSV
 export function convertToCSV(data) {
   if (!data || !data.length) return ""
@@ -38,6 +40,10 @@ export function downloadCSV(data, filename = "export.csv") {
   downloadFile(csv, filename, "text/csv")
 }
 
+export function exportToCSV(data, filename = "export.csv") {
+  downloadCSV(data, filename)
+}
+
 // Fonction pour convertir les données en Excel (XLSX)
 export async function downloadExcel(data, filename = "export.xlsx") {
   try {
@@ -63,6 +69,10 @@ export async function downloadExcel(data, filename = "export.xlsx") {
     console.error("Erreur lors de la génération du fichier Excel:", error)
     alert("Une erreur est survenue lors de la génération du fichier Excel. Veuillez réessayer.")
   }
+}
+
+export async function exportToExcel(data, filename = "export.xlsx") {
+  return downloadExcel(data, filename)
 }
 
 // Fonction pour convertir les données en PDF
@@ -98,6 +108,10 @@ export async function downloadPDF(data, filename = "export.pdf", title = "Export
     console.error("Erreur lors de la génération du fichier PDF:", error)
     alert("Une erreur est survenue lors de la génération du fichier PDF. Veuillez réessayer.")
   }
+}
+
+export async function exportToPDF(data, filename = "export.pdf", title = "Exported Data") {
+  return downloadPDF(data, filename, title)
 }
 
 // Fonction utilitaire pour télécharger un fichier

@@ -1,6 +1,8 @@
+"use client"
+
 import { useContext } from "react"
 import { AuthContext } from "@/contexts/AuthContext" // Change le chemin si nécessaire
- 
+
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {
@@ -8,5 +10,5 @@ export function useAuth() {
   }
   return context
 }
- 
- 
+
+

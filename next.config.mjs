@@ -1,3 +1,6 @@
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
 let userConfig = undefined
 try {
   // try to import ESM first
@@ -11,15 +14,18 @@ try {
   }
 }
 
+const configDir = path.dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: configDir,
   images: {
     unoptimized: true,
   },
   experimental: {
-    webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
+    webpackBuildWorker: false,
+    parallelServerBuildTraces: false,
+    parallelServerCompiles: false,
   },
   // Configuration pour éviter les erreurs EBUSY avec OneDrive
   onDemandEntries: {

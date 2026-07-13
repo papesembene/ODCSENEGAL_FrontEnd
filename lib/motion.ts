@@ -1,4 +1,6 @@
-import { Variants } from "framer-motion"
+import type { Transition, Variants } from "framer-motion"
+
+type MotionTransitionType = NonNullable<Transition["type"]>
 
 export const staggerContainer = (staggerChildren?: number, delayChildren?: number): Variants => {
   return {
@@ -12,7 +14,12 @@ export const staggerContainer = (staggerChildren?: number, delayChildren?: numbe
   }
 }
 
-export const fadeIn = (direction: 'up' | 'down' | 'left' | 'right', type: string, delay: number, duration: number): Variants => {
+export const fadeIn = (
+  direction: 'up' | 'down' | 'left' | 'right',
+  type: MotionTransitionType,
+  delay: number,
+  duration: number,
+): Variants => {
   return {
     hidden: {
       x: direction === 'left' ? 100 : direction === 'right' ? -100 : 0,
@@ -70,7 +77,12 @@ export const zoomIn = (delay: number, duration: number): Variants => {
   }
 }
 
-export const slideIn = (direction: 'left' | 'right' | 'up' | 'down', type: string, delay: number, duration: number): Variants => {
+export const slideIn = (
+  direction: 'left' | 'right' | 'up' | 'down',
+  type: MotionTransitionType,
+  delay: number,
+  duration: number,
+): Variants => {
   return {
     hidden: {
       x: direction === 'left' ? '-100%' : direction === 'right' ? '100%' : 0,

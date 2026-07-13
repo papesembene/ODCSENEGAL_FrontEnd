@@ -1,127 +1,164 @@
+"use client"
 
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
   CardTitle,
-  CardFooter
+  CardFooter 
 } from "@/components/ui/card"
-import {
-  ArrowRight,
-  BookOpen,
+import { 
+  ArrowRight, 
+  BookOpen, 
   Rocket,
 } from "lucide-react"
 import HeroSection from "@/components/home/hero-section"
+import PortalAnnouncementsSection from "@/components/home/portal-announcements-section"
+import PortalNewsSection from "@/components/home/portal-news-section"
 import StatisticsSection from "@/components/home/statistics-section"
 import TestimonialsSection from "@/components/home/testimonials-section"
 import PartnersSection from "@/components/home/partners-section"
-import AnimatedSection from "@/components/AnimatedSection"
-import { getUpcomingEvents } from "@/lib/public-api"
-import HomeEventsSection from "@/components/home/HomeEventsSection"
+import { motion } from "framer-motion"
+import { fadeIn, staggerContainer } from "@/lib/motion"
+import { useInView } from "react-intersection-observer"
 
-export default async function Home() {
-  const spaces = [
-    {
-      title: "Développement des Compétences Numériques",
-      description: "Formations gratuites dans les métiers du numérique pour favoriser l'employabilité des jeunes.",
-      icon: <BookOpen className="h-10 w-10 text-orange-1" />,
-      link: "/competences",
-      image: "/odc2Accueil.jpg"
-    },
-    {
-      title: "Accompagnement des Startups",
-      description: "Programmes d'accompagnement sur mesure pour les startups à tous les stades de développement.",
-      icon: <Rocket className="h-10 w-10 text-orange-1" />,
-      link: "/startups",
-      image: "/oss1.png"
-    },
-  ]
+const HOME_SPACES = [
+  {
+    title: "Développement des Compétences Numériques",
+    description: "Formations gratuites dans les métiers du numérique pour favoriser l'employabilité des jeunes.",
+    icon: <BookOpen className="h-10 w-10 text-orange-1" />,
+    link: "/competences",
+    image: "/odc2Accueil.jpg",
+  },
+  {
+    title: "Accompagnement des Startups",
+    description: "Programmes d'accompagnement sur mesure pour les startups à tous les stades de développement.",
+    icon: <Rocket className="h-10 w-10 text-orange-1" />,
+    link: "/startups",
+    image: "/oss1.png",
+  },
+]
 
-  let upcomingEvents = []
-  try {
-    upcomingEvents = await getUpcomingEvents()
-  } catch (err) {
-    console.error("Failed to fetch events:", err)
-  }
+export default function Home() {
+  const [objectifsRef, objectifsInView] = useInView({
+    triggerOnce: true,
+    threshold: 0.2,
+  })
 
   return (
     <div className="flex flex-col overflow-hidden">
-      {/* Hero Section */}
-      <HeroSection />
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+      </motion.div>
 
-      {/* Objectives Section */}
-      <section className="bg-white dark:bg-gray-900 py-20 px-4">
-        <AnimatedSection className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Orange Digital Center (ODC)
+      <HeroSection />
+      <PortalAnnouncementsSection />
+      <PortalNewsSection />
+
+      <motion.section 
+        ref={objectifsRef}
+        initial="hidden"
+        animate={objectifsInView ? "show" : "hidden"}
+        variants={staggerContainer(0.1, 0.2)}
+        className="bg-white px-4 py-12 dark:bg-gray-950 md:py-14"
+      >
+        <motion.div
+          variants={fadeIn('up', 'tween', 0.2, 1)}
+          className="container mx-auto max-w-4xl text-center"
+          >
+            <h2 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-4xl">
+              Orange Digital Center <span className="text-orange-600">(ODC)</span>
           </h2>
 
-          <p className="mt-6 text-xl leading-8 text-gray-600 dark:text-gray-300">
+          <motion.p 
+            variants={fadeIn('up', 'tween', 0.4, 1)}
+            className="mx-auto mt-4 max-w-3xl text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg"
+          >
             Initiative de Sonatel, forme aux compétences numériques, favorise l'emploi des jeunes et accompagne les startups innovantes.
-          </p>
+          </motion.p>
 
-          <div className="mt-10 flex justify-center">
-            <Button asChild size="lg" className="group">
+          <motion.div 
+            variants={fadeIn('up', 'tween', 0.6, 1)}
+            className="mt-7 flex justify-center"
+          >
+            <Button asChild size="lg" className="group rounded-full bg-orange-1 px-7 text-black hover:bg-orange-500">
               <Link href="/about" className="flex items-center">
                 En savoir plus
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-2" />
               </Link>
             </Button>
-          </div>
-        </AnimatedSection>
-      </section>
+          </motion.div>
+        </motion.div>
+      </motion.section>
 
-      {/* Programs Section */}
-      <section className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 py-20 px-4">
+      <section className="relative overflow-hidden bg-white px-4 py-24 dark:bg-gray-950">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+        <div className="absolute right-[-8rem] top-24 h-96 w-96 rounded-full bg-orange-100 blur-3xl dark:bg-orange-500/10" />
         <div className="container mx-auto">
-          <AnimatedSection className="mx-auto max-w-4xl text-center mb-16">
-            <h2 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="mx-auto max-w-4xl text-center mb-16"
+          >
+            <span className="inline-flex rounded-full bg-orange-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">
+              Deux portes d'entrée
+            </span>
+            <h2 className="mt-5 text-4xl font-black tracking-tight text-gray-950 dark:text-white sm:text-5xl">
               Nos <span className="text-orange-1">Programmes</span>
             </h2>
             <p className="mt-6 text-xl text-gray-600 dark:text-gray-300">
               Découvrez nos espaces innovants conçus pour booster vos compétences
             </p>
-          </AnimatedSection>
+          </motion.div>
 
-          <div className="flex flex-col md:flex-row justify-center gap-8 max-w-6xl mx-auto">
-            {spaces.slice(0, 2).map((space, index) => (
-              <AnimatedSection
+          <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2">
+            {HOME_SPACES.map((space, index) => (
+              <motion.div
                 key={index}
-                delay={index * 0.15}
-                className="w-full md:w-1/2 lg:w-1/3"
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.15 }}
+                viewport={{ once: true }}
               >
-                <Card className="h-full flex flex-col group overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800">
-                  <div className="relative h-64 overflow-hidden">
-                    <Image
-                      src={space.image}
-                      alt={space.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                <Card className="group relative h-full overflow-hidden rounded-[2rem] border border-gray-200/80 bg-white shadow-xl shadow-gray-200/70 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-200/60 dark:border-white/10 dark:bg-white/5 dark:shadow-none">
+                  <div className="relative h-72 overflow-hidden">
+                    <Image 
+                      src={space.image} 
+                      alt={space.title} 
+                      fill 
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                    <div className="absolute bottom-5 left-5 rounded-2xl border border-white/20 bg-white/15 p-3 text-white backdrop-blur-md">
+                      {space.icon}
+                    </div>
                   </div>
-
-                  <CardHeader className="px-6 pt-6">
-                    <CardTitle className="text-2xl font-bold group-hover:text-orange-1 transition-colors duration-300">
+                  
+                  <CardHeader className="px-7 pt-7">
+                    <CardTitle className="text-2xl font-black leading-tight text-gray-950 transition-colors duration-300 group-hover:text-orange-1 dark:text-white">
                       {space.title}
                     </CardTitle>
                   </CardHeader>
-
-                  <CardContent className="px-6 pb-4 flex-grow">
-                    <p className="text-gray-600 dark:text-gray-300 text-lg">
+                  
+                  <CardContent className="flex-grow px-7 pb-5">
+                    <p className="text-lg leading-8 text-gray-600 dark:text-gray-300">
                       {space.description}
                     </p>
                   </CardContent>
-
-                  <CardFooter className="px-6 pb-6">
-                    <Button asChild variant="outline" className="w-full group/button border-orange-1 hover:bg-orange-50 dark:hover:bg-orange-900/20">
+                  
+                  <CardFooter className="px-7 pb-7">
+                    <Button asChild variant="outline" className="group/button h-12 w-full rounded-full border-orange-1 bg-orange-50/60 font-bold hover:bg-orange-1 hover:text-black dark:bg-orange-500/10 dark:hover:bg-orange-500">
                       <Link href={space.link} className="flex items-center justify-between">
-                        <span className="font-medium group-hover/button:text-orange-1 transition-colors duration-300">
+                        <span>
                           Explorer le programme
                         </span>
                         <ArrowRight className="h-5 w-5 transition-transform group-hover/button:translate-x-2" />
@@ -129,53 +166,79 @@ export default async function Home() {
                     </Button>
                   </CardFooter>
                 </Card>
-              </AnimatedSection>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Statistics */}
-      <StatisticsSection />
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <StatisticsSection />
+      </motion.div>
 
-      {/* Events Section */}
-      <HomeEventsSection upcomingEvents={upcomingEvents} />
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+      >
+        <TestimonialsSection />
+      </motion.div>
 
-      {/* Testimonials */}
-      <TestimonialsSection />
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        viewport={{ once: true }}
+      >
+        <PartnersSection />
+      </motion.div>
 
-      {/* Partners */}
-      <PartnersSection />
-
-      {/* CTA Section */}
-      <section className="relative py-16 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-1 to-[#CC6200] animate-gradient-x" />
+      <motion.section 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+        className="relative overflow-hidden py-20 text-white"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,#111111_0%,#FF7900_55%,#b84d00_100%)]" />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-bold sm:text-4xl drop-shadow-md">
+          <div className="mx-auto max-w-4xl rounded-[2rem] border border-white/15 bg-white/10 p-8 text-center shadow-2xl shadow-black/20 backdrop-blur-md sm:p-12">
+            <h2 className="text-3xl font-black sm:text-5xl drop-shadow-md">
               Prêt à rejoindre l'aventure ?
             </h2>
-            <p className="mt-4 text-lg drop-shadow-md">
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/90 drop-shadow-md">
               Que vous soyez étudiant, entrepreneur ou professionnel, Orange Digital Center a un programme adapté à vos besoins.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <AnimatedSection>
-                <Button asChild className="bg-white text-[#000000] hover:bg-white hover:text-[#000000] border-none h-12 px-6 text-sm md:text-base">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button asChild className="h-12 rounded-full border-none bg-white px-6 text-sm font-bold text-black hover:bg-white hover:text-black md:text-base">
                   <Link href="/odc/candidatures">Postuler à une formation</Link>
                 </Button>
-              </AnimatedSection>
-              <AnimatedSection>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <Button
                   asChild
-                  className="bg-[#000000] text-white hover:bg-[#000000] hover:text-white border-none h-12 px-6 text-sm md:text-base"
+                  className="h-12 rounded-full border border-white/20 bg-black text-sm font-bold text-white hover:bg-black hover:text-white md:text-base"
                 >
                   <Link href="/candidatures/fermees">Postuler à un programme d'accompagnements</Link>
                 </Button>
-              </AnimatedSection>
+              </motion.div>
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
     </div>
   )
 }

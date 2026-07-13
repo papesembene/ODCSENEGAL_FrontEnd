@@ -10,6 +10,7 @@ interface NewsItem {
   id: string
   title: string
   slug: string
+  linkUrl?: string
   isBreaking?: boolean
   category?: string
 }
@@ -46,7 +47,7 @@ export default function NewsMarquee({ news }: Props) {
           news.map((item) => (
             <React.Fragment key={item.id}>
               <Link
-                href={`/actualites/${item.slug}`}
+                href={item.linkUrl || `/actualites/${item.slug}`}
                 className="mx-6 flex items-center group/news-item"
               >
                 {item.category && (

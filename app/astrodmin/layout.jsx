@@ -10,48 +10,112 @@ import {
   LogOut, 
   LayoutDashboard, 
   Users, 
-  Briefcase, 
   Calendar, 
-  Activity, 
   FileText, 
   Settings,
+  Briefcase,
   Menu,
   X,
   Moon,
   Sun,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Megaphone
 } from "lucide-react"
 import { useTheme } from "next-themes"
+
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
+  const [isMounted, setIsMounted] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [adminType, setAdminType] = useState(null)
   const [adminEmail, setAdminEmail] = useState(null)
+  const [adminScope, setAdminScope] = useState(null)
+  const [canManageInterviewQuestions, setCanManageInterviewQuestions] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
     // Vérifier l'authentification
-    const checkAuth = () => {
-      const authenticated = !!localStorage.getItem("admin_token")
+    const checkAuth = async () => {
+      const token = localStorage.getItem("admin_token")
+      const authenticated = !!token
       const type = localStorage.getItem("admin_type")
       const email = localStorage.getItem("admin_email")
+      const admin = JSON.parse(localStorage.getItem("admin_user") || "{}")
+      const scope = admin?.profile_data?.admin_scope || null
+      let canManageQuestions = false
+
+      if (authenticated && scope === "interview_member") {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/admin/interviews/capabilities`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          const payload = await response.json()
+          canManageQuestions = Boolean(payload?.data?.can_manage_questions)
+        } catch {
+          canManageQuestions = false
+        }
+      } else {
+        canManageQuestions = type === "competences"
+      }
       
       setIsAuthenticated(authenticated)
       setAdminType(type)
       setAdminEmail(email)
+      setAdminScope(scope)
+      setCanManageInterviewQuestions(canManageQuestions)
+
+      const isContentManager = type === "cm"
+      const defaultAdminRoute = isContentManager
+        ? "/astrodmin/portail"
+        : scope === "interview_member"
+          ? "/astrodmin/mes-entretiens"
+          : "/astrodmin/dashboard"
 
       // Si l'utilisateur n'est pas authentifié et n'est pas sur la page de connexion, rediriger
       if (!authenticated && pathname !== "/astrodmin") {
         router.push("/astrodmin")
       } else if (authenticated && pathname === "/astrodmin") {
         // Si l'utilisateur est authentifié et sur la page de connexion, rediriger vers le dashboard
-        router.push("/astrodmin/dashboard")
+        router.push(defaultAdminRoute)
+      } else if (authenticated && isContentManager && !pathname.startsWith("/astrodmin/portail")) {
+        router.replace("/astrodmin/portail")
+      } else if (authenticated && !isContentManager && pathname.startsWith("/astrodmin/portail")) {
+        router.replace(defaultAdminRoute)
+      } else if (
+        authenticated
+        && scope === "interview_member"
+        && !pathname.startsWith("/astrodmin/mes-entretiens")
+        && !(canManageQuestions && pathname.startsWith("/astrodmin/entretiens/questions"))
+      ) {
+        router.replace("/astrodmin/mes-entretiens")
+      } else if (
+        authenticated
+        && scope === "interview_member"
+        && !canManageQuestions
+        && pathname.startsWith("/astrodmin/entretiens/questions")
+      ) {
+        router.replace("/astrodmin/mes-entretiens")
+      } else if (
+        authenticated
+        && scope !== "interview_member"
+        && pathname.startsWith("/astrodmin/entretiens/questions")
+      ) {
+        router.replace("/astrodmin/entretiens")
+      } else if (authenticated && scope !== "interview_member" && pathname.startsWith("/astrodmin/mes-entretiens")) {
+        router.replace("/astrodmin/entretiens")
       }
 
       setIsLoading(false)
@@ -81,26 +145,58 @@ export default function AdminLayout({ children }) {
     router.push("/astrodmin")
   }
 
+  const isInterviewMember = adminScope === "interview_member"
+  const isContentManager = adminType === "cm"
+
   const menuItems = [
     {
       label: "Dashboard",
       icon: LayoutDashboard,
       href: "/astrodmin/dashboard",
-      color: "text-blue-500"
+      color: "text-blue-500",
+      show: !isInterviewMember && !isContentManager,
     },
     {
       label: "Compétences",
       icon: Users,
       href: "/astrodmin/competences",
       color: "text-orange-500",
-      show: adminType === "competences" || adminType === "super_admin" || !adminType
+      show: !isInterviewMember && (adminType === "competences" || adminType === "super_admin" || !adminType)
     },
-    /*{
+    {
+      label: "Entretiens",
+      icon: Calendar,
+      href: "/astrodmin/entretiens",
+      color: "text-emerald-500",
+      show: !isInterviewMember && (adminType === "competences" || adminType === "super_admin" || !adminType)
+    },
+    {
+      label: "Questions entretien",
+      icon: FileText,
+      href: "/astrodmin/entretiens/questions",
+      color: "text-emerald-500",
+      show: false,
+    },
+    {
+      label: "Mes entretiens",
+      icon: Calendar,
+      href: "/astrodmin/mes-entretiens",
+      color: "text-teal-500",
+      show: isInterviewMember,
+    },
+    {
+      label: "Questions entretien",
+      icon: FileText,
+      href: "/astrodmin/entretiens/questions",
+      color: "text-emerald-500",
+      show: isInterviewMember && canManageInterviewQuestions,
+    },
+    {
       label: "Startups",
       icon: Briefcase,
       href: "/astrodmin/startups",
       color: "text-purple-500",
-      show: adminType === "startups" || !adminType
+      show: !isInterviewMember && (adminType === "startups" || adminType === "super_admin" || !adminType)
     },
     /*{
       label: "Événements",
@@ -112,7 +208,22 @@ export default function AdminLayout({ children }) {
       label: "Tests en ligne",
       icon: FileText,
       href: "/astrodmin/competences/tests",
-      color: "text-indigo-500"
+      color: "text-indigo-500",
+      show: !isInterviewMember && !isContentManager && (adminType === "competences" || adminType === "super_admin" || !adminType)
+    },
+    {
+      label: "Portail",
+      icon: Megaphone,
+      href: "/astrodmin/portail",
+      color: "text-orange-500",
+      show: !isInterviewMember && adminType === "cm",
+    },
+    {
+      label: "Paramètres",
+      icon: Settings,
+      href: "/astrodmin/parametres",
+      color: "text-slate-500",
+      show: !isInterviewMember && !isContentManager && (adminType === "competences" || adminType === "super_admin"),
     },
     /*{
       label: "Log Connexions",
@@ -122,17 +233,23 @@ export default function AdminLayout({ children }) {
     },*/
   ]
 
+  const isDarkTheme = isMounted && theme === "dark"
+  const visibleMenuItems = menuItems.filter(item => item.show !== false)
+  const activeMenuHref = visibleMenuItems
+    .filter((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+    .sort((currentItem, nextItem) => nextItem.href.length - currentItem.href.length)[0]?.href
+
   return (
-    <div className="min-h-screen flex">
+    <div className="flex h-full min-h-0 overflow-hidden">
       {/* Sidebar Desktop */}
-      <aside className={`hidden lg:flex lg:flex-col ${sidebarCollapsed ? "lg:w-16" : "lg:w-64"} bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-200`}>
+      <aside className={`hidden h-full shrink-0 overflow-hidden lg:flex lg:flex-col ${sidebarCollapsed ? "lg:w-16" : "lg:w-64"} bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-200`}>
         <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <div className={`${sidebarCollapsed ? "opacity-0 pointer-events-none w-0" : "opacity-100"} transition-opacity duration-200`}>
             <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
               ODC Admin
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : "Dashboard"}
+              {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : adminType === "cm" ? "Community Manager" : "Dashboard"}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} aria-label="Basculer la taille du menu">
@@ -142,8 +259,8 @@ export default function AdminLayout({ children }) {
 
         <ScrollArea className="flex-1 px-3 py-4">
           <nav className="space-y-1">
-            {menuItems.filter(item => item.show !== false).map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+            {visibleMenuItems.map((item) => {
+              const isActive = activeMenuHref === item.href
               return (
                 <Link
                   key={item.href}
@@ -181,10 +298,10 @@ export default function AdminLayout({ children }) {
               variant="outline"
               size="sm"
               className={`${sidebarCollapsed ? "" : "flex-1"}`}
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => setTheme(isDarkTheme ? "light" : "dark")}
               aria-label="Basculer thème"
             >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             {!sidebarCollapsed && (
               <Button variant="outline" size="sm" className="flex-1" onClick={handleLogout}>
@@ -206,7 +323,7 @@ export default function AdminLayout({ children }) {
                   ODC Admin
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : "Dashboard"}
+                  {adminType === "competences" ? "Compétences" : adminType === "super_admin" ? "Super Admin" : adminType === "startups" ? "Startups" : adminType === "cm" ? "Community Manager" : "Dashboard"}
                 </p>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
@@ -216,8 +333,8 @@ export default function AdminLayout({ children }) {
 
             <ScrollArea className="flex-1 px-3 py-4">
               <nav className="space-y-1">
-                {menuItems.filter(item => item.show !== false).map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+                {visibleMenuItems.map((item) => {
+                  const isActive = activeMenuHref === item.href
                   return (
                     <Link
                       key={item.href}
@@ -254,9 +371,9 @@ export default function AdminLayout({ children }) {
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  onClick={() => setTheme(isDarkTheme ? "light" : "dark")}
                 >
-                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
                 <Button variant="outline" size="sm" className="flex-1" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
@@ -268,9 +385,9 @@ export default function AdminLayout({ children }) {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header Mobile */}
-        <header className="lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+        <header className="z-40 flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950 lg:hidden">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>
@@ -283,7 +400,7 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+        <main className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain bg-gray-50 dark:bg-gray-900">
           {children}
         </main>
       </div>

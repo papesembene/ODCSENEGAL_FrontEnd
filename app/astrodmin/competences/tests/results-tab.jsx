@@ -10,6 +10,16 @@ import { FORMATIONS } from "./constants"
 import { PageSizeSelector, PaginationControls, ResultStatusBadge } from "./test-components"
 import { Upload, Download, RefreshCw, List, LayoutGrid, FileText, Eye, AlertCircle, GraduationCap, UsersIcon, CheckCircle, XCircle, Clock } from "lucide-react"
 
+function hasViolations(violationEntry) {
+  const totalViolations = Number(
+    violationEntry?.totalViolations
+      ?? violationEntry?.violations?.length
+      ?? 0
+  )
+
+  return totalViolations > 0
+}
+
 export function ResultsTab({
   testResults,
   refreshing,
@@ -191,7 +201,7 @@ export function ResultsTab({
                                 <Button variant="outline" size="sm" onClick={() => handleViewDetails(result)} title="Voir les réponses détaillées">
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                {testViolations[result.id] && testViolations[result.id].violations?.length > 0 && (
+                                {hasViolations(testViolations[result.id]) && (
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -337,7 +347,7 @@ export function ResultsTab({
                                             <Button variant="outline" size="sm" onClick={() => handleViewDetails(result)} title="Voir les réponses détaillées">
                                               <Eye className="h-4 w-4" />
                                             </Button>
-                                            {testViolations[result.id] && testViolations[result.id].violations?.length > 0 && (
+                                            {hasViolations(testViolations[result.id]) && (
                                               <Button
                                                 variant="outline"
                                                 size="sm"

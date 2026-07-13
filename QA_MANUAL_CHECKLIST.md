@@ -44,7 +44,7 @@ Ce document liste les parcours utilisateur et administrateur critiques à vérif
 ## 4. Administration (Astrodmin)
 **URL :** `/astrodmin`
 
-- [ ] **Authentification** : 
+- [ ] **Authentification** :
     - [ ] Test de connexion avec identifiants valides.
     - [ ] Test avec identifiants erronés (message d'erreur clair).
     - [ ] Persistance du token (recharge de page).
