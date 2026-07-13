@@ -12,7 +12,11 @@ import {
   validateProfileStep,
 } from "../register-form-utils"
 
-const REGISTER_API_URL = "https://odcdeploye-2.onrender.com/api/auth/register"
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
+
+function buildApiUrl(path) {
+  return `${API_BASE_URL}${path}`
+}
 
 export default function useRegisterForm() {
   const router = useRouter()
@@ -111,7 +115,7 @@ export default function useRegisterForm() {
       setError(null)
 
       try {
-        const response = await fetch(REGISTER_API_URL, {
+        const response = await fetch(buildApiUrl("/api/auth/register"), {
           method: "POST",
           body: buildRegisterPayload(formData),
         })
