@@ -54,5 +54,5 @@ export const CANDIDATES_LIST = [
     phone: "+221779234567",
     referentiel: "Data Science",
   },
-  { id: 10, name: "Ndeye Fall", email: "ndeye.fall@gmail.com", phone: "+221770234567", referentiel: "Design UX/UI" },
+  { id: 10, name: "Ndeye Fall", email: "ndeye.fall@gmail.com", phone: "+221770234567", referentiel: "Référent Digital" },
 ]

@@ -385,7 +385,7 @@ export const normalizeFormationName = (name) => {
   if (n.includes("data")) return "Data"
   if (n.includes("hack")) return "Hackeuse"
   if (n.includes("aws") || n.includes("cloud")) return "AWS"
-  if (n.includes("design") || n.includes("ux")) return "Design UX/UI"
+  if (n.includes("referent") || n.includes("référent") || n.includes("digital")) return "Référent Digital"
   if (n.includes("cyber")) return "Cyber security"
   if (n.includes("intel") || n.includes("ia")) return "Intelligence Artificielle"
   return name

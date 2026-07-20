@@ -134,7 +134,7 @@ export function CreateGroupDialog({
                   <SelectItem value="Data">Data</SelectItem>
                   <SelectItem value="Hackeuse">Hackeuse</SelectItem>
                   <SelectItem value="AWS">AWS</SelectItem>
-                  <SelectItem value="Design UX/UI">Design UX/UI</SelectItem>
+                  <SelectItem value="Référent Digital">Référent Digital</SelectItem>
                   <SelectItem value="Cyber security">Cyber security</SelectItem>
                   <SelectItem value="Intelligence Artificielle">Intelligence Artificielle</SelectItem>
                 </SelectContent>
