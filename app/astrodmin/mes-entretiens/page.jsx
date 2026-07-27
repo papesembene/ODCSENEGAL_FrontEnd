@@ -80,6 +80,12 @@ function getCoachRecommendationLabels(evaluation) {
     .map((option) => option.label)
 }
 
+function isFilterFailure(evaluation) {
+  const filterReview = getEvaluationSectionReview(evaluation, "filter")
+  const decision = normalizeSearchValue(filterReview?.decision || filterReview?.verdict)
+  return ["echec", "echec filtre", "rejet", "rejete", "rejected", "failed"].includes(decision)
+}
+
 function getRoleKeys(roles) {
   return roles.map(getRoleSectionKey).filter(Boolean)
 }
@@ -272,7 +278,7 @@ function CandidateFoundQuestionsPanel({ testDetails }) {
 
   return (
     <div className="space-y-3">
-      <div className="max-h-[360px] space-y-3 overflow-auto rounded-lg border bg-background p-3">
+      <div className="max-h-[min(360px,40vh)] space-y-3 overflow-auto rounded-lg border bg-background p-3">
         {visibleQuestions.map((question) => (
           <div key={question.index} className="space-y-3 rounded-lg border bg-white p-3">
             <div className="flex items-start gap-2">
@@ -343,7 +349,7 @@ function InterviewQuestionsSidebar({ questions, selectedEvaluation }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:max-h-[calc(100vh-260px)] lg:overflow-y-auto lg:pr-1">
       <div className="rounded-lg border border-orange-200 bg-orange-50/60">
         <div className="border-b border-orange-200 px-4 py-3">
           <p className="text-sm font-semibold text-orange-950">Questions d'entretien</p>
@@ -351,7 +357,7 @@ function InterviewQuestionsSidebar({ questions, selectedEvaluation }) {
             Questions à poser et réponses attendues.
           </p>
         </div>
-        <div className="max-h-[36vh] overflow-y-auto">
+        <div className="max-h-[min(320px,36vh)] overflow-y-auto">
           <div className="divide-y">
             {questions.map((item, index) => (
               <div key={item.id || index} className="space-y-2 p-4">
@@ -516,7 +522,7 @@ function InterviewEvaluationTable({
   const colSpan = 6 + Math.max(visibleCriteriaCount, 1)
 
   return (
-    <div className="max-h-[62vh] overflow-auto rounded-lg border">
+    <div className="min-h-[420px] max-h-[calc(100vh-280px)] overflow-auto rounded-lg border">
       <Table className="min-w-max">
         <TableHeader>
           <TableRow>
@@ -562,18 +568,21 @@ function InterviewEvaluationTable({
             const isActive = activeEvaluationId === evaluation.id
             const coachRecommendationLabels = getCoachRecommendationLabels(evaluation)
             const hasCoachRecommendation = coachRecommendationLabels.length > 0
+            const hasFilterFailure = isFilterFailure(evaluation)
+            const stickyCellTone = hasFilterFailure ? "bg-red-100" : "bg-background"
 
             return (
               <Fragment key={evaluation.id}>
                 <TableRow
                   className={[
                     "cursor-pointer transition-colors",
+                    hasFilterFailure ? "bg-red-100/80 hover:bg-red-100" : "",
                     hasCoachRecommendation ? "bg-emerald-50/70 hover:bg-emerald-50" : "",
                     isActive ? "bg-muted/60 ring-1 ring-inset ring-orange-200" : "",
                   ].filter(Boolean).join(" ")}
                   onClick={() => onSelectEvaluation(evaluation.id)}
                 >
-                  <TableCell className="sticky left-0 z-10 bg-background font-medium">
+                  <TableCell className={`sticky left-0 z-10 font-medium ${stickyCellTone}`}>
                     {[evaluation.candidate_snapshot?.first_name, evaluation.candidate_snapshot?.last_name].filter(Boolean).join(" ") || evaluation.candidate_snapshot?.email || "Candidat"}
                     <p className="text-xs font-normal text-muted-foreground">
                       {evaluation.candidate_snapshot?.email || "-"}
@@ -618,7 +627,7 @@ function InterviewEvaluationTable({
                       )),
                     )
                   )}
-                  <TableCell className="sticky right-0 z-10 bg-background text-right">
+                  <TableCell className={`sticky right-0 z-10 text-right ${stickyCellTone}`}>
                     <div className="flex justify-end gap-2">
                       {roles.includes("Validateur") ? (
                         <Button
@@ -1062,10 +1071,10 @@ export default function MyInterviewsPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtres</CardTitle>
-          <CardDescription>Sélectionnez le périmètre à traiter.</CardDescription>
+      <Card className="sticky top-0 z-30 bg-background/95 shadow-sm backdrop-blur">
+        <CardHeader className="pb-3">
+          <CardTitle>Filtres rapides</CardTitle>
+          <CardDescription>Gardez le bon référentiel, créneau ou candidat sans remonter toute la page.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-end">
@@ -1138,8 +1147,8 @@ export default function MyInterviewsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Tableau d'entretien</CardTitle>
@@ -1156,7 +1165,7 @@ export default function MyInterviewsPage() {
             />
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
 	          {filteredEvaluations.length === 0 ? (
 	            <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
 	              Aucun candidat pour les filtres sélectionnés.
@@ -1168,7 +1177,7 @@ export default function MyInterviewsPage() {
 	              const scorecardConfig = campaign?.scorecard_config || campaignEvaluations[0]?.campaign_scorecard_config || {}
 
 	              return (
-		                <div key={campaignId} className="space-y-4 rounded-xl border p-4">
+			                <div key={campaignId} className="space-y-4 rounded-xl border p-3">
 	                  <div className="flex flex-wrap items-center justify-between gap-3">
 	                    <div>
 	                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -1191,7 +1200,7 @@ export default function MyInterviewsPage() {
                               const activeEvaluationId = activeEvaluationBySlot[slotId] || firstEvaluation?.id || ""
                               const activeEvaluation = slotEvaluations.find((evaluation) => evaluation.id === activeEvaluationId) || firstEvaluation
 		                      return (
-			                        <div key={slotId} className="space-y-3 rounded-lg border bg-background p-3">
+				                        <div key={slotId} className="space-y-3 rounded-lg border bg-background p-3">
 		                          <div className="flex flex-wrap items-center justify-between gap-2">
 		                            <div>
 		                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -1213,7 +1222,7 @@ export default function MyInterviewsPage() {
 		                            </div>
 			                          </div>
 
-                              <div className={shouldShowFilterQuestions ? "grid gap-4 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]" : ""}>
+	                              <div className={shouldShowFilterQuestions ? "grid gap-4 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:items-start" : ""}>
                                 {shouldShowFilterQuestions ? (
                                   <aside className="lg:sticky lg:top-4 lg:self-start">
                                     <InterviewQuestionsSidebar
