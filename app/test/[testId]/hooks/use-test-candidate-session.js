@@ -45,6 +45,35 @@ export default function useTestCandidateSession({ testId }) {
   const timerRef = useRef(null)
   const antiCheatRef = useRef(null)
   const countdownRef = useRef(null)
+  const serverDraftTimerRef = useRef(null)
+  const lastServerDraftRef = useRef("")
+  const lastServerDraftAtRef = useRef(0)
+
+  const isExpectedAuthError = useCallback((message) => {
+    return [
+      "Test déjà passé",
+      "Email ou numéro incorrect",
+      "Numéro incorrect",
+      "Vous ne faites pas partie du groupe autorisé",
+      "Test expiré",
+    ].some((expectedMessage) => message.includes(expectedMessage))
+  }, [])
+
+  const getFriendlyAuthMessage = useCallback((message) => {
+    if (message.includes("Email ou numéro incorrect") || message.includes("Numéro incorrect")) {
+      return "Les informations saisies ne correspondent pas à la liste autorisée pour ce test."
+    }
+
+    if (message.includes("Vous ne faites pas partie du groupe autorisé")) {
+      return "Votre candidature n'est pas rattachée à ce groupe de test."
+    }
+
+    if (message.includes("Test expiré")) {
+      return "Le créneau de ce test est terminé. Veuillez contacter l'administration."
+    }
+
+    return message
+  }, [])
 
   const stopAntiCheat = useCallback(() => {
     if (!antiCheatRef.current) {
@@ -257,16 +286,41 @@ export default function useTestCandidateSession({ testId }) {
 
         return true
       } catch (error) {
-        console.error("Erreur d'authentification:", error)
-        const errorMsg = "❌ Erreur de connexion au serveur. Veuillez réessayer."
-        setAuthError(errorMsg)
-        if (!silent) toast.error(errorMsg)
+        const serverMessage = error instanceof Error ? error.message : ""
+        const errorMsg = serverMessage || "Erreur de connexion au serveur. Veuillez réessayer."
+
+        if (silent) {
+          removeStoredValues([storageKeys.auth])
+          setAuthData((previous) => ({ ...previous, email: "", phone: "" }))
+          setAuthError("")
+          return false
+        }
+
+        if (errorMsg.includes("Test déjà passé")) {
+          removeStoredValues([storageKeys.auth])
+          writeStoredValue(storageKeys.submitted, "true")
+          setTestStarted(false)
+          setTestCompleted(true)
+          setShowAuthDialog(false)
+          setShowSuccessModal(true)
+          toast.info("Vous avez déjà soumis ce test. Merci pour votre participation.")
+          return false
+        }
+
+        if (!isExpectedAuthError(errorMsg)) {
+          console.error("Erreur d'authentification:", error)
+          toast.error("Impossible de joindre le serveur. Veuillez réessayer.")
+        } else {
+          toast.info(getFriendlyAuthMessage(errorMsg))
+        }
+
+        setAuthError(getFriendlyAuthMessage(errorMsg))
         return false
       } finally {
         setLoading(false)
       }
     },
-    [storageKeys.auth, testId],
+    [getFriendlyAuthMessage, isExpectedAuthError, storageKeys.auth, storageKeys.submitted, testId],
   )
 
   const resumeTestFromStorage = useCallback(() => {
@@ -315,6 +369,44 @@ export default function useTestCandidateSession({ testId }) {
     }
   }, [resuming, storageKeys.answers, storageKeys.startedAt, storageKeys.submitted, testData])
 
+  const resumeTestFromServerDraft = useCallback(async () => {
+    if (!testData?.id || !authData.email || !authData.phone || testCompleted || testStarted) {
+      return
+    }
+
+    try {
+      const query = new URLSearchParams({
+        email: authData.email,
+        phone: authData.phone,
+      })
+      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testData.id}/session-draft?${query.toString()}`, {
+        timeout: 8000,
+        retries: 0,
+      })
+      const draft = result?.data
+
+      if (!draft || draft.status !== "in_progress") {
+        return
+      }
+
+      if (draft.answers && Object.keys(draft.answers).length > 0) {
+        setAnswers(draft.answers)
+        writeStoredJsonValue(storageKeys.answers, draft.answers)
+      }
+
+      setCurrentQuestion(Number.isInteger(draft.lastQuestion) ? draft.lastQuestion : 0)
+
+      if (draft.remainingTime > 0) {
+        setTimeRemaining(draft.remainingTime)
+        setTestStarted(true)
+        writeStoredValue(storageKeys.startedAt, new Date().toISOString())
+        toast.info("Reprise de votre brouillon de test.")
+      }
+    } catch (error) {
+      console.warn("Impossible de reprendre le brouillon serveur:", error)
+    }
+  }, [authData.email, authData.phone, storageKeys.answers, storageKeys.startedAt, testCompleted, testData?.id, testStarted])
+
   const submitResults = useCallback(
     async (finalScore) => {
       try {
@@ -339,7 +431,7 @@ export default function useTestCandidateSession({ testId }) {
       } catch (error) {
         console.error("Erreur lors de l'envoi des résultats:", error)
         toast.error("Impossible d'enregistrer les résultats. Vérifiez la connexion au backend.")
-      if (typeof window !== "undefined") {
+        if (typeof window !== "undefined") {
           removeStoredValues([storageKeys.submitted])
         }
       }
@@ -422,6 +514,52 @@ export default function useTestCandidateSession({ testId }) {
 
   const { handleSingleAnswerChange, handleMultipleAnswerChange, handleTextAnswerChange } = useMemo(() => createAnswerHandlers({ currentQuestion, setAnswers }), [currentQuestion])
 
+  const saveServerDraft = useCallback(
+    async ({ force = false } = {}) => {
+      if (!testStarted || testCompleted || !isAuthenticated || !testData?.id || !authData.email || !authData.phone) {
+        return
+      }
+
+      const payload = {
+        email: authData.email,
+        phone: authData.phone,
+        name: authData.name,
+        answers,
+        lastQuestion: currentQuestion,
+        remainingTime: timeRemaining,
+      }
+      const payloadSignature = JSON.stringify({
+        answers,
+        currentQuestion,
+        testId: testData.id,
+      })
+      const now = Date.now()
+
+      if (!force && payloadSignature === lastServerDraftRef.current) {
+        return
+      }
+
+      if (!force && now - lastServerDraftAtRef.current < 1500) {
+        return
+      }
+
+      try {
+        await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testData.id}/session-draft`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          timeout: 8000,
+          retries: 0,
+          body: JSON.stringify(payload),
+        })
+        lastServerDraftRef.current = payloadSignature
+        lastServerDraftAtRef.current = now
+      } catch (error) {
+        console.warn("Brouillon serveur non sauvegardé:", error)
+      }
+    },
+    [answers, authData.email, authData.name, authData.phone, currentQuestion, isAuthenticated, testCompleted, testData?.id, testStarted, timeRemaining],
+  )
+
   useEffect(() => {
     loadTestMetadata()
 
@@ -463,6 +601,12 @@ export default function useTestCandidateSession({ testId }) {
   }, [isAuthenticated, resumeTestFromStorage])
 
   useEffect(() => {
+    if (isAuthenticated) {
+      resumeTestFromServerDraft()
+    }
+  }, [isAuthenticated, resumeTestFromServerDraft])
+
+  useEffect(() => {
     if (!isAuthenticated || !testStarted) {
       return
     }
@@ -477,6 +621,38 @@ export default function useTestCandidateSession({ testId }) {
   useBeforeUnloadProtection({ testCompleted, testStarted })
   useVisibilityWarning({ testCompleted, testStarted })
   usePersistedAnswers({ answers, storageKey: storageKeys.answers, testStarted })
+
+  useEffect(() => {
+    if (!testStarted || testCompleted || !isAuthenticated) {
+      return
+    }
+
+    if (serverDraftTimerRef.current) {
+      clearTimeout(serverDraftTimerRef.current)
+    }
+
+    serverDraftTimerRef.current = setTimeout(() => {
+      saveServerDraft()
+    }, 1200)
+
+    return () => {
+      if (serverDraftTimerRef.current) {
+        clearTimeout(serverDraftTimerRef.current)
+      }
+    }
+  }, [answers, currentQuestion, isAuthenticated, saveServerDraft, testCompleted, testStarted])
+
+  useEffect(() => {
+    if (!testStarted || testCompleted || !isAuthenticated) {
+      return
+    }
+
+    const intervalId = setInterval(() => {
+      saveServerDraft({ force: true })
+    }, 90000)
+
+    return () => clearInterval(intervalId)
+  }, [isAuthenticated, saveServerDraft, testCompleted, testStarted])
 
   useEffect(() => {
     if (!testStarted || testCompleted || !isAuthenticated || !authData.email || !testId) {
