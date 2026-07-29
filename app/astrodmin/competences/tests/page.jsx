@@ -20,6 +20,7 @@ import { OverviewTab } from "./overview-tab"
 import { TestsTab } from "./tests-tab"
 import { GroupsTab } from "./groups-tab"
 import { ResultsTab } from "./results-tab"
+import { SessionsTab } from "./sessions-tab"
 
 // Components and Dialogs
 import {
@@ -101,10 +102,11 @@ export default function TestsManagementPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-8">
         <div className="sticky top-0 z-10 py-2 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md rounded-xl px-2">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-14 p-1.5 bg-gray-200/50 dark:bg-gray-800/50 rounded-xl">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto gap-1 p-1.5 bg-gray-200/50 dark:bg-gray-800/50 rounded-xl lg:h-14">
             <TabsTrigger value="overview" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm transition-all h-11">Tableau de bord</TabsTrigger>
             <TabsTrigger value="tests" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm transition-all h-11">Mes Tests</TabsTrigger>
             <TabsTrigger value="groups" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm transition-all h-11">Groupes & Sessions</TabsTrigger>
+            <TabsTrigger value="sessions" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm transition-all h-11">Sessions</TabsTrigger>
             <TabsTrigger value="results" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm transition-all h-11">Résultats</TabsTrigger>
           </TabsList>
         </div>
@@ -144,6 +146,24 @@ export default function TestsManagementPage() {
           handleOpenInvitationDialog={m.handleOpenInvitationDialog}
           handleDeleteGroupClick={m.handleDeleteGroupClick}
           handleViewGroupCandidates={m.handleViewGroupCandidates}
+        />
+
+        <SessionsTab
+          fetchTestSessions={m.fetchTestSessions}
+          handleMarkSessionForReschedule={m.handleMarkSessionForReschedule}
+          sessionsItemsPerPage={m.sessionsItemsPerPage}
+          sessionsPage={m.sessionsPage}
+          sessionsSearchTerm={m.sessionsSearchTerm}
+          sessionsStatusFilter={m.sessionsStatusFilter}
+          sessionsTestFilter={m.sessionsTestFilter}
+          setSessionsItemsPerPage={m.setSessionsItemsPerPage}
+          setSessionsPage={m.setSessionsPage}
+          setSessionsSearchTerm={m.setSessionsSearchTerm}
+          setSessionsStatusFilter={m.setSessionsStatusFilter}
+          setSessionsTestFilter={m.setSessionsTestFilter}
+          testSessions={m.testSessions}
+          testSessionsTotal={m.testSessionsTotal}
+          testsData={m.testsData}
         />
 
         <ResultsTab

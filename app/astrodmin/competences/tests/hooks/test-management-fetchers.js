@@ -50,6 +50,52 @@ export async function fetchResultsData({ setTestResults }) {
   }
 }
 
+export async function fetchTestSessionsData({
+  filters = {},
+  setTestSessions,
+  setTestSessionsTotal,
+}) {
+  try {
+    const params = new URLSearchParams({
+      page: String(filters.page || 1),
+      per_page: String(filters.perPage || 20),
+    })
+
+    if (filters.status && filters.status !== "all") {
+      params.set("status", filters.status)
+    }
+
+    if (filters.testId && filters.testId !== "all") {
+      params.set("testId", filters.testId)
+    }
+
+    if (filters.search?.trim()) {
+      params.set("search", filters.search.trim())
+    }
+
+    const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/sessions?${params.toString()}`, {
+      timeout: 30000,
+      retries: 1,
+      retryDelay: 1000,
+    })
+
+    if (result.success) {
+      setTestSessions(result.data || [])
+      setTestSessionsTotal(result.total || 0)
+      return
+    }
+
+    toast.error(result.error || "Erreur lors du chargement des sessions")
+    setTestSessions([])
+    setTestSessionsTotal(0)
+  } catch (error) {
+    console.warn("Erreur lors du chargement des sessions:", error)
+    toast.error("Impossible de charger les sessions de test.")
+    setTestSessions([])
+    setTestSessionsTotal(0)
+  }
+}
+
 export async function fetchStatisticsData({ setStatistics }) {
   try {
     const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/statistics`, {
@@ -117,12 +163,12 @@ export async function fetchTestGroupsData({
   setTestGroups,
 }) {
   try {
-    let url = `${API_BASE_URL}/api/admin/test-groups?`
+    const params = new URLSearchParams()
     if (groupFormationFilter !== "all") {
-      url += `formation=${groupFormationFilter}`
+      params.set("formation", groupFormationFilter)
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(`${API_BASE_URL}/api/admin/test-groups?${params.toString()}`, {
       headers: getAdminAuthHeaders(),
     })
     const result = await response.json()

@@ -25,6 +25,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { FORMATION_OPTIONS } from "../constants"
 import { 
   Plus, 
   Trash, 
@@ -109,13 +110,11 @@ export function CreateTestDialog({
                         <SelectValue placeholder="Sélectionner" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Dev Web">Dev Web</SelectItem>
-                        <SelectItem value="Data">Data</SelectItem>
-                        <SelectItem value="Hackeuse">Hackeuse</SelectItem>
-                        <SelectItem value="AWS">AWS</SelectItem>
-                        <SelectItem value="Référent Digital">Référent Digital</SelectItem>
-                        <SelectItem value="Cyber security">Cyber security</SelectItem>
-                        <SelectItem value="Intelligence Artificielle">Intelligence Artificielle</SelectItem>
+                        {FORMATION_OPTIONS.map((formation) => (
+                          <SelectItem key={formation.value} value={formation.value}>
+                            {formation.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

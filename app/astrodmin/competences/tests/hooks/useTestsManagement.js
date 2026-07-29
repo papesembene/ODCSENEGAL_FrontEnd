@@ -16,12 +16,14 @@ import {
   buildAdminStats,
   buildScoreDistributionData,
   buildStatusDistributionData,
+  normalizeFormationName,
 } from "../helpers"
 import {
   fetchAvailableCandidatesData,
   fetchResultsData,
   fetchStatisticsData,
   fetchTestGroupsData,
+  fetchTestSessionsData,
   fetchTestsData,
   fetchViolationsData,
 } from "./test-management-fetchers"
@@ -40,6 +42,8 @@ export const useTestsManagement = (router) => {
   // États pour les tests
   const [testsData, setTestsData] = useState([])
   const [testResults, setTestResults] = useState([])
+  const [testSessions, setTestSessions] = useState([])
+  const [testSessionsTotal, setTestSessionsTotal] = useState(0)
   const [statistics, setStatistics] = useState(null)
   const [selectedTest, setSelectedTest] = useState(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -57,6 +61,9 @@ export const useTestsManagement = (router) => {
   const [resultsReferentielFilter, setResultsReferentielFilter] = useState("all")
   const [resultsStatusFilter, setResultsStatusFilter] = useState("all")
   const [resultsView, setResultsView] = useState("list")
+  const [sessionsSearchTerm, setSessionsSearchTerm] = useState("")
+  const [sessionsStatusFilter, setSessionsStatusFilter] = useState("all")
+  const [sessionsTestFilter, setSessionsTestFilter] = useState("all")
   const [selectedResults, setSelectedResults] = useState([])
   const [showEmailResultsDialog, setShowEmailResultsDialog] = useState(false)
   const [emailResultsType, setEmailResultsType] = useState("")
@@ -81,6 +88,8 @@ export const useTestsManagement = (router) => {
   const [groupsItemsPerPage, setGroupsItemsPerPage] = useState(20)
   const [resultsPage, setResultsPage] = useState(1)
   const [resultsItemsPerPage, setResultsItemsPerPage] = useState(20)
+  const [sessionsPage, setSessionsPage] = useState(1)
+  const [sessionsItemsPerPage, setSessionsItemsPerPage] = useState(20)
   const [newGroup, setNewGroup] = useState(createInitialGroup())
   const [groupFormationFilter, setGroupFormationFilter] = useState("all")
   const [showGroupCandidatesDialog, setShowGroupCandidatesDialog] = useState(false)
@@ -130,6 +139,20 @@ export const useTestsManagement = (router) => {
     await fetchStatisticsData({ setStatistics })
   }, [])
 
+  const fetchTestSessions = useCallback(async () => {
+    await fetchTestSessionsData({
+      filters: {
+        page: sessionsPage,
+        perPage: sessionsItemsPerPage,
+        search: sessionsSearchTerm,
+        status: sessionsStatusFilter,
+        testId: sessionsTestFilter,
+      },
+      setTestSessions,
+      setTestSessionsTotal,
+    })
+  }, [sessionsItemsPerPage, sessionsPage, sessionsSearchTerm, sessionsStatusFilter, sessionsTestFilter])
+
   const fetchAllViolations = useCallback(async () => {
     await fetchViolationsData({ setTestViolations, testResults })
   }, [testResults])
@@ -142,6 +165,32 @@ export const useTestsManagement = (router) => {
       setTestGroups,
     })
   }, [groupFormationFilter])
+
+  const handleMarkSessionForReschedule = useCallback(async (session) => {
+    if (!session?.id) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/tests/sessions/${session.id}/reschedule`, {
+        method: "PATCH",
+        headers: getAdminAuthHeaders(),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        toast.error(result.error || "Impossible de marquer cette session à reprogrammer")
+        return
+      }
+
+      toast.success("Candidat marqué à reprogrammer")
+      await fetchTestSessions()
+      await fetchTestGroups()
+    } catch (error) {
+      console.warn("Erreur reprogrammation session:", error)
+      toast.error("Impossible de marquer cette session à reprogrammer")
+    }
+  }, [fetchTestGroups, fetchTestSessions])
 
   const fetchAvailableCandidates = useCallback(async (filters = {}) => {
     await fetchAvailableCandidatesData({
@@ -163,13 +212,20 @@ export const useTestsManagement = (router) => {
     fetchResults()
     fetchStatistics()
     fetchTestGroups()
-  }, [router, fetchTests, fetchResults, fetchStatistics, fetchTestGroups, fetchAvailableCandidates])
+    fetchTestSessions()
+  }, [router, fetchTests, fetchResults, fetchStatistics, fetchTestGroups, fetchTestSessions, fetchAvailableCandidates])
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchTestGroups()
     }
   }, [groupFormationFilter, isAuthenticated, fetchTestGroups])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTestSessions()
+    }
+  }, [fetchTestSessions, isAuthenticated])
 
   useEffect(() => {
     if (testResults.length > 0) {
@@ -280,12 +336,12 @@ export const useTestsManagement = (router) => {
   // Derived state
   const filteredTests = testsData.filter((test) => {
     const matchesSearch = searchTerm === "" || test.title?.toLowerCase().includes(searchTerm.toLowerCase()) || test.referentiel?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesReferentiel = referentielFilter === "all" || test.referentiel === referentielFilter
+    const matchesReferentiel = referentielFilter === "all" || normalizeFormationName(test.referentiel) === normalizeFormationName(referentielFilter)
     return matchesSearch && matchesReferentiel
   })
 
   const filteredResults = testResults.filter((result) => {
-    const matchesReferentiel = resultsReferentielFilter === "all" || result.referentiel === resultsReferentielFilter
+    const matchesReferentiel = resultsReferentielFilter === "all" || normalizeFormationName(result.referentiel) === normalizeFormationName(resultsReferentielFilter)
     const matchesStatus = resultsStatusFilter === "all" || result.status === resultsStatusFilter
     return matchesReferentiel && matchesStatus
   })
@@ -296,6 +352,8 @@ export const useTestsManagement = (router) => {
     refreshing,
     testsData,
     testResults,
+    testSessions,
+    testSessionsTotal,
     statistics,
     selectedTest, setSelectedTest,
     showCreateDialog, setShowCreateDialog,
@@ -311,6 +369,9 @@ export const useTestsManagement = (router) => {
     resultsReferentielFilter, setResultsReferentielFilter,
     resultsStatusFilter, setResultsStatusFilter,
     resultsView, setResultsView,
+    sessionsSearchTerm, setSessionsSearchTerm,
+    sessionsStatusFilter, setSessionsStatusFilter,
+    sessionsTestFilter, setSessionsTestFilter,
     selectedResults, setSelectedResults,
     showEmailResultsDialog, setShowEmailResultsDialog,
     emailResultsType, setEmailResultsType,
@@ -331,6 +392,8 @@ export const useTestsManagement = (router) => {
     groupsItemsPerPage, setGroupsItemsPerPage,
     resultsPage, setResultsPage,
     resultsItemsPerPage, setResultsItemsPerPage,
+    sessionsPage, setSessionsPage,
+    sessionsItemsPerPage, setSessionsItemsPerPage,
     newGroup, setNewGroup,
     groupFormationFilter, setGroupFormationFilter,
     showGroupCandidatesDialog, setShowGroupCandidatesDialog,
@@ -364,6 +427,8 @@ export const useTestsManagement = (router) => {
     fetchTests,
     fetchResults,
     fetchStatistics,
+    fetchTestSessions,
+    handleMarkSessionForReschedule,
     fetchAllViolations,
     fetchAvailableCandidates,
     handleCreateTest: testHandlers.handleCreateTest,

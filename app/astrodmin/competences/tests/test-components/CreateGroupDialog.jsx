@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Users } from "lucide-react"
+import { FORMATION_OPTIONS } from "../constants"
 import { normalizeFormationName } from "../helpers"
 
 function parseNumberInput(value, fallback) {
@@ -48,9 +49,7 @@ export function CreateGroupDialog({
 }) {
   const [candidateSearch, setCandidateSearch] = useState("")
   const matchingTests = testsData.filter((test) => normalizeFormationName(test.referentiel) === newGroup.formation)
-  const availableCandidatesForFormation = availableCandidates.filter(
-    (candidate) => normalizeFormationName(candidate.desired_training) === newGroup.formation,
-  )
+  const availableCandidatesForFormation = availableCandidates
   const selectableCandidatesForFormation = availableCandidatesForFormation.filter(
     (candidate) => !assignedCandidateIds.includes(candidate.id),
   )
@@ -130,13 +129,11 @@ export function CreateGroupDialog({
                   <SelectValue placeholder="Sélectionner une formation" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Dev Web">Dev Web</SelectItem>
-                  <SelectItem value="Data">Data</SelectItem>
-                  <SelectItem value="Hackeuse">Hackeuse</SelectItem>
-                  <SelectItem value="AWS">AWS</SelectItem>
-                  <SelectItem value="Référent Digital">Référent Digital</SelectItem>
-                  <SelectItem value="Cyber security">Cyber security</SelectItem>
-                  <SelectItem value="Intelligence Artificielle">Intelligence Artificielle</SelectItem>
+                  {FORMATION_OPTIONS.map((formation) => (
+                    <SelectItem key={formation.value} value={formation.value}>
+                      {formation.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

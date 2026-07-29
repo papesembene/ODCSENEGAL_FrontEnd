@@ -1,3 +1,5 @@
+import { FORMATION_OPTIONS } from "./constants"
+
 export const createInitialGroup = () => ({
   name: "",
   formation: "",
@@ -301,7 +303,7 @@ export const buildGroupedResults = (filteredResults, testsData, testGroups) => {
   const grouped = {}
 
   filteredResults.forEach((result) => {
-    const formation = result.referentiel || "Non spécifié"
+    const formation = normalizeFormationName(result.referentiel) || "Non spécifié"
 
     if (!grouped[formation]) {
       grouped[formation] = {
@@ -380,13 +382,30 @@ export const getTestUrl = (testId) => {
 
 export const normalizeFormationName = (name) => {
   if (!name) return ""
-  const n = name.toLowerCase().trim()
-  if (n.includes("dev") && (n.includes("web") || n.includes("mobile"))) return "Dev Web"
-  if (n.includes("data")) return "Data"
-  if (n.includes("hack")) return "Hackeuse"
-  if (n.includes("aws") || n.includes("cloud")) return "AWS"
-  if (n.includes("referent") || n.includes("référent") || n.includes("digital")) return "Référent Digital"
-  if (n.includes("cyber")) return "Cyber security"
-  if (n.includes("intel") || n.includes("ia")) return "Intelligence Artificielle"
+
+  const normalizedName = normalizeFormationToken(name)
+  const formation = FORMATION_OPTIONS.find((option) => {
+    const values = [option.value, option.label, ...(option.aliases || [])]
+    return values.some((value) => normalizeFormationToken(value) === normalizedName)
+  })
+
+  if (formation) return formation.value
+  if (normalizedName.includes("dev") && (normalizedName.includes("web") || normalizedName.includes("mobile"))) return "Dev Web"
+  if (normalizedName.includes("data")) return "Data"
+  if (normalizedName.includes("hack")) return "Hackeuse"
+  if (normalizedName.includes("aws") || normalizedName.includes("cloud")) return "AWS"
+  if (normalizedName.includes("referent") || normalizedName.includes("digital")) return "Référent Digital"
+  if (normalizedName.includes("cyber")) return "Cyber security"
+  if (normalizedName.includes("intel") || normalizedName === "ia") return "Intelligence Artificielle"
+
   return name
 }
+
+export const normalizeFormationToken = (name) =>
+  String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()

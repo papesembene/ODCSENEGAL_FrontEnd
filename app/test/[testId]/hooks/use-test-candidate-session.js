@@ -429,8 +429,8 @@ export default function useTestCandidateSession({ testId }) {
           retries: 0,
         })
       } catch (error) {
-        console.error("Erreur lors de l'envoi des résultats:", error)
-        toast.error("Impossible d'enregistrer les résultats. Vérifiez la connexion au backend.")
+        console.warn("Résultat non enregistré:", error)
+        toast.warning("La soumission n'a pas pu être confirmée. Veuillez contacter l'administration.")
         if (typeof window !== "undefined") {
           removeStoredValues([storageKeys.submitted])
         }

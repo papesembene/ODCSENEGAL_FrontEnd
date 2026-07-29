@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Users, Eye, Mail, Trash } from "lucide-react"
 import { GroupStatusBadge, PageSizeSelector, PaginationControls } from "./test-components"
+import { FORMATION_OPTIONS } from "./constants"
 import { normalizeFormationName } from "./helpers"
 
 export function GroupsTab({
@@ -48,13 +49,11 @@ export function GroupsTab({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les formations</SelectItem>
-                <SelectItem value="Dev Web">Dev Web</SelectItem>
-                <SelectItem value="Data">Data</SelectItem>
-                <SelectItem value="Hackeuse">Hackeuse</SelectItem>
-                <SelectItem value="AWS">AWS</SelectItem>
-                <SelectItem value="Référent Digital">Référent Digital</SelectItem>
-                <SelectItem value="Cyber security">Cyber security</SelectItem>
-                <SelectItem value="Intelligence Artificielle">Intelligence Artificielle</SelectItem>
+                {FORMATION_OPTIONS.map((formation) => (
+                  <SelectItem key={formation.value} value={formation.value}>
+                    {formation.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
