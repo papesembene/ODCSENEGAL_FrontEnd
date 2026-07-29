@@ -74,24 +74,6 @@ function countSlotAssignments(slot) {
   }
 }
 
-function countSlotAvailability(slot) {
-  const responses = Object.values(slot?.availability_responses || {})
-  return responses.reduce(
-    (counts, item) => {
-      const status = item?.status || "pending"
-      if (status === "available") {
-        counts.available += 1
-      } else if (status === "unavailable") {
-        counts.unavailable += 1
-      } else {
-        counts.pending += 1
-      }
-      return counts
-    },
-    { available: 0, unavailable: 0, pending: 0 },
-  )
-}
-
 function getEvaluationSectionReview(evaluation, sectionKey) {
   const legacyReviewFields = {
     filter: "filter_review",
@@ -555,14 +537,13 @@ export default function CompetencesInterviewsTab() {
 	                    <TableHead>Début</TableHead>
 	                    <TableHead>Candidats planifiés</TableHead>
 	                    <TableHead>Jurys</TableHead>
-	                    <TableHead>Disponibilités</TableHead>
 	                    <TableHead>État</TableHead>
 	                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {interviews.campaignSlots.length === 0 ? (
 	                    <TableRow>
-	                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+	                      <TableCell colSpan={5} className="text-center text-muted-foreground">
 	                        Aucun créneau pour cette campagne.
 	                      </TableCell>
                     </TableRow>
@@ -570,7 +551,6 @@ export default function CompetencesInterviewsTab() {
 	                    interviews.campaignSlots.map((slot) => {
 	                      const assignedCount = slotOccupancy[slot.id] || 0
 	                      const juryCount = countSlotAssignments(slot)
-	                      const availability = countSlotAvailability(slot)
 
 	                      return (
 	                        <TableRow key={slot.id}>
@@ -582,15 +562,6 @@ export default function CompetencesInterviewsTab() {
 	                              <Badge variant={juryCount.filter ? "secondary" : "outline"}>F: {juryCount.filter}</Badge>
 	                              <Badge variant={juryCount.validator ? "secondary" : "outline"}>V: {juryCount.validator}</Badge>
 	                              <Badge variant={juryCount.motivation ? "secondary" : "outline"}>M: {juryCount.motivation}</Badge>
-	                            </div>
-	                          </TableCell>
-	                          <TableCell>
-	                            <div className="flex flex-wrap gap-1">
-	                              <Badge variant="outline">OK: {availability.available}</Badge>
-	                              <Badge variant="outline">Attente: {availability.pending}</Badge>
-	                              <Badge variant={availability.unavailable ? "destructive" : "outline"}>
-	                                Non: {availability.unavailable}
-	                              </Badge>
 	                            </div>
 	                          </TableCell>
 	                          <TableCell>

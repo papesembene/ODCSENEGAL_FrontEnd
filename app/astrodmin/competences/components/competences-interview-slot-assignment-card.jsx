@@ -45,24 +45,6 @@ function countAssignments(slot) {
   }
 }
 
-function countAvailability(slot) {
-  const responses = Object.values(slot?.availability_responses || {})
-  return responses.reduce(
-    (counts, item) => {
-      const status = item?.status || "pending"
-      if (status === "available") {
-        counts.available += 1
-      } else if (status === "unavailable") {
-        counts.unavailable += 1
-      } else {
-        counts.pending += 1
-      }
-      return counts
-    },
-    { available: 0, unavailable: 0, pending: 0 },
-  )
-}
-
 function formatSlotDate(value) {
   return value ? new Date(value).toLocaleString("fr-FR") : "-"
 }
@@ -202,7 +184,6 @@ export default function CompetencesInterviewSlotAssignmentCard({
             <div className="space-y-3">
               {slots.map((slot) => {
                 const counts = countAssignments(slot)
-                const availability = countAvailability(slot)
 
                 return (
                   <div key={slot.id} className="flex flex-col gap-3 rounded-lg border p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -216,11 +197,6 @@ export default function CompetencesInterviewSlotAssignmentCard({
                           {role.shortLabel}: {counts[role.key]}
                         </Badge>
                       ))}
-                      <Badge variant="outline">Dispo: {availability.available}</Badge>
-                      <Badge variant="outline">Attente: {availability.pending}</Badge>
-                      <Badge variant={availability.unavailable ? "destructive" : "outline"}>
-                        Indispo: {availability.unavailable}
-                      </Badge>
                       <Button type="button" variant="outline" size="sm" onClick={() => openSingleSlot(slot)}>
                         Affecter
                       </Button>
