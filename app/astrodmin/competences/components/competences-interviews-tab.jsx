@@ -1,11 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CalendarClock, ClipboardCheck, ListChecks, Plus, RefreshCw, Search, Users } from "lucide-react"
+import { AlertTriangle, CalendarClock, ClipboardCheck, Heart, ListChecks, Plus, RefreshCw, Search, Sparkles, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -46,6 +47,19 @@ const INTERVIEW_PROGRESS_LABELS = {
   passe: "Passé",
   absent: "Absent",
 }
+
+const DECISION_FILTER_LABELS = {
+  all: "Tous",
+  pending: "À décider",
+  arbitration: "À arbitrer",
+  favorable: "Favorables",
+}
+
+const BULK_DECISION_OPTIONS = [
+  { value: "retenu", label: "Marquer retenus" },
+  { value: "liste_attente", label: "Mettre en liste d'attente" },
+  { value: "rejete", label: "Rejeter" },
+]
 
 function formatTestScore(score) {
   return Number.isFinite(Number(score)) ? `${Number(score)} pts` : "Non disponible"
@@ -103,6 +117,64 @@ function getDecisionActionLabel(evaluation) {
   return "Voir la décision"
 }
 
+function getCandidateName(evaluation) {
+  return [evaluation.candidate_snapshot?.first_name, evaluation.candidate_snapshot?.last_name]
+    .filter(Boolean)
+    .join(" ")
+    || evaluation.candidate_snapshot?.email
+    || "Candidat"
+}
+
+function normalizeDecisionText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+}
+
+function getCoachBadges(evaluation) {
+  const review = getEvaluationSectionReview(evaluation, "validator")
+  return [
+    review.coach_pick ? { key: "coach_pick", label: "Coup de coeur", tone: "bg-blue-50 text-blue-700 border-blue-200", icon: Heart } : null,
+    review.strong_potential ? { key: "strong_potential", label: "Potentiel fort", tone: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: Sparkles } : null,
+    review.cohort_balance ? { key: "cohort_balance", label: "Équilibre cohorte", tone: "bg-sky-50 text-sky-700 border-sky-200", icon: Users } : null,
+    review.social_context ? { key: "social_context", label: "Contexte social", tone: "bg-amber-50 text-amber-700 border-amber-200", icon: AlertTriangle } : null,
+  ].filter(Boolean)
+}
+
+function getReviewDecision(evaluation, sectionKey) {
+  const review = getEvaluationSectionReview(evaluation, sectionKey)
+  return review.decision || review.verdict || review.status || review.comment || review.notes || ""
+}
+
+function getDecisionAid(evaluation) {
+  const testScore = Number(evaluation.test_score)
+  const filterDecision = normalizeDecisionText(getReviewDecision(evaluation, "filter"))
+  const validatorDecision = normalizeDecisionText(getReviewDecision(evaluation, "validator"))
+  const motivationDecision = normalizeDecisionText(getReviewDecision(evaluation, "motivation"))
+  const badges = getCoachBadges(evaluation)
+  const hasWarning = evaluation.test_details?.violations?.totalViolations > 0
+  const hasNegative = [filterDecision, validatorDecision, motivationDecision].some((value) =>
+    ["echec", "rejete", "rejet", "defavorable", "non"].some((keyword) => value.includes(keyword)),
+  )
+  const hasStrongSignal = badges.some((badge) => ["coach_pick", "strong_potential"].includes(badge.key))
+
+  if (hasWarning || hasNegative || (Number.isFinite(testScore) && testScore < 50 && hasStrongSignal)) {
+    return { value: "arbitration", label: "À arbitrer", className: "border-amber-200 bg-amber-50 text-amber-800" }
+  }
+  if (hasStrongSignal && (!Number.isFinite(testScore) || testScore >= 70)) {
+    return { value: "very_favorable", label: "Très favorable", className: "border-emerald-200 bg-emerald-50 text-emerald-800" }
+  }
+  if (Number.isFinite(testScore) && testScore >= 70 && evaluation.is_complete) {
+    return { value: "favorable", label: "Favorable", className: "border-green-200 bg-green-50 text-green-800" }
+  }
+  if (!evaluation.is_complete) {
+    return { value: "pending", label: "À compléter", className: "border-slate-200 bg-slate-50 text-slate-700" }
+  }
+  return { value: "discussion", label: "À discuter", className: "border-orange-200 bg-orange-50 text-orange-800" }
+}
+
 function WorkflowStep({ icon: Icon, title, description, value, active, onClick }) {
   return (
     <button
@@ -128,6 +200,9 @@ export default function CompetencesInterviewsTab() {
   const interviews = useCompetencesInterviews()
   const [selectedEvaluationId, setSelectedEvaluationId] = useState("")
   const [activeTab, setActiveTab] = useState("campaigns")
+  const [decisionFilter, setDecisionFilter] = useState("all")
+  const [bulkDecision, setBulkDecision] = useState("")
+  const [selectedDecisionIds, setSelectedDecisionIds] = useState([])
 
   const slotOccupancy = interviews.slotOccupancy
 
@@ -141,6 +216,49 @@ export default function CompetencesInterviewsTab() {
   }
 
   const visibleEvaluations = interviews.evaluations
+  const decisionEvaluations = useMemo(() => {
+    return visibleEvaluations.filter((evaluation) => {
+      const aid = getDecisionAid(evaluation)
+      if (decisionFilter === "pending") {
+        return !evaluation.final_status || evaluation.final_status === "en_attente"
+      }
+      if (decisionFilter === "arbitration") {
+        return aid.value === "arbitration"
+      }
+      if (decisionFilter === "favorable") {
+        return ["very_favorable", "favorable"].includes(aid.value)
+      }
+      return true
+    })
+  }, [decisionFilter, visibleEvaluations])
+  const selectedDecisionIdSet = useMemo(() => new Set(selectedDecisionIds), [selectedDecisionIds])
+  const selectedDecisionRows = useMemo(
+    () => decisionEvaluations.filter((evaluation) => selectedDecisionIdSet.has(evaluation.id)),
+    [decisionEvaluations, selectedDecisionIdSet],
+  )
+  const allDecisionRowsSelected = decisionEvaluations.length > 0
+    && decisionEvaluations.every((evaluation) => selectedDecisionIdSet.has(evaluation.id))
+  const decisionSummaryStats = useMemo(() => {
+    return visibleEvaluations.reduce(
+      (summary, evaluation) => {
+        const aid = getDecisionAid(evaluation)
+        if (!evaluation.final_status || evaluation.final_status === "en_attente") {
+          summary.pending += 1
+        }
+        if (aid.value === "arbitration") {
+          summary.arbitration += 1
+        }
+        if (["very_favorable", "favorable"].includes(aid.value)) {
+          summary.favorable += 1
+        }
+        if (evaluation.final_status === "retenu") {
+          summary.accepted += 1
+        }
+        return summary
+      },
+      { pending: 0, arbitration: 0, favorable: 0, accepted: 0 },
+    )
+  }, [visibleEvaluations])
   const adminScorecardSections = interviews.selectedCampaign?.scorecard_config?.sections || {}
   const adminScorecardSectionKeys = Object.keys(adminScorecardSections)
   const adminScorecardCriteriaCount = adminScorecardSectionKeys.reduce(
@@ -224,10 +342,43 @@ export default function CompetencesInterviewsTab() {
       tab: "evaluations",
       icon: Users,
       title: "4. Fiches",
-      description: "Générer, suivre et finaliser les décisions.",
+      description: "Générer et suivre les fiches jury.",
       value: interviews.pagination.total,
     },
+    {
+      tab: "final-decision",
+      icon: ClipboardCheck,
+      title: "5. Décision",
+      description: "Retenir, arbitrer ou rejeter sans traiter ligne par ligne.",
+      value: decisionSummaryStats.pending,
+    },
   ].filter(Boolean)
+
+  const toggleDecisionSelection = (evaluationId, checked) => {
+    setSelectedDecisionIds((previous) => {
+      if (checked) {
+        return Array.from(new Set([...previous, evaluationId]))
+      }
+      return previous.filter((id) => id !== evaluationId)
+    })
+  }
+
+  const toggleAllDecisionRows = (checked) => {
+    setSelectedDecisionIds((previous) => {
+      const visibleIds = decisionEvaluations.map((evaluation) => evaluation.id)
+      if (checked) {
+        return Array.from(new Set([...previous, ...visibleIds]))
+      }
+      const visibleIdSet = new Set(visibleIds)
+      return previous.filter((id) => !visibleIdSet.has(id))
+    })
+  }
+
+  const applyBulkDecision = async () => {
+    await interviews.handleBulkUpdateFinalStatus(selectedDecisionIds, bulkDecision)
+    setSelectedDecisionIds([])
+    setBulkDecision("")
+  }
 
   if (interviews.loading) {
     return (
@@ -275,6 +426,7 @@ export default function CompetencesInterviewsTab() {
           <TabsTrigger value="campaigns">Campagnes et critères</TabsTrigger>
           <TabsTrigger value="slots">Créneaux et jurys</TabsTrigger>
           <TabsTrigger value="evaluations">Fiches et décisions</TabsTrigger>
+          <TabsTrigger value="final-decision">Décision finale</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -800,6 +952,223 @@ export default function CompetencesInterviewsTab() {
                   )}
                 </TableBody>
               </Table>
+              <PaginationControls
+                page={interviews.pagination.page}
+                pageSize={interviews.pagination.page_size}
+                totalItems={interviews.pagination.total}
+                itemLabel="fiche(s)"
+                onPageChange={interviews.setPage}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="final-decision" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <CardTitle>Décision finale</CardTitle>
+                  <CardDescription>
+                    Vue courte pour décider par référentiel: les jurys évaluent, l&apos;admin compétences ou le super admin tranche.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline">
+                  {selectedDecisionRows.length} sélectionné(s)
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <SummaryStatCard
+                  label="À décider"
+                  value={decisionSummaryStats.pending}
+                  description="Sans décision finale."
+                />
+                <SummaryStatCard
+                  label="À arbitrer"
+                  value={decisionSummaryStats.arbitration}
+                  description="Cas sensibles ou contradictoires."
+                />
+                <SummaryStatCard
+                  label="Favorables"
+                  value={decisionSummaryStats.favorable}
+                  description="Signaux positifs forts."
+                />
+                <SummaryStatCard
+                  label="Retenus"
+                  value={decisionSummaryStats.accepted}
+                  description="Liste officielle actuelle."
+                />
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_220px_220px_auto]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={interviews.searchTerm}
+                    onChange={(event) => interviews.setSearchTerm(event.target.value)}
+                    className="pl-9"
+                    placeholder="Nom, email ou téléphone"
+                  />
+                </div>
+                <Select value={decisionFilter} onValueChange={setDecisionFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(DECISION_FILTER_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={interviews.statusFilter} onValueChange={interviews.setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    {Object.entries(FINAL_STATUS_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={bulkDecision || "none"} onValueChange={(value) => setBulkDecision(value === "none" ? "" : value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Décision groupée</SelectItem>
+                    {BULK_DECISION_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={applyBulkDecision}
+                  disabled={interviews.submitting || selectedDecisionIds.length === 0 || !bulkDecision}
+                >
+                  Appliquer
+                </Button>
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={allDecisionRowsSelected}
+                          onCheckedChange={(value) => toggleAllDecisionRows(Boolean(value))}
+                          aria-label="Sélectionner les candidats visibles"
+                        />
+                      </TableHead>
+                      <TableHead>Candidat</TableHead>
+                      <TableHead>Score test</TableHead>
+                      <TableHead>Filtreur</TableHead>
+                      <TableHead>Coach</TableHead>
+                      <TableHead>Motivation</TableHead>
+                      <TableHead>Badges</TableHead>
+                      <TableHead>Aide décision</TableHead>
+                      <TableHead>Décision finale</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {interviews.evaluationsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
+                          Chargement des décisions...
+                        </TableCell>
+                      </TableRow>
+                    ) : decisionEvaluations.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
+                          Aucun candidat pour les filtres actuels.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      decisionEvaluations.map((evaluation) => {
+                        const aid = getDecisionAid(evaluation)
+                        const badges = getCoachBadges(evaluation)
+                        const checked = selectedDecisionIdSet.has(evaluation.id)
+
+                        return (
+                          <TableRow key={evaluation.id} className={aid.value === "arbitration" ? "bg-amber-50/40" : ""}>
+                            <TableCell>
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(value) => toggleDecisionSelection(evaluation.id, Boolean(value))}
+                                aria-label={`Sélectionner ${getCandidateName(evaluation)}`}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">{getCandidateName(evaluation)}</div>
+                              <div className="text-xs text-muted-foreground">{evaluation.candidate_snapshot?.email || "-"}</div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold">{formatTestScore(evaluation.test_score)}</span>
+                              {evaluation.test_details?.violations?.totalViolations > 0 ? (
+                                <div className="mt-1 text-xs text-amber-700">
+                                  {evaluation.test_details.violations.totalViolations} infraction(s)
+                                </div>
+                              ) : null}
+                            </TableCell>
+                            <TableCell className="max-w-[180px] truncate">
+                              {getReviewDecision(evaluation, "filter") || "-"}
+                            </TableCell>
+                            <TableCell className="max-w-[180px] truncate">
+                              {getReviewDecision(evaluation, "validator") || "-"}
+                            </TableCell>
+                            <TableCell className="max-w-[180px] truncate">
+                              {getReviewDecision(evaluation, "motivation") || "-"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex max-w-[260px] flex-wrap gap-1">
+                                {badges.length === 0 ? (
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                ) : (
+                                  badges.map((badge) => {
+                                    const Icon = badge.icon
+                                    return (
+                                      <Badge key={badge.key} variant="outline" className={badge.tone}>
+                                        <Icon className="mr-1 h-3 w-3" />
+                                        {badge.label}
+                                      </Badge>
+                                    )
+                                  })
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={aid.className}>
+                                {aid.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {FINAL_STATUS_LABELS[evaluation.final_status] || evaluation.final_status || "À décider"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="outline" size="sm" onClick={() => setSelectedEvaluationId(evaluation.id)}>
+                                Modifier
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
               <PaginationControls
                 page={interviews.pagination.page}
                 pageSize={interviews.pagination.page_size}

@@ -376,6 +376,41 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     }
   }, [fetchBootstrap, fetchEvaluations, interviews])
 
+  const handleBulkUpdateFinalStatus = useCallback(async (evaluationIds, finalStatus) => {
+    const ids = Array.isArray(evaluationIds) ? evaluationIds.filter(Boolean) : []
+    if (ids.length === 0) {
+      toast.error("Veuillez sélectionner au moins un candidat")
+      return
+    }
+    if (!finalStatus || finalStatus === "en_attente") {
+      toast.error("Veuillez choisir une décision finale")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const results = await Promise.all(
+        ids.map((evaluationId) => interviews.updateEvaluation(evaluationId, {
+          final_status: finalStatus,
+        })),
+      )
+      const failedResult = results.find((result) => !result.success)
+      if (failedResult) {
+        throw new Error(failedResult.error || "Erreur lors de la décision groupée")
+      }
+
+      toast.success(`${ids.length} décision(s) mise(s) à jour`)
+      await Promise.all([fetchBootstrap(), fetchEvaluations()])
+      return results.map((result) => result.data)
+    } catch (error) {
+      console.error(error)
+      toast.error(error.message || "Impossible d'enregistrer les décisions")
+      throw error
+    } finally {
+      setSubmitting(false)
+    }
+  }, [fetchBootstrap, fetchEvaluations, interviews])
+
   return {
     loading,
     evaluationsLoading,
@@ -422,5 +457,6 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     handleUpdateSlotAssignments,
     handleSeedEvaluations,
     handleUpdateEvaluation,
+    handleBulkUpdateFinalStatus,
   }
 }
