@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { AlertTriangle, CalendarClock, ClipboardCheck, Heart, ListChecks, Plus, RefreshCw, Search, Sparkles, Users } from "lucide-react"
+import { AlertTriangle, CalendarClock, ClipboardCheck, Download, Heart, ListChecks, Plus, RefreshCw, Search, Sparkles, Users } from "lucide-react"
+import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,9 @@ import CompetencesInterviewEvaluationDialog from "./competences-interview-evalua
 import CompetencesInterviewScorecardEditor from "./competences-interview-scorecard-editor"
 import CompetencesInterviewSlotAssignmentCard from "./competences-interview-slot-assignment-card"
 import useCompetencesInterviews from "../hooks/use-competences-interviews"
+import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
+
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
 
 const FORMATION_OPTIONS = [
   { value: "dev-web-mobile", label: "Développement Web Mobile" },
@@ -71,6 +75,57 @@ function SummaryStatCard({ label, value, description, className = "" }) {
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-semibold">{value}</p>
       {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
+    </div>
+  )
+}
+
+function ActiveCampaignBanner({ campaign, slotsCount, evaluationsCount, onGoToCampaigns, onGoToSlots }) {
+  if (!campaign) {
+    return (
+      <div className="rounded-2xl border border-dashed bg-muted/20 p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Aucune campagne sélectionnée</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Commencez par créer ou choisir une campagne d&apos;entretien pour un référentiel.
+            </p>
+          </div>
+          <Button onClick={onGoToCampaigns}>Choisir une campagne</Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-5 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold">{campaign.name}</p>
+            <Badge variant="outline">{getFormationLabel(campaign.formation)}</Badge>
+            <Badge variant={campaign.status === "active" ? "default" : "secondary"}>
+              {campaign.status === "active" ? "Active" : campaign.status}
+            </Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Campagne active pour le travail en cours: critères, créneaux, fiches et décision finale.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm sm:min-w-[260px]">
+          <div className="rounded-xl bg-muted/40 p-3">
+            <p className="text-muted-foreground">Créneaux</p>
+            <p className="text-xl font-semibold">{slotsCount}</p>
+          </div>
+          <div className="rounded-xl bg-muted/40 p-3">
+            <p className="text-muted-foreground">Fiches</p>
+            <p className="text-xl font-semibold">{evaluationsCount}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={onGoToCampaigns}>Critères</Button>
+          <Button variant="outline" onClick={onGoToSlots}>Créneaux</Button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -380,6 +435,56 @@ export default function CompetencesInterviewsTab() {
     setBulkDecision("")
   }
 
+  const handleExportFinalDecisions = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (interviews.selectedCampaignId) {
+        params.set("campaignId", interviews.selectedCampaignId)
+      }
+      if (interviews.statusFilter && interviews.statusFilter !== "all") {
+        params.set("status", interviews.statusFilter)
+      }
+      if (interviews.formationFilter && interviews.formationFilter !== "all") {
+        params.set("formation", interviews.formationFilter)
+      }
+      if (interviews.searchTerm.trim()) {
+        params.set("search", interviews.searchTerm.trim())
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/admin/interviews/evaluations/export?${params.toString()}`,
+        { headers: getAdminAuthHeaders() },
+      )
+
+      if (!response.ok) {
+        let message = "Export impossible"
+        try {
+          const errorData = await response.json()
+          message = errorData?.error || errorData?.message || message
+        } catch (error) {
+          message = `Export impossible (${response.status})`
+        }
+        throw new Error(message)
+      }
+
+      const blob = await response.blob()
+      const disposition = response.headers.get("Content-Disposition") || ""
+      const filenameMatch = disposition.match(/filename="?([^"]+)"?/)
+      const filename = filenameMatch?.[1] || "entretiens.csv"
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      toast.success("Export CSV généré")
+    } catch (error) {
+      toast.error(error.message || "Impossible de générer l'export")
+    }
+  }
+
   if (interviews.loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -394,9 +499,9 @@ export default function CompetencesInterviewsTab() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-700">Module entretiens</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">Piloter les entretiens sans surcharge</h2>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">Organiser les entretiens simplement</h2>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground md:text-base">
-              Suivez le parcours dans l&apos;ordre: campagne, critères, créneaux, puis fiches. Chaque écran garde une action principale.
+              Une campagne par référentiel, des créneaux clairs, puis un tableau de suivi pour décider sans ouvrir chaque fiche inutilement.
             </p>
           </div>
           <Button variant="outline" onClick={interviews.fetchBootstrap}>
@@ -405,7 +510,7 @@ export default function CompetencesInterviewsTab() {
           </Button>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           {workflowSteps.map((step) => (
             <WorkflowStep
               key={`${step.tab}-${step.title}`}
@@ -419,6 +524,14 @@ export default function CompetencesInterviewsTab() {
           ))}
         </div>
       </section>
+
+      <ActiveCampaignBanner
+        campaign={interviews.selectedCampaign}
+        slotsCount={interviews.campaignSlots.length}
+        evaluationsCount={interviews.pagination.total}
+        onGoToCampaigns={() => setActiveTab("campaigns")}
+        onGoToSlots={() => setActiveTab("slots")}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="hidden">
@@ -529,11 +642,42 @@ export default function CompetencesInterviewsTab() {
 
         <TabsContent value="campaigns" className="space-y-6">
           <div className="grid gap-6 xl:grid-cols-[1fr_0.8fr]">
+            <Card className="border-orange-200 bg-orange-50/60 xl:col-span-2">
+              <CardHeader className="pb-4">
+                <CardTitle>Campagne de travail</CardTitle>
+                <CardDescription>
+                  Choisissez d&apos;abord le référentiel à traiter. Les critères, créneaux et décisions suivront cette campagne.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 lg:grid-cols-[minmax(260px,1fr)_auto] lg:items-end">
+                  <div className="space-y-2">
+                    <Label>Campagne</Label>
+                    <Select value={interviews.selectedCampaignId} onValueChange={interviews.setSelectedCampaignId}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Choisir une campagne" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {interviews.campaigns.map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.id}>
+                            {campaign.name} - {getFormationLabel(campaign.formation)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="outline" onClick={() => setActiveTab("slots")} disabled={!interviews.selectedCampaign}>
+                    Continuer vers les créneaux
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
-                <CardTitle>Créer une campagne</CardTitle>
+                <CardTitle>Nouvelle campagne</CardTitle>
                 <CardDescription>
-                  Une campagne correspond à un référentiel et à une vague d&apos;entretiens.
+                  À créer seulement quand un nouveau référentiel ou une nouvelle vague d&apos;entretiens démarre.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -580,33 +724,30 @@ export default function CompetencesInterviewsTab() {
 
                 <Button onClick={interviews.handleCreateCampaign} disabled={interviews.submitting}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Créer la campagne
+                  Créer et utiliser cette campagne
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-orange-200 bg-orange-50/60">
+            <Card>
               <CardHeader>
-                <CardTitle>Campagne de travail</CardTitle>
+                <CardTitle>Repères simples</CardTitle>
                 <CardDescription>
-                  Tout ce que vous faites ensuite concerne cette campagne.
+                  Pour éviter les confusions pendant les entretiens.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Campagne</Label>
-                  <Select value={interviews.selectedCampaignId} onValueChange={interviews.setSelectedCampaignId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir une campagne" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {interviews.campaigns.map((campaign) => (
-                        <SelectItem key={campaign.id} value={campaign.id}>
-                          {campaign.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <p className="font-medium text-foreground">Campagne</p>
+                  <p>Regroupe les entretiens d&apos;un référentiel pour une période donnée.</p>
+                </div>
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <p className="font-medium text-foreground">Critères</p>
+                  <p>Correspondent aux colonnes du tableau type Excel, différentes selon le référentiel.</p>
+                </div>
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <p className="font-medium text-foreground">Créneaux</p>
+                  <p>Servent à organiser les passages et à rattacher les jurys concernés.</p>
                 </div>
               </CardContent>
             </Card>
@@ -621,53 +762,77 @@ export default function CompetencesInterviewsTab() {
         </TabsContent>
 
         <TabsContent value="slots" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Créer un créneau d&apos;entretien</CardTitle>
-              <CardDescription>
-                Organisez les passages par campagne, référentiel et plage horaire.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+            <Card>
+              <CardHeader>
+                <CardTitle>Créer un créneau</CardTitle>
+                <CardDescription>
+                  Un créneau = une plage horaire d&apos;entretien. Les jurys peuvent être affectés après création.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="slot-label">Libellé</Label>
                   <Input
                     id="slot-label"
                     value={interviews.slotForm.label}
                     onChange={(event) => interviews.setSlotForm((prev) => ({ ...prev, label: event.target.value }))}
-                    placeholder="Ex: Vague 1 - 9h"
+                    placeholder="Ex: Mardi matin - Dev Web"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="slot-start">Début</Label>
-                  <Input
-                    id="slot-start"
-                    type="datetime-local"
-                    value={interviews.slotForm.start_at}
-                    onChange={(event) => interviews.setSlotForm((prev) => ({ ...prev, start_at: event.target.value }))}
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="slot-start">Début</Label>
+                    <Input
+                      id="slot-start"
+                      type="datetime-local"
+                      value={interviews.slotForm.start_at}
+                      onChange={(event) => interviews.setSlotForm((prev) => ({ ...prev, start_at: event.target.value }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="slot-end">Fin</Label>
+                    <Input
+                      id="slot-end"
+                      type="datetime-local"
+                      value={interviews.slotForm.end_at}
+                      onChange={(event) => interviews.setSlotForm((prev) => ({ ...prev, end_at: event.target.value }))}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="slot-end">Fin</Label>
-                  <Input
-                    id="slot-end"
-                    type="datetime-local"
-                    value={interviews.slotForm.end_at}
-                    onChange={(event) => interviews.setSlotForm((prev) => ({ ...prev, end_at: event.target.value }))}
-                  />
+                <Button className="w-full" onClick={interviews.handleCreateSlot} disabled={interviews.submitting || !interviews.selectedCampaign}>
+                  <CalendarClock className="mr-2 h-4 w-4" />
+                  Ajouter ce créneau
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Comment utiliser les créneaux ?</CardTitle>
+                <CardDescription>
+                  Gardez le scénario simple, même avec beaucoup de candidats.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 text-sm md:grid-cols-3">
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <p className="font-medium">1. Créer</p>
+                  <p className="mt-1 text-muted-foreground">Ajoutez toutes les plages horaires prévues pour ce référentiel.</p>
                 </div>
-
-              </div>
-
-              <Button onClick={interviews.handleCreateSlot} disabled={interviews.submitting || !interviews.selectedCampaign}>
-                <CalendarClock className="mr-2 h-4 w-4" />
-                Ajouter le créneau
-              </Button>
-            </CardContent>
-          </Card>
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <p className="font-medium">2. Affecter</p>
+                  <p className="mt-1 text-muted-foreground">Ajoutez filtreurs, coachs ou motivation selon le besoin du créneau.</p>
+                </div>
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <p className="font-medium">3. Planifier</p>
+                  <p className="mt-1 text-muted-foreground">Le système répartit ensuite les candidats sur les créneaux disponibles.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           <CompetencesInterviewSlotAssignmentCard
             slots={interviews.campaignSlots}
@@ -682,51 +847,53 @@ export default function CompetencesInterviewsTab() {
               <CardDescription>Vue rapide des entretiens programmés pour la campagne sélectionnée.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-	                  <TableRow>
-	                    <TableHead>Créneau</TableHead>
-	                    <TableHead>Début</TableHead>
-	                    <TableHead>Candidats planifiés</TableHead>
-	                    <TableHead>Jurys</TableHead>
-	                    <TableHead>État</TableHead>
-	                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {interviews.campaignSlots.length === 0 ? (
-	                    <TableRow>
-	                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-	                        Aucun créneau pour cette campagne.
-	                      </TableCell>
+              <div className="overflow-x-auto rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Créneau</TableHead>
+                      <TableHead>Début</TableHead>
+                      <TableHead>Candidats</TableHead>
+                      <TableHead>Jurys affectés</TableHead>
+                      <TableHead>État</TableHead>
                     </TableRow>
-                  ) : (
-	                    interviews.campaignSlots.map((slot) => {
-	                      const assignedCount = slotOccupancy[slot.id] || 0
-	                      const juryCount = countSlotAssignments(slot)
+                  </TableHeader>
+                  <TableBody>
+                    {interviews.campaignSlots.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                          Aucun créneau pour cette campagne.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      interviews.campaignSlots.map((slot) => {
+                        const assignedCount = slotOccupancy[slot.id] || 0
+                        const juryCount = countSlotAssignments(slot)
 
-	                      return (
-	                        <TableRow key={slot.id}>
-	                          <TableCell className="font-medium">{slot.label}</TableCell>
-	                          <TableCell>{slot.start_at ? new Date(slot.start_at).toLocaleString("fr-FR") : "-"}</TableCell>
-	                          <TableCell>{assignedCount}</TableCell>
-	                          <TableCell>
-	                            <div className="flex flex-wrap gap-1">
-	                              <Badge variant={juryCount.filter ? "secondary" : "outline"}>F: {juryCount.filter}</Badge>
-	                              <Badge variant={juryCount.validator ? "secondary" : "outline"}>V: {juryCount.validator}</Badge>
-	                              <Badge variant={juryCount.motivation ? "secondary" : "outline"}>M: {juryCount.motivation}</Badge>
-	                            </div>
-	                          </TableCell>
-	                          <TableCell>
-                            <Badge variant="outline">
-                              {assignedCount > 0 ? "Planifié" : "Vide"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  )}
-                </TableBody>
-              </Table>
+                        return (
+                          <TableRow key={slot.id}>
+                            <TableCell className="font-medium">{slot.label}</TableCell>
+                            <TableCell>{slot.start_at ? new Date(slot.start_at).toLocaleString("fr-FR") : "-"}</TableCell>
+                            <TableCell>{assignedCount}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                <Badge variant={juryCount.filter ? "secondary" : "outline"}>Filtre: {juryCount.filter}</Badge>
+                                <Badge variant={juryCount.validator ? "secondary" : "outline"}>Coach: {juryCount.validator}</Badge>
+                                <Badge variant={juryCount.motivation ? "secondary" : "outline"}>Motivation: {juryCount.motivation}</Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={assignedCount > 0 ? "default" : "outline"}>
+                                {assignedCount > 0 ? "Avec candidats" : "Disponible"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -738,7 +905,7 @@ export default function CompetencesInterviewsTab() {
                 <div>
                   <CardTitle>Fiches et décisions</CardTitle>
                   <CardDescription>
-                    Le système répartit automatiquement les candidats admissibles sur les créneaux complets du référentiel.
+                    Planifiez les candidats, puis suivez les avis dans un tableau proche du fichier Excel.
                   </CardDescription>
                 </div>
                 <div className="grid gap-3 sm:w-[520px] sm:grid-cols-[1fr_1fr_auto] sm:items-end">
@@ -772,7 +939,7 @@ export default function CompetencesInterviewsTab() {
                   )}
                   <Button onClick={interviews.handleSeedEvaluations} disabled={interviews.submitting || !interviews.selectedCampaign}>
                     <Users className="mr-2 h-4 w-4" />
-                    Planifier
+                    Planifier les candidats
                   </Button>
                 </div>
               </div>
@@ -797,7 +964,14 @@ export default function CompetencesInterviewsTab() {
                 ))}
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_220px_220px_auto]">
+              <div className="rounded-2xl border bg-muted/20 p-4">
+                <div className="mb-3 flex flex-col gap-1">
+                  <p className="text-sm font-semibold">Rechercher et filtrer</p>
+                  <p className="text-xs text-muted-foreground">
+                    La liste reste paginée pour rester rapide, même avec beaucoup de candidats.
+                  </p>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_220px_220px_auto]">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -850,108 +1024,109 @@ export default function CompetencesInterviewsTab() {
                     interviews.setPageSize(nextPageSize)
                   }}
                 />
+                </div>
               </div>
 
-	              <Table>
-	                <TableHeader>
-	                  <TableRow>
-	                    <TableHead rowSpan={2} className="sticky left-0 z-20 min-w-[180px] bg-background">
-	                      Candidat
-	                    </TableHead>
-	                    <TableHead rowSpan={2} className="min-w-[150px]">Référentiel</TableHead>
-	                    <TableHead rowSpan={2} className="min-w-[110px]">Score test</TableHead>
-	                    {adminScorecardSectionKeys.map((sectionKey) => (
-	                      <TableHead
-	                        key={sectionKey}
-	                        colSpan={(adminScorecardSections[sectionKey]?.criteria || []).length}
-	                        className="border-l bg-orange-50 text-center font-semibold text-orange-900"
-	                      >
-	                        {adminScorecardSections[sectionKey]?.title || sectionKey}
-	                      </TableHead>
-	                    ))}
-	                    <TableHead rowSpan={2}>Fiche</TableHead>
-	                    <TableHead rowSpan={2}>Avancement</TableHead>
-	                    <TableHead rowSpan={2}>Statut</TableHead>
-	                    <TableHead rowSpan={2} className="sticky right-0 z-20 bg-background text-right">Action</TableHead>
-	                  </TableRow>
-	                  <TableRow>
-	                    {adminScorecardSectionKeys.flatMap((sectionKey) =>
-	                      (adminScorecardSections[sectionKey]?.criteria || []).map((criterion) => (
-	                        <TableHead key={`${sectionKey}-${criterion.key}`} className="border-l text-center">
-	                          {criterion.label}
-	                        </TableHead>
-	                      )),
-	                    )}
-	                  </TableRow>
-	                </TableHeader>
-	                <TableBody>
-	                  {interviews.evaluationsLoading ? (
-	                    <TableRow>
-	                      <TableCell colSpan={adminTableColSpan} className="text-center text-muted-foreground">
-	                        Chargement des fiches...
-	                      </TableCell>
-	                    </TableRow>
-	                  ) : visibleEvaluations.length === 0 ? (
-	                    <TableRow>
-	                      <TableCell colSpan={adminTableColSpan} className="text-center text-muted-foreground">
-	                        Aucune fiche d&apos;entretien pour les filtres actuels.
-	                      </TableCell>
+              <div className="max-h-[70vh] overflow-auto rounded-lg border">
+                <Table>
+                  <TableHeader className="sticky top-0 z-30 bg-background shadow-sm">
+                    <TableRow>
+                      <TableHead rowSpan={2} className="sticky left-0 z-40 min-w-[200px] bg-background">
+                        Candidat
+                      </TableHead>
+                      <TableHead rowSpan={2} className="min-w-[150px]">Référentiel</TableHead>
+                      <TableHead rowSpan={2} className="min-w-[110px]">Score test</TableHead>
+                      {adminScorecardSectionKeys.map((sectionKey) => (
+                        <TableHead
+                          key={sectionKey}
+                          colSpan={(adminScorecardSections[sectionKey]?.criteria || []).length}
+                          className="border-l bg-orange-50 text-center font-semibold text-orange-900"
+                        >
+                          {adminScorecardSections[sectionKey]?.title || sectionKey}
+                        </TableHead>
+                      ))}
+                      <TableHead rowSpan={2}>Fiche</TableHead>
+                      <TableHead rowSpan={2}>Avancement</TableHead>
+                      <TableHead rowSpan={2}>Statut</TableHead>
+                      <TableHead rowSpan={2} className="sticky right-0 z-40 bg-background text-right">Action</TableHead>
                     </TableRow>
-                  ) : (
-	                    visibleEvaluations.map((evaluation) => (
-	                      <TableRow key={evaluation.id}>
-	                        <TableCell className="sticky left-0 z-10 bg-background font-medium">
-	                          {[evaluation.candidate_snapshot?.first_name, evaluation.candidate_snapshot?.last_name].filter(Boolean).join(" ") || evaluation.candidate_snapshot?.email || "Candidat"}
-	                          <p className="text-xs font-normal text-muted-foreground">
-	                            {evaluation.candidate_snapshot?.email || "-"}
-	                          </p>
-	                        </TableCell>
-	                        <TableCell>{getFormationLabel(evaluation.candidate_snapshot?.desired_training)}</TableCell>
-	                        <TableCell>
-	                          <span className="font-medium">{formatTestScore(evaluation.test_score)}</span>
-	                        </TableCell>
-	                        {adminScorecardSectionKeys.flatMap((sectionKey) =>
-	                          (adminScorecardSections[sectionKey]?.criteria || []).map((criterion) => {
-	                            const review = getEvaluationSectionReview(evaluation, sectionKey)
-	                            const value = criterion.type === "computed"
-	                              ? review?.[criterion.key]
-	                              : review?.[criterion.key]
-	                            return (
-	                              <TableCell key={`${evaluation.id}-${sectionKey}-${criterion.key}`} className="border-l">
-	                                <span className="text-sm text-muted-foreground">
-	                                  {formatCriterionValue(value, criterion)}
-	                                </span>
-	                              </TableCell>
-	                            )
-	                          }),
-	                        )}
-	                        <TableCell>
-	                          <Badge variant={getCompletionState(evaluation) === "Complète" ? "default" : "secondary"}>
-                            {getCompletionState(evaluation)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {INTERVIEW_PROGRESS_LABELS[evaluation.interview_progress_status] || evaluation.interview_progress_status || "-"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{FINAL_STATUS_LABELS[evaluation.final_status] || evaluation.final_status}</Badge>
-                        </TableCell>
-	                        <TableCell className="sticky right-0 z-10 bg-background text-right">
-                          <Button
-                            variant={evaluation.is_complete && evaluation.final_status === "en_attente" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSelectedEvaluationId(evaluation.id)}
-                          >
-                            {getDecisionActionLabel(evaluation)}
-                          </Button>
+                    <TableRow>
+                      {adminScorecardSectionKeys.flatMap((sectionKey) =>
+                        (adminScorecardSections[sectionKey]?.criteria || []).map((criterion) => (
+                          <TableHead key={`${sectionKey}-${criterion.key}`} className="border-l bg-background text-center">
+                            {criterion.label}
+                          </TableHead>
+                        )),
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {interviews.evaluationsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={adminTableColSpan} className="py-10 text-center text-muted-foreground">
+                          Chargement des fiches...
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : visibleEvaluations.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={adminTableColSpan} className="py-10 text-center text-muted-foreground">
+                          Aucune fiche d&apos;entretien pour les filtres actuels.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      visibleEvaluations.map((evaluation) => (
+                        <TableRow key={evaluation.id}>
+                          <TableCell className="sticky left-0 z-10 bg-background font-medium">
+                            {[evaluation.candidate_snapshot?.first_name, evaluation.candidate_snapshot?.last_name].filter(Boolean).join(" ") || evaluation.candidate_snapshot?.email || "Candidat"}
+                            <p className="text-xs font-normal text-muted-foreground">
+                              {evaluation.candidate_snapshot?.email || "-"}
+                            </p>
+                          </TableCell>
+                          <TableCell>{getFormationLabel(evaluation.candidate_snapshot?.desired_training)}</TableCell>
+                          <TableCell>
+                            <span className="font-medium">{formatTestScore(evaluation.test_score)}</span>
+                          </TableCell>
+                          {adminScorecardSectionKeys.flatMap((sectionKey) =>
+                            (adminScorecardSections[sectionKey]?.criteria || []).map((criterion) => {
+                              const review = getEvaluationSectionReview(evaluation, sectionKey)
+                              const value = review?.[criterion.key]
+                              return (
+                                <TableCell key={`${evaluation.id}-${sectionKey}-${criterion.key}`} className="border-l">
+                                  <span className="text-sm text-muted-foreground">
+                                    {formatCriterionValue(value, criterion)}
+                                  </span>
+                                </TableCell>
+                              )
+                            }),
+                          )}
+                          <TableCell>
+                            <Badge variant={getCompletionState(evaluation) === "Complète" ? "default" : "secondary"}>
+                              {getCompletionState(evaluation)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {INTERVIEW_PROGRESS_LABELS[evaluation.interview_progress_status] || evaluation.interview_progress_status || "-"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{FINAL_STATUS_LABELS[evaluation.final_status] || evaluation.final_status}</Badge>
+                          </TableCell>
+                          <TableCell className="sticky right-0 z-10 bg-background text-right">
+                            <Button
+                              variant={evaluation.is_complete && evaluation.final_status === "en_attente" ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setSelectedEvaluationId(evaluation.id)}
+                            >
+                              {getDecisionActionLabel(evaluation)}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
               <PaginationControls
                 page={interviews.pagination.page}
                 pageSize={interviews.pagination.page_size}
@@ -970,7 +1145,7 @@ export default function CompetencesInterviewsTab() {
                 <div>
                   <CardTitle>Décision finale</CardTitle>
                   <CardDescription>
-                    Vue courte pour décider par référentiel: les jurys évaluent, l&apos;admin compétences ou le super admin tranche.
+                    Vue de synthèse pour retenir, mettre en attente ou rejeter sans retraiter toute la fiche.
                   </CardDescription>
                 </div>
                 <Badge variant="outline">
@@ -1002,65 +1177,77 @@ export default function CompetencesInterviewsTab() {
                 />
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_220px_220px_auto]">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={interviews.searchTerm}
-                    onChange={(event) => interviews.setSearchTerm(event.target.value)}
-                    className="pl-9"
-                    placeholder="Nom, email ou téléphone"
-                  />
+              <div className="rounded-2xl border bg-muted/20 p-4">
+                <div className="mb-3 flex flex-col gap-1">
+                  <p className="text-sm font-semibold">Filtrer puis décider</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sélectionnez uniquement les lignes concernées, puis appliquez une décision groupée si besoin.
+                  </p>
                 </div>
-                <Select value={decisionFilter} onValueChange={setDecisionFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(DECISION_FILTER_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={interviews.statusFilter} onValueChange={interviews.setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    {Object.entries(FINAL_STATUS_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={bulkDecision || "none"} onValueChange={(value) => setBulkDecision(value === "none" ? "" : value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Décision groupée</SelectItem>
-                    {BULK_DECISION_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={applyBulkDecision}
-                  disabled={interviews.submitting || selectedDecisionIds.length === 0 || !bulkDecision}
-                >
-                  Appliquer
-                </Button>
+                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_220px_220px_auto_auto]">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={interviews.searchTerm}
+                      onChange={(event) => interviews.setSearchTerm(event.target.value)}
+                      className="pl-9"
+                      placeholder="Nom, email ou téléphone"
+                    />
+                  </div>
+                  <Select value={decisionFilter} onValueChange={setDecisionFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(DECISION_FILTER_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={interviews.statusFilter} onValueChange={interviews.setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les statuts</SelectItem>
+                      {Object.entries(FINAL_STATUS_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={bulkDecision || "none"} onValueChange={(value) => setBulkDecision(value === "none" ? "" : value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Décision groupée</SelectItem>
+                      {BULK_DECISION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={applyBulkDecision}
+                    disabled={interviews.submitting || selectedDecisionIds.length === 0 || !bulkDecision}
+                  >
+                    Appliquer
+                  </Button>
+                  <Button variant="outline" onClick={handleExportFinalDecisions}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Exporter
+                  </Button>
+                </div>
               </div>
 
-              <div className="overflow-x-auto rounded-lg border">
+              <div className="max-h-[70vh] overflow-auto rounded-lg border">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 z-30 bg-background shadow-sm">
                     <TableRow>
                       <TableHead className="w-12">
                         <Checkbox
