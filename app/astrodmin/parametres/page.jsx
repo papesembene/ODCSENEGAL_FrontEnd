@@ -24,7 +24,7 @@ const parameterModules = [
   {
     title: "Inscription des rôles jury",
     description:
-      "Préparez l'affectation des trois rôles requis pour compléter un créneau d'entretien : filtre, validation et motivation.",
+      "Préparez les personnes qui pourront être affectées aux créneaux d'entretien : filtre, validation et motivation.",
     noteTitle: "Membres du jury",
     noteDescription:
       "Enregistrez uniquement les personnes qui interviennent dans les entretiens : filtreur, validateur ou jury motivation.",
