@@ -57,7 +57,7 @@ export default function PortalContentDialog({
             <Textarea
               value={formData.summary}
               onChange={(event) => onFieldChange("summary", event.target.value)}
-              placeholder="Exemple : Du 03 au 17 novembre 2025..."
+              placeholder="Exemple : Les candidatures ouvrent prochainement..."
             />
           </div>
 
