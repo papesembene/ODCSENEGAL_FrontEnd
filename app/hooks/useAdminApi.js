@@ -34,14 +34,17 @@ export const useAdminApi = () => {
     }
     headers.set("Authorization", `Bearer ${token}`)
 
+    const requestUrl = `${API_BASE_URL}${endpoint}`
+
     try {
-      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      response = await fetch(requestUrl, {
         ...options,
         headers,
         credentials: 'include',
       })
     } catch (error) {
-      throw new Error("Impossible de joindre le backend sur http://localhost:5000")
+      const baseUrl = requestUrl.split("/api/")[0] || API_BASE_URL || "le backend"
+      throw new Error(`Impossible de joindre le backend sur ${baseUrl}`)
     }
 
     if (!response.ok) {
