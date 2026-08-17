@@ -40,6 +40,7 @@ export default function useTestCandidateSession({ testId }) {
   const [resumeAttempted, setResumeAttempted] = useState(false)
   const [resuming, setResuming] = useState(false)
   const [loadingFullTest, setLoadingFullTest] = useState(false)
+  const [submittingResult, setSubmittingResult] = useState(false)
 
   const storageKeys = useMemo(() => createStorageKeys(testId), [testId])
   const timerRef = useRef(null)
@@ -56,6 +57,7 @@ export default function useTestCandidateSession({ testId }) {
       "Numéro incorrect",
       "Vous ne faites pas partie du groupe autorisé",
       "Test expiré",
+      "Test non accessible",
     ].some((expectedMessage) => message.includes(expectedMessage))
   }, [])
 
@@ -70,6 +72,10 @@ export default function useTestCandidateSession({ testId }) {
 
     if (message.includes("Test expiré")) {
       return "Le créneau de ce test est terminé. Veuillez contacter l'administration."
+    }
+
+    if (message.includes("Test non accessible")) {
+      return "Ce test n'est pas accessible actuellement. Vérifiez le créneau ou contactez l'administration."
     }
 
     return message
@@ -410,6 +416,7 @@ export default function useTestCandidateSession({ testId }) {
   const submitResults = useCallback(
     async (finalScore) => {
       try {
+        setSubmittingResult(true)
         const resultData = buildResultPayload({ testData, authData, answers, finalScore })
         const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/results`, {
           method: "POST",
@@ -428,38 +435,48 @@ export default function useTestCandidateSession({ testId }) {
           timeout: 10000,
           retries: 0,
         })
+        return true
       } catch (error) {
         console.warn("Résultat non enregistré:", error)
-        toast.warning("La soumission n'a pas pu être confirmée. Veuillez contacter l'administration.")
+        toast.warning("La soumission n'a pas pu être confirmée. Vos réponses restent sur cette page, veuillez réessayer.")
         if (typeof window !== "undefined") {
           removeStoredValues([storageKeys.submitted])
         }
+        return false
+      } finally {
+        setSubmittingResult(false)
       }
     },
     [answers, authData, storageKeys.submitted, testData],
   )
 
   const confirmSubmitTest = useCallback(
-    (autoSubmit = false) => {
+    async (autoSubmit = false) => {
       setShowConfirmSubmit(false)
       clearInterval(timerRef.current)
       stopAntiCheat()
 
       const finalScore = calculateScore(testData, answers)
+      const submitted = await submitResults(finalScore)
+
+      if (!submitted) {
+        setShowConfirmSubmit(true)
+        return
+      }
+
       setTestStarted(false)
       setTestCompleted(true)
+
+      if (autoSubmit) {
+        toast.warning("Le temps est écoulé. Votre test a été automatiquement soumis.")
+      }
 
       if (typeof window !== "undefined") {
         writeStoredValue(storageKeys.submitted, "true")
         removeStoredValues([storageKeys.startedAt, storageKeys.answers])
       }
 
-      submitResults(finalScore)
       setShowSuccessModal(true)
-
-      if (autoSubmit) {
-        toast.warning("Le temps est écoulé. Votre test a été automatiquement soumis.")
-      }
     },
     [answers, storageKeys.answers, storageKeys.startedAt, storageKeys.submitted, stopAntiCheat, submitResults, testData],
   )
@@ -696,6 +713,7 @@ export default function useTestCandidateSession({ testId }) {
     authData,
     resuming,
     loadingFullTest,
+    submittingResult,
     answeredCount,
     progress,
     unansweredCount,

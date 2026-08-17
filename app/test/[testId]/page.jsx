@@ -86,12 +86,14 @@ export default function TestCandidatePage() {
             onNext={() => session.setCurrentQuestion((prev) => Math.min(session.testData.questions.length - 1, prev + 1))}
             onJump={session.setCurrentQuestion}
             onSubmit={() => session.handleSubmitTest(false)}
+            submittingResult={session.submittingResult}
           />
         ) : null}
 
         <SubmitConfirmationDialog
           open={session.showConfirmSubmit}
           unansweredCount={session.unansweredCount}
+          submittingResult={session.submittingResult}
           onOpenChange={session.setShowConfirmSubmit}
           onCancel={() => session.setShowConfirmSubmit(false)}
           onConfirm={() => session.confirmSubmitTest(false)}

@@ -32,6 +32,10 @@ function handleExpiredAdminSession(url) {
     return
   }
 
+  if (window.location.pathname.startsWith("/test/")) {
+    return
+  }
+
   localStorage.removeItem("admin_token")
   localStorage.removeItem("admin_type")
   localStorage.removeItem("admin_email")
@@ -106,9 +110,8 @@ export async function fetchWithTimeout(url, options = {}) {
         `La requête a expiré après ${retries + 1} tentative(s). Le serveur prend trop de temps à répondre.`
       )
     } else if (lastError.name === 'TypeError' && (lastError.message.includes('fetch') || lastError.message.includes('Failed to fetch') || lastError.message.includes('network'))) {
-      // Erreur de connexion réseau - le serveur backend n'est probablement pas démarré
       const baseUrl = url.split('/api/')[0] || 'http://localhost:5000'
-      const errorMessage = `Impossible de se connecter au serveur backend (${baseUrl}). Vérifiez que le serveur backend est démarré sur le port 5000, que l'URL de l'API est correcte, et votre connexion internet.`
+      const errorMessage = `Impossible de joindre le serveur (${baseUrl}). Vérifiez votre connexion, puis réessayez.`
       throw new Error(errorMessage)
     } else if (lastError.message) {
       throw lastError

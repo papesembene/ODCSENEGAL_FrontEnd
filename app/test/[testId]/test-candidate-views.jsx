@@ -373,6 +373,7 @@ export function ActiveTestView({
   onNext,
   onJump,
   onSubmit,
+  submittingResult,
 }) {
   return (
     <div className="space-y-4">
@@ -488,8 +489,12 @@ export function ActiveTestView({
             </Button>
 
             {currentQuestion === testData.questions.length - 1 ? (
-              <Button onClick={onSubmit} className="h-12 w-full bg-green-500 text-base touch-manipulation hover:bg-green-600 sm:h-10 sm:w-auto sm:text-sm">
-                Soumettre le test
+              <Button
+                onClick={onSubmit}
+                disabled={submittingResult}
+                className="h-12 w-full bg-green-500 text-base touch-manipulation hover:bg-green-600 sm:h-10 sm:w-auto sm:text-sm"
+              >
+                {submittingResult ? "Enregistrement..." : "Soumettre le test"}
               </Button>
             ) : (
               <Button onClick={onNext} className="h-12 w-full touch-manipulation text-base sm:h-10 sm:w-auto sm:text-sm">
@@ -526,7 +531,7 @@ export function ActiveTestView({
   )
 }
 
-export function SubmitConfirmationDialog({ open, unansweredCount, onOpenChange, onCancel, onConfirm }) {
+export function SubmitConfirmationDialog({ open, unansweredCount, submittingResult, onOpenChange, onCancel, onConfirm }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="mx-4 sm:max-w-md">
@@ -551,8 +556,10 @@ export function SubmitConfirmationDialog({ open, unansweredCount, onOpenChange, 
         </Alert>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>Annuler</Button>
-          <Button onClick={onConfirm} className="bg-orange-500 hover:bg-orange-600">Confirmer la soumission</Button>
+          <Button variant="outline" onClick={onCancel} disabled={submittingResult}>Annuler</Button>
+          <Button onClick={onConfirm} disabled={submittingResult} className="bg-orange-500 hover:bg-orange-600">
+            {submittingResult ? "Enregistrement..." : "Confirmer la soumission"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
