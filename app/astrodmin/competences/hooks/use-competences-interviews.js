@@ -21,6 +21,7 @@ const EMPTY_EVALUATION_SUMMARY = {
 export default function useCompetencesInterviews({ filterBySelectedCampaign = true } = {}) {
   const { interviews } = useAdminApi()
   const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [evaluationsLoading, setEvaluationsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [campaigns, setCampaigns] = useState([])
@@ -85,6 +86,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       toast.error(error.message || "Impossible de charger le module entretiens")
     } finally {
       setLoading(false)
+      setInitialLoading(false)
     }
   }, [interviews])
 
@@ -207,6 +209,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       })
       await fetchBootstrap()
       setSelectedCampaignId(result.data.id)
+      return result.data
     } catch (error) {
       console.error(error)
       toast.error(error.message || "Impossible de créer la campagne")
@@ -293,6 +296,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
         end_at: "",
       })
       await fetchBootstrap()
+      return result.data
     } catch (error) {
       console.error(error)
       toast.error(error.message || "Impossible de créer le créneau")
@@ -348,6 +352,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       toast.success(result.message || "Fiches d'entretien générées")
       await fetchBootstrap()
       await fetchEvaluations()
+      return result.data || true
     } catch (error) {
       console.error(error)
       toast.error(error.message || "Impossible de générer les fiches")
@@ -413,6 +418,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
 
   return {
     loading,
+    initialLoading,
     evaluationsLoading,
     submitting,
     campaigns,

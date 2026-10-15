@@ -175,7 +175,7 @@ export default function CompetencesInterviewScorecardEditor({
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle>Critères du référentiel</CardTitle>
+            <CardTitle role="heading" aria-level={2} className="text-lg">Critères du référentiel</CardTitle>
             <CardDescription>
               Cette grille sera utilisée uniquement pour la campagne {selectedCampaign.name}.
             </CardDescription>

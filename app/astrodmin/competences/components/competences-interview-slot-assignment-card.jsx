@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Users } from "lucide-react"
+import { useDeferredValue, useMemo, useState } from "react"
+import { CalendarClock, Plus, Search, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 const ROLE_FIELDS = [
   { key: "assigned_filter_ids", label: "Filtreurs", shortLabel: "F" },
@@ -52,13 +54,21 @@ function formatSlotDate(value) {
 export default function CompetencesInterviewSlotAssignmentCard({
   slots,
   adminOptions,
+  occupancy = {},
   submitting,
   onSave,
+  onCreate,
+  onPlan,
 }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [mode, setMode] = useState("single")
   const [selectedSlotIds, setSelectedSlotIds] = useState([])
   const [draftAssignments, setDraftAssignments] = useState(EMPTY_ASSIGNMENTS)
+  const [slotSearch, setSlotSearch] = useState("")
+  const [userSearch, setUserSearch] = useState("")
+  const deferredSearch = useDeferredValue(slotSearch).trim().toLowerCase()
+  const visibleSlots = slots.filter((slot) => slot.label.toLowerCase().includes(deferredSearch))
+  const visibleAdmins = adminOptions.filter((admin) => admin.label.toLowerCase().includes(userSearch.trim().toLowerCase()))
 
   const selectedSlots = useMemo(
     () => slots.filter((slot) => selectedSlotIds.includes(slot.id)),
@@ -69,6 +79,7 @@ export default function CompetencesInterviewSlotAssignmentCard({
     setMode("single")
     setSelectedSlotIds([slot.id])
     setDraftAssignments(getSlotAssignments(slot))
+    setUserSearch("")
     setDialogOpen(true)
   }
 
@@ -76,6 +87,7 @@ export default function CompetencesInterviewSlotAssignmentCard({
     setMode("bulk")
     setSelectedSlotIds([])
     setDraftAssignments(EMPTY_ASSIGNMENTS)
+    setUserSearch("")
     setDialogOpen(true)
   }
 
@@ -111,15 +123,19 @@ export default function CompetencesInterviewSlotAssignmentCard({
   }
 
   const handleSave = async () => {
-    await onSave(selectedSlotIds, {
-      ...draftAssignments,
-      assigned_jury_ids: draftAssignments.assigned_filter_ids,
-    })
-    setDialogOpen(false)
+    try {
+      await onSave(selectedSlotIds, {
+        ...draftAssignments,
+        assigned_jury_ids: draftAssignments.assigned_filter_ids,
+      })
+      setDialogOpen(false)
+    } catch {
+      // Keep the selected assignments available after a failed request.
+    }
   }
 
   const renderRolePicker = (role) => (
-    <div key={role.key} className="space-y-3 rounded-lg border p-3">
+    <div key={role.key} role="group" aria-label={role.label} className="space-y-3 rounded-lg border p-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <h4 className="font-medium">{role.label}</h4>
@@ -133,10 +149,10 @@ export default function CompetencesInterviewSlotAssignmentCard({
       </div>
 
       <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
-        {adminOptions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun membre d'entretien disponible.</p>
+        {visibleAdmins.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun membre correspondant.</p>
         ) : (
-          adminOptions.map((admin) => {
+          visibleAdmins.map((admin) => {
             const checkboxId = `assignment-${mode}-${role.key}-${admin.value}`
             const checked = (draftAssignments[role.key] || []).includes(admin.value)
 
@@ -164,47 +180,78 @@ export default function CompetencesInterviewSlotAssignmentCard({
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle>Affectation des jurys</CardTitle>
+              <CardTitle role="heading" aria-level={2} className="text-lg">Créneaux et jurys</CardTitle>
               <CardDescription>
-                Affectez les filtreurs, validateurs et jurys motivation par créneau. La même personne peut avoir plusieurs rôles selon le besoin.
+                {slots.length} créneau(x). Affectez les personnes par rôle, puis planifiez les candidats.
               </CardDescription>
             </div>
-            <Button type="button" variant="outline" onClick={openBulkAssignment} disabled={slots.length === 0}>
-              <Users className="mr-2 h-4 w-4" />
-              Affecter plusieurs créneaux
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {onPlan ? <Button type="button" variant="outline" onClick={onPlan} disabled={submitting || !slots.length}>
+                <CalendarClock className="mr-2 h-4 w-4" />Planifier
+              </Button> : null}
+              <Button type="button" variant="outline" onClick={openBulkAssignment} disabled={submitting || !slots.length}>
+                <Users className="mr-2 h-4 w-4" />Affectation groupée
+              </Button>
+              {onCreate ? <Button type="button" onClick={onCreate} disabled={submitting}>
+                <Plus className="mr-2 h-4 w-4" />Nouveau créneau
+              </Button> : null}
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {slots.length > 0 ? <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <Input className="pl-9" aria-label="Rechercher un créneau" placeholder="Rechercher un créneau"
+              value={slotSearch} onChange={(event) => setSlotSearch(event.target.value)} />
+          </div> : null}
           {slots.length === 0 ? (
-            <p className="rounded-lg border p-4 text-sm text-muted-foreground">
-              Créez d'abord les créneaux de la campagne. Vous pourrez ensuite affecter les jurys.
-            </p>
+            <div className="rounded-lg border border-dashed p-10 text-center">
+              <CalendarClock className="mx-auto mb-3 h-7 w-7 text-muted-foreground" />
+              <p className="font-medium">Aucun créneau pour cette campagne</p>
+              <p className="mt-1 text-sm text-muted-foreground">Ajoutez une plage horaire pour commencer les affectations.</p>
+            </div>
           ) : (
-            <div className="space-y-3">
-              {slots.map((slot) => {
+            <Table containerClassName="isolate max-h-[58vh] rounded-lg border">
+              <TableHeader className="sticky top-0 z-20 bg-background">
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Créneau</TableHead>
+                  <TableHead className="min-w-[180px]">Horaires</TableHead>
+                  <TableHead>Candidats</TableHead>
+                  <TableHead className="min-w-[260px]">Jurys affectés</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+              {visibleSlots.length === 0 ? <TableRow><TableCell colSpan={5} className="h-28 text-center text-muted-foreground">
+                Aucun créneau correspondant à votre recherche.
+              </TableCell></TableRow> : visibleSlots.map((slot) => {
                 const counts = countAssignments(slot)
 
                 return (
-                  <div key={slot.id} className="flex flex-col gap-3 rounded-lg border p-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0">
-                      <p className="font-medium">{slot.label}</p>
-                      <p className="text-sm text-muted-foreground">{formatSlotDate(slot.start_at)}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                  <TableRow key={slot.id}>
+                    <TableCell className="font-medium">{slot.label}</TableCell>
+                    <TableCell className="text-sm">
+                      <p>{formatSlotDate(slot.start_at)}</p>
+                      <p className="text-xs text-muted-foreground">Fin : {formatSlotDate(slot.end_at)}</p>
+                    </TableCell>
+                    <TableCell className="tabular-nums">{occupancy[slot.id] || 0}</TableCell>
+                    <TableCell><div className="flex flex-wrap gap-1.5">
                       {ROLE_FIELDS.map((role) => (
                         <Badge key={role.key} variant={counts[role.key] ? "secondary" : "outline"}>
-                          {role.shortLabel}: {counts[role.key]}
+                          {role.label}: {counts[role.key]}
                         </Badge>
                       ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => openSingleSlot(slot)}>
-                        Affecter
+                    </div></TableCell>
+                    <TableCell className="text-right">
+                      <Button type="button" variant="outline" size="sm" disabled={submitting} onClick={() => openSingleSlot(slot)}>
+                        Gérer les jurys
                       </Button>
-                    </div>
-                  </div>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </div>
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
@@ -223,6 +270,8 @@ export default function CompetencesInterviewSlotAssignmentCard({
           </DialogHeader>
 
           <div className="space-y-5">
+            <Input aria-label="Rechercher un membre du jury" placeholder="Rechercher un membre du jury"
+              value={userSearch} onChange={(event) => setUserSearch(event.target.value)} />
             {mode === "bulk" ? (
               <div className="space-y-3 rounded-lg border p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -231,6 +280,7 @@ export default function CompetencesInterviewSlotAssignmentCard({
                     <p className="text-sm text-muted-foreground">
                       {selectedSlotIds.length} créneau(x) sélectionné(s)
                     </p>
+                    <p className="mt-1 text-xs text-muted-foreground">Les affectations choisies remplaceront celles des créneaux sélectionnés.</p>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={() => setSelectedSlotIds(slots.map((slot) => slot.id))}>
                     Tout sélectionner
