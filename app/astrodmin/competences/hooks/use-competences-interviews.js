@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { useAdminApi } from "@/app/hooks/useAdminApi"
@@ -22,6 +22,11 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   const { interviews } = useAdminApi()
   const [loading, setLoading] = useState(true)
   const [initialLoading, setInitialLoading] = useState(true)
+  const [bootstrapError, setBootstrapError] = useState("")
+  const [evaluationsError, setEvaluationsError] = useState("")
+  const [serverClock, setServerClock] = useState(null)
+  const bootstrapRequest = useRef(0)
+  const evaluationsRequest = useRef(0)
   const [evaluationsLoading, setEvaluationsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [campaigns, setCampaigns] = useState([])
@@ -34,6 +39,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   const [progressFilter, setProgressFilter] = useState("all")
   const [completionFilter, setCompletionFilter] = useState("all")
   const [formationFilter, setFormationFilter] = useState("all")
+  const [slotFilter, setSlotFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [planningMode, setPlanningMode] = useState("auto")
   const [candidatesPerSlot, setCandidatesPerSlot] = useState(50)
@@ -60,14 +66,20 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   })
 
   const fetchBootstrap = useCallback(async () => {
+    const requestId = ++bootstrapRequest.current
     try {
       setLoading(true)
       const result = await interviews.bootstrap()
+      if (requestId !== bootstrapRequest.current) return
       if (!result.success) {
         throw new Error(result.error || "Erreur lors du chargement des entretiens")
       }
 
       const data = result.data || {}
+      setBootstrapError("")
+      if (data.server_now) {
+        setServerClock({ time: Date.parse(data.server_now), receivedAt: performance.now() })
+      }
       setCampaigns(data.campaigns || [])
       setSlots(data.slots || [])
       setAdmins(data.admins || [])
@@ -82,11 +94,15 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
         return currentCampaignStillExists ? currentCampaignId : campaigns[0]?.id || ""
       })
     } catch (error) {
+      if (requestId !== bootstrapRequest.current) return
+      setBootstrapError(error.message || "Impossible de charger les entretiens")
       console.error(error)
       toast.error(error.message || "Impossible de charger le module entretiens")
     } finally {
-      setLoading(false)
-      setInitialLoading(false)
+      if (requestId === bootstrapRequest.current) {
+        setLoading(false)
+        setInitialLoading(false)
+      }
     }
   }, [interviews])
 
@@ -95,8 +111,10 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   }, [fetchBootstrap])
 
   const fetchEvaluations = useCallback(async () => {
+    const requestId = ++evaluationsRequest.current
     if (filterBySelectedCampaign && !selectedCampaignId) {
       setEvaluations([])
+      setEvaluationsLoading(false)
       setPagination({
         page: 1,
         page_size: pageSize,
@@ -111,6 +129,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       setEvaluationsLoading(true)
       const result = await interviews.getEvaluations({
         campaignId: filterBySelectedCampaign ? selectedCampaignId : "",
+        slotId: slotFilter,
         formation: formationFilter,
         status: statusFilter,
         progress: progressFilter,
@@ -119,11 +138,13 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
         page,
         pageSize,
       })
+      if (requestId !== evaluationsRequest.current) return
       if (!result.success) {
         throw new Error(result.error || "Erreur lors du chargement des fiches")
       }
 
       setEvaluations(result.data || [])
+      setEvaluationsError("")
       const nextPagination = result.pagination || {
         page: 1,
         page_size: pageSize,
@@ -136,10 +157,13 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       ))
       setEvaluationSummary(result.summary || EMPTY_EVALUATION_SUMMARY)
     } catch (error) {
+      if (requestId !== evaluationsRequest.current) return
+      setEvaluationsError(error.message || "Impossible de charger les candidats")
+      setEvaluations([])
       console.error(error)
       toast.error(error.message || "Impossible de charger les fiches d'entretien")
     } finally {
-      setEvaluationsLoading(false)
+      if (requestId === evaluationsRequest.current) setEvaluationsLoading(false)
     }
   }, [
     completionFilter,
@@ -151,6 +175,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     pageSize,
     progressFilter,
     selectedCampaignId,
+    slotFilter,
     statusFilter,
   ])
 
@@ -166,6 +191,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     formationFilter,
     progressFilter,
     selectedCampaignId,
+    slotFilter,
     statusFilter,
   ])
 
@@ -419,6 +445,9 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   return {
     loading,
     initialLoading,
+    bootstrapError,
+    evaluationsError,
+    serverClock,
     evaluationsLoading,
     submitting,
     campaigns,
@@ -439,6 +468,8 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     setSearchTerm,
     formationFilter,
     setFormationFilter,
+    slotFilter,
+    setSlotFilter,
     statusFilter,
     setStatusFilter,
     progressFilter,
