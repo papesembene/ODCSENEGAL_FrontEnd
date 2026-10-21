@@ -28,7 +28,7 @@ export default function CompetencesFormationCandidatesDialog({
   const unassignedEligibleCount = eligibleCandidates.filter((candidate) => !assignedCandidateIds.includes(candidate.id)).length
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="m-4 max-h-[90vh] w-full max-w-7xl overflow-auto rounded-lg bg-white shadow-lg dark:bg-gray-800">
         <div className="p-6">
           <div className="mb-6 flex items-center justify-between">

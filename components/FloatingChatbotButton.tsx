@@ -32,7 +32,7 @@ const FloatingChatbotButton = ({ toggleChatbot, isMobile }: any) => {
       {showHand && <WavingHand />}
       <button
         onClick={toggleChatbot}
-        className={`rounded-full bg-transparent focus:outline-none ${
+        className={`rounded-full bg-transparent focus:outline-hidden ${
           isMobile ? "h-16 w-16" : "h-24 w-24"
         }`}
       >

@@ -106,7 +106,7 @@ export default function StartupLabPage() {
           className="object-cover transform scale-105 transition-transform duration-10000 hover:scale-110"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50" />
+        <div className="absolute inset-0 bg-linear-to-r/srgb from-black/70 to-black/50" />
         <div className="container relative z-10 mx-auto flex h-full items-center px-4">
           <div className={`max-w-2xl text-white transition-all duration-1000 transform ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-20 opacity-0'}`}>
             <h1 className="text-5xl font-bold leading-tight sm:text-6xl">
@@ -306,7 +306,7 @@ export default function StartupLabPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-orange-1 to-orange-600 py-20">
+      <section className="bg-linear-to-r/srgb from-orange-1 to-orange-600 py-20">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-3xl text-center text-white">
             <h2 className="text-4xl font-bold mb-6">Prêt à lancer votre startup ?</h2>

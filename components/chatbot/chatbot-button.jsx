@@ -250,7 +250,7 @@ const ChatbotButton = () => {
             }}
           >
             {/* En-tête */}
-            <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-3 text-white flex items-center justify-between">
+            <div className="bg-linear-to-r/srgb from-amber-500 to-orange-600 p-3 text-white flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="relative h-8 w-8">
                   <Image
@@ -291,7 +291,7 @@ const ChatbotButton = () => {
               {messages.map((message, index) => (
                 <div key={index} className={`flex items-start gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {message.role === 'assistant' && (
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <div className="relative h-8 w-8">
                         <Image
                           src="/thaloob.png"
@@ -333,7 +333,7 @@ const ChatbotButton = () => {
                   </div>
                  
                   {message.role === 'user' && (
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       <div className="relative h-8 w-8">
                         <Image
                           src="/avatar_user.png"
@@ -349,7 +349,7 @@ const ChatbotButton = () => {
  
               {isLoading && (
                 <div className="flex items-start gap-2">
-                  <div className="bg-orange-100 dark:bg-orange-900 p-1.5 rounded-full flex-shrink-0">
+                  <div className="bg-orange-100 dark:bg-orange-900 p-1.5 rounded-full shrink-0">
                     <Bot className="h-4 w-4 text-orange-500 dark:text-orange-300" />
                   </div>
                   <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2 max-w-[80%]">
@@ -374,7 +374,7 @@ const ChatbotButton = () => {
                   onChange={(e) => setInput(e.target.value)}
                   onFocus={handleInputFocus}
                   placeholder="Posez votre question..."
-                  className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 py-2 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-800 text-sm"
+                  className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 py-2 pl-3 pr-10 focus:outline-hidden focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-800 text-sm"
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(e)}
                   disabled={isLoading}
                   autoFocus={isOpen}
@@ -405,7 +405,7 @@ const ChatbotButton = () => {
             aria-label="Ouvrir l'assistant"
             className={cn(
               "rounded-full bg-transparent hover:bg-transparent",
-              "focus:outline-none focus:ring-2 focus:ring-orange-500",
+              "focus:outline-hidden focus:ring-2 focus:ring-orange-500",
               "relative overflow-hidden border-none shadow-none",
               isMobile ? "h-16 w-16" : "h-40 w-36"
             )}
@@ -436,4 +436,3 @@ const ChatbotButton = () => {
 }
  
 export default ChatbotButton
- 

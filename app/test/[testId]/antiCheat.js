@@ -11,9 +11,10 @@ import {
 } from "./anti-cheat-utils"
 
 export class AntiCheatService {
-  constructor(testId, candidateEmail, onViolation) {
+  constructor(testId, candidateEmail, onViolation, candidatePhone) {
     this.testId = testId
     this.candidateEmail = candidateEmail
+    this.candidatePhone = candidatePhone
     this.onViolation = onViolation || (() => {})
 
     const sessionKey = getAntiCheatSessionKey(testId)
@@ -403,7 +404,7 @@ export class AntiCheatService {
     this.violations.push(violation)
     this.persistState()
     this.onViolation(violation)
-    sendViolationToBackend(violation)
+    sendViolationToBackend({ ...violation, candidatePhone: this.candidatePhone })
   }
 
   getViolationsSummary() {

@@ -7,11 +7,9 @@ import { RefreshCw, Trash, CheckCircle, XCircle, Clock } from "lucide-react"
 const ITEMS_PER_PAGE_OPTIONS = ["10", "20", "30", "50", "100"]
 
 const getVisiblePages = (totalPages, currentPage) => {
-  return Array.from({ length: totalPages }, (_, index) => index + 1).filter((page) => {
-    if (totalPages <= 7) return true
-    if (page === 1 || page === totalPages) return true
-    return Math.abs(page - currentPage) <= 1
-  })
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
+  return [...new Set([1, currentPage - 1, currentPage, currentPage + 1, totalPages])]
+    .filter((page) => page >= 1 && page <= totalPages).sort((left, right) => left - right)
 }
 
 export function PageSizeSelector({ value, onChange }) {
@@ -40,7 +38,7 @@ export function PageSizeSelector({ value, onChange }) {
   )
 }
 
-export function PaginationControls({ page, itemsPerPage, totalItems, itemLabel, onPageChange }) {
+export function PaginationControls({ page, itemsPerPage, totalItems, itemLabel, onPageChange, disabled = false }) {
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   if (!totalItems) {
@@ -53,13 +51,14 @@ export function PaginationControls({ page, itemsPerPage, totalItems, itemLabel, 
         Affichage de {Math.min((page - 1) * itemsPerPage + 1, totalItems)} à {Math.min(page * itemsPerPage, totalItems)} sur {totalItems} {itemLabel}
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page === 1}>
+        <Button variant="outline" size="sm" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={disabled || page === 1}>
           Précédent
         </Button>
         <div className="flex gap-1">
           {getVisiblePages(totalPages, page).map((visiblePage) => (
             <Button
               key={visiblePage}
+              disabled={disabled}
               variant={page === visiblePage ? "default" : "outline"}
               size="sm"
               className="w-8 h-8 p-0"
@@ -73,7 +72,7 @@ export function PaginationControls({ page, itemsPerPage, totalItems, itemLabel, 
           variant="outline"
           size="sm"
           onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-          disabled={page >= totalPages}
+          disabled={disabled || page >= totalPages}
         >
           Suivant
         </Button>

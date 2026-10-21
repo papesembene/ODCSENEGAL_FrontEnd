@@ -198,7 +198,7 @@ export default function SuccessStoriesPage() {
                 <Card key={story.id} className="overflow-hidden transition-all hover:shadow-lg">
                   <div className="relative h-48">
                     <Image src={story.image || "/placeholder.svg"} alt={story.name} fill className="object-cover" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                    <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t/srgb from-black/70 to-transparent p-4">
                       <div className="flex items-center space-x-2">
                         <div className="relative h-10 w-10 overflow-hidden rounded-full bg-white">
                           <Image
@@ -238,7 +238,7 @@ export default function SuccessStoriesPage() {
 
                     <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
                       <div className="flex items-start space-x-2">
-                        <Quote className="h-5 w-5 flex-shrink-0 text-orange-500" />
+                        <Quote className="h-5 w-5 shrink-0 text-orange-500" />
                         <p className="text-sm italic text-gray-600 dark:text-gray-300">
                           {story.quote.length > 150 ? `${story.quote.substring(0, 150)}...` : story.quote}
                         </p>

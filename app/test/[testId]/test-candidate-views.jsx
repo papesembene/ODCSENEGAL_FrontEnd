@@ -120,7 +120,7 @@ export function TestTooEarlyState({ scheduledDateTime, countdown, testData, onRe
       </div>
 
       <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
-        <AlertCircle className="h-4 w-4 flex-shrink-0 text-blue-600" />
+        <AlertCircle className="h-4 w-4 shrink-0 text-blue-600" />
         <AlertDescription className="text-xs sm:text-sm">
           <strong className="text-sm text-blue-900 dark:text-blue-100 sm:text-base">Informations sur le test</strong>
           <div className="mt-2 space-y-1">
@@ -138,10 +138,10 @@ export function TestTooEarlyState({ scheduledDateTime, countdown, testData, onRe
           Préparez-vous
         </h4>
         <ul className="space-y-1 text-xs text-orange-800 dark:text-orange-200 sm:text-sm">
-          <li className="flex items-center gap-2"><Wifi className="h-3.5 w-3.5 flex-shrink-0" /> Vérifiez votre connexion internet</li>
-          <li className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 flex-shrink-0" /> Assurez-vous d&apos;avoir {testData.duration} minutes disponibles</li>
-          <li className="flex items-center gap-2"><UserRound className="h-3.5 w-3.5 flex-shrink-0" /> Préparez vos informations (nom, email, téléphone)</li>
-          <li className="flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 flex-shrink-0" /> Cette page se mettra à jour automatiquement</li>
+          <li className="flex items-center gap-2"><Wifi className="h-3.5 w-3.5 shrink-0" /> Vérifiez votre connexion internet</li>
+          <li className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 shrink-0" /> Assurez-vous d&apos;avoir {testData.duration} minutes disponibles</li>
+          <li className="flex items-center gap-2"><UserRound className="h-3.5 w-3.5 shrink-0" /> Préparez vos informations (nom, email, téléphone)</li>
+          <li className="flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 shrink-0" /> Cette page se mettra à jour automatiquement</li>
         </ul>
       </div>
 
@@ -165,7 +165,7 @@ export function TestExpiredState({ scheduledDateTime, testData }) {
         {scheduledDateTime && new Date(scheduledDateTime.getTime() + testData.duration * 60000).toLocaleString("fr-FR")}
       </p>
       <Alert>
-        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+        <AlertCircle className="h-4 w-4 shrink-0" />
         <AlertDescription className="text-xs sm:text-sm">
           Veuillez contacter l&apos;administration pour plus d&apos;informations.
         </AlertDescription>
@@ -279,14 +279,14 @@ export function TestIntroductionCard({ testData, authData, onStart, loadingFullT
 
   return (
     <Card>
-      <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+      <CardHeader className="bg-linear-to-r/srgb from-orange-500 to-orange-600 text-white">
         <CardTitle className="text-xl sm:text-2xl">{testData.title}</CardTitle>
         <CardDescription className="text-sm text-orange-100 sm:text-base">{testData.referentiel}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
-            <Clock className="h-6 w-6 flex-shrink-0 text-orange-500 sm:h-8 sm:w-8" />
+            <Clock className="h-6 w-6 shrink-0 text-orange-500 sm:h-8 sm:w-8" />
             <div>
               <p className="text-xs text-muted-foreground sm:text-sm">Durée</p>
               <p className="text-base font-semibold sm:text-lg">{testData.duration} minutes</p>
@@ -294,7 +294,7 @@ export function TestIntroductionCard({ testData, authData, onStart, loadingFullT
           </div>
 
           <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
-            <FileText className="h-6 w-6 flex-shrink-0 text-blue-500 sm:h-8 sm:w-8" />
+            <FileText className="h-6 w-6 shrink-0 text-blue-500 sm:h-8 sm:w-8" />
             <div>
               <p className="text-xs text-muted-foreground sm:text-sm">Questions</p>
               <p className="text-base font-semibold sm:text-lg">{questionCount}</p>
@@ -303,7 +303,7 @@ export function TestIntroductionCard({ testData, authData, onStart, loadingFullT
         </div>
 
         <Alert className="border-l-4 border-orange-500 bg-orange-50">
-          <AlertCircle className="h-4 w-4 flex-shrink-0 text-orange-600" />
+          <AlertCircle className="h-4 w-4 shrink-0 text-orange-600" />
           <AlertDescription className="text-xs text-gray-800 sm:text-sm">
             <strong className="inline-flex items-center gap-2 text-sm text-gray-900 sm:text-base">
               <ClipboardList className="h-4 w-4 text-orange-600" />
@@ -323,12 +323,12 @@ export function TestIntroductionCard({ testData, authData, onStart, loadingFullT
             </strong>
             <p className="mt-2">Ce test est surveillé par un système avancé de détection.</p>
             <ul className="mt-3 list-inside list-disc space-y-1">
-              <li className="flex items-start gap-2"><Copy className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Blocage du copier/coller</span> et des raccourcis suspects.</span></li>
-              <li className="flex items-start gap-2"><MousePointerClick className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Désactivation du clic droit</span> et des outils de développement.</span></li>
-              <li className="flex items-start gap-2"><Camera className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Détection des captures d’écran</span>.</span></li>
-              <li className="flex items-start gap-2"><Monitor className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Détection des changements d’onglet</span> ou perte de focus.</span></li>
-              <li className="flex items-start gap-2"><Monitor className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-gray-700" /><span><span className="font-medium">Avertissements visuels</span> déclenchés automatiquement.</span></li>
-              <li className="flex items-start gap-2"><BellRing className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-red-600" /><span><span className="font-medium text-red-600">Avertissement sonore</span> en cas de comportement suspect.</span></li>
+              <li className="flex items-start gap-2"><Copy className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Blocage du copier/coller</span> et des raccourcis suspects.</span></li>
+              <li className="flex items-start gap-2"><MousePointerClick className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Désactivation du clic droit</span> et des outils de développement.</span></li>
+              <li className="flex items-start gap-2"><Camera className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Détection des captures d’écran</span>.</span></li>
+              <li className="flex items-start gap-2"><Monitor className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-700" /><span><span className="font-medium text-gray-900">Détection des changements d’onglet</span> ou perte de focus.</span></li>
+              <li className="flex items-start gap-2"><Monitor className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-700" /><span><span className="font-medium">Avertissements visuels</span> déclenchés automatiquement.</span></li>
+              <li className="flex items-start gap-2"><BellRing className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" /><span><span className="font-medium text-red-600">Avertissement sonore</span> en cas de comportement suspect.</span></li>
             </ul>
             <p className="mt-3 font-semibold text-red-700">
               Toute tentative de triche est enregistrée et transmise automatiquement à l’équipe d’évaluation.
@@ -343,7 +343,7 @@ export function TestIntroductionCard({ testData, authData, onStart, loadingFullT
             <p className="truncate text-sm font-medium sm:text-base">Candidat : {authData.name}</p>
             <p className="truncate text-xs text-muted-foreground sm:text-sm">{authData.email}</p>
           </div>
-          <Badge className="flex-shrink-0 bg-green-100 text-xs text-green-800 sm:text-sm">Prêt</Badge>
+          <Badge className="shrink-0 bg-green-100 text-xs text-green-800 sm:text-sm">Prêt</Badge>
         </div>
 
         <Button
@@ -428,7 +428,7 @@ export function ActiveTestView({
                   key={index}
                   className="flex min-h-[56px] cursor-pointer items-center space-x-3 rounded-lg border p-4 touch-manipulation hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
-                  <RadioGroupItem value={index.toString()} id={`option-${index}`} className="h-5 w-5 flex-shrink-0" />
+                  <RadioGroupItem value={index.toString()} id={`option-${index}`} className="h-5 w-5 shrink-0" />
                   <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer text-sm sm:text-base">
                     {option}
                   </Label>
@@ -454,7 +454,7 @@ export function ActiveTestView({
                     id={`option-multiple-${index}`}
                     checked={answers[currentQuestion] ? Array.isArray(answers[currentQuestion]) && answers[currentQuestion].includes(index) : false}
                     onCheckedChange={(checked) => onMultipleAnswerChange(index, checked)}
-                    className="h-5 w-5 flex-shrink-0"
+                    className="h-5 w-5 shrink-0"
                   />
                   <Label htmlFor={`option-multiple-${index}`} className="flex-1 cursor-pointer text-sm sm:text-base">
                     {option}

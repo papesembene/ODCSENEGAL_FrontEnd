@@ -98,7 +98,7 @@ export default function OdcAvailabilitySection({
                 name="contractType"
                 value={formData.contractType}
                 onChange={handleChange}
-                className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900]"
+                className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900]"
               >
                 <option value="">Sélectionnez votre type de contrat</option>
                 <option value="stage">Stage</option>

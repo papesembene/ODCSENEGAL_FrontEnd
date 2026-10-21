@@ -98,7 +98,7 @@ export default function Home() {
       </motion.section>
 
       <section className="relative overflow-hidden bg-white px-4 py-24 dark:bg-gray-950">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r/srgb from-transparent via-orange-500/50 to-transparent" />
         <div className="absolute right-[-8rem] top-24 h-96 w-96 rounded-full bg-orange-100 blur-3xl dark:bg-orange-500/10" />
         <div className="container mx-auto">
           <motion.div
@@ -137,7 +137,7 @@ export default function Home() {
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t/srgb from-black/80 via-black/15 to-transparent" />
                     <div className="absolute bottom-5 left-5 rounded-2xl border border-white/20 bg-white/15 p-3 text-white backdrop-blur-md">
                       {space.icon}
                     </div>
@@ -149,7 +149,7 @@ export default function Home() {
                     </CardTitle>
                   </CardHeader>
                   
-                  <CardContent className="flex-grow px-7 pb-5">
+                  <CardContent className="grow px-7 pb-5">
                     <p className="text-lg leading-8 text-gray-600 dark:text-gray-300">
                       {space.description}
                     </p>

@@ -145,7 +145,9 @@ export function createGroupHandlers({
       )
       const sendResult = await sendResponse.json()
 
-      if (sendResult.success) {
+      if (sendResult.queued && sendResponse.ok) {
+        toast.info(sendResult.message || "Invitations en attente d'envoi")
+      } else if (sendResult.success) {
         toast.success(sendResult.message || `Invitations envoyées à ${sendResult.data?.sent || 0} candidats`)
       } else if (sendResponse.status === 207) {
         toast.warning(sendResult.message || `Invitations partiellement envoyées : ${sendResult.data?.sent || 0} succès`)
@@ -153,7 +155,7 @@ export function createGroupHandlers({
         toast.error(sendResult.error || sendResult.message || "Erreur d'envoi")
       }
 
-      if (sendResponse.ok) {
+      if (sendResponse.ok && !sendResult.queued) {
         setShowSendInvitationDialog(false)
       }
       fetchTestGroups()

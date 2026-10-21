@@ -240,7 +240,7 @@ export default function OffreEmploiDetailPage({ params: _params }: OffreEmploiDe
                     <ul className="mb-4 space-y-2">
                       {offreEmploi.responsabilites.map((item, i) => (
                         <li key={i} className="flex items-start">
-                          <Check className="mr-2 h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                          <Check className="mr-2 h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
                           <span className="text-gray-700 dark:text-gray-300">{item}</span>
                         </li>
                       ))}
@@ -250,7 +250,7 @@ export default function OffreEmploiDetailPage({ params: _params }: OffreEmploiDe
                     <ul className="mb-4 space-y-2">
                       {offreEmploi.profil.map((item, i) => (
                         <li key={i} className="flex items-start">
-                          <Check className="mr-2 h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                          <Check className="mr-2 h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
                           <span className="text-gray-700 dark:text-gray-300">{item}</span>
                         </li>
                       ))}
@@ -260,7 +260,7 @@ export default function OffreEmploiDetailPage({ params: _params }: OffreEmploiDe
                     <ul className="space-y-2">
                       {offreEmploi.avantages.map((item, i) => (
                         <li key={i} className="flex items-start">
-                          <Check className="mr-2 h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                          <Check className="mr-2 h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
                           <span className="text-gray-700 dark:text-gray-300">{item}</span>
                         </li>
                       ))}

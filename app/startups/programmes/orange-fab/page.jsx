@@ -136,7 +136,7 @@ export default function OrangeFabPage() {
       {/* Hero Section */}
       <section className="relative h-[500px] overflow-hidden">
         <Image src="/images/orangefab.webp" alt="Orange Fab" fill className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50" />
+        <div className="absolute inset-0 bg-linear-to-r/srgb from-black/70 to-black/50" />
         <div className="container relative z-10 mx-auto flex h-full items-center px-4">
           <div className="max-w-2xl text-white">
             <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Orange Fab</h1>

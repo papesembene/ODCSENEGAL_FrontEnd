@@ -344,7 +344,7 @@ export function RichTextEditor({
           updateActiveFormats()
         }}
         onBlur={() => setIsEditing(false)}
-        className={`min-h-32 p-3 focus:outline-none whitespace-pre-wrap break-words ${
+        className={`min-h-32 p-3 focus:outline-hidden whitespace-pre-wrap break-words ${
           isEditing ? "bg-white" : "bg-gray-50"
         }`}
         style={{ minHeight: `${rows * 1.5}rem` }}

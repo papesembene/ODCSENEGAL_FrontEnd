@@ -52,7 +52,7 @@ export default function FAQPage() {
                   <h2 className="text-lg font-medium text-gray-900 dark:text-white">
                     {faq.question}
                   </h2>
-                  <div className="ml-4 flex-shrink-0 text-orange-500 group-open:rotate-90 transition-transform">
+                  <div className="ml-4 shrink-0 text-orange-500 group-open:rotate-90 transition-transform">
                     <ChevronRight className="h-5 w-5" />
                   </div>
                 </summary>

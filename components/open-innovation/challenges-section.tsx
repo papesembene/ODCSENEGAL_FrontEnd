@@ -292,13 +292,13 @@ export default function ChallengesSection() {
         </div>
 
         <div>
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-0 shadow-md">
+          <Card className="bg-linear-to-br/srgb from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-0 shadow-md">
             <CardHeader>
               <CardTitle>Comment ça marche ?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
+                <div className="shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
                   1
                 </div>
                 <p className="ml-4 text-gray-600 dark:text-gray-300">
@@ -307,7 +307,7 @@ export default function ChallengesSection() {
                 </p>
               </div>
               <div className="flex items-start">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
+                <div className="shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
                   2
                 </div>
                 <p className="ml-4 text-gray-600 dark:text-gray-300">
@@ -316,7 +316,7 @@ export default function ChallengesSection() {
                 </p>
               </div>
               <div className="flex items-start">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
+                <div className="shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
                   3
                 </div>
                 <p className="ml-4 text-gray-600 dark:text-gray-300">
@@ -325,7 +325,7 @@ export default function ChallengesSection() {
                 </p>
               </div>
               <div className="flex items-start">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
+                <div className="shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">
                   4
                 </div>
                 <p className="ml-4 text-gray-600 dark:text-gray-300">

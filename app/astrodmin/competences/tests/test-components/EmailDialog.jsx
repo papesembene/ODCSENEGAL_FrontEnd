@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { RefreshCw, Send } from "lucide-react"
+import { InvitationDeliveryStatus } from "./InvitationDeliveryStatus"
 
 export function EmailDialog({
   open,
@@ -27,9 +28,11 @@ export function EmailDialog({
   setCustomMessage,
   sendingEmails,
   handleSendEmails,
+  batchId,
+  resetBatch,
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(value) => { if (!sendingEmails) { if (!value) resetBatch(); onOpenChange(value) } }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Envoyer un email aux candidats sélectionnés</DialogTitle>
@@ -38,14 +41,14 @@ export function EmailDialog({
         <div className="space-y-4">
           <div>
             <Label htmlFor="emailType">Type d'email</Label>
-            <Select value={emailType} onValueChange={setEmailType}>
+            <Select value={emailType} onValueChange={(value) => { resetBatch(); setEmailType(value) }} disabled={sendingEmails}>
               <SelectTrigger id="emailType">
                 <SelectValue placeholder="Sélectionner le type d'email" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="interview_invitation">Invitation à l'entretien</SelectItem>
-                <SelectItem value="acceptance">Notification d'acceptation</SelectItem>
-                <SelectItem value="rejection">Notification de refus</SelectItem>
+                <SelectItem value="acceptance">Test : seuil atteint</SelectItem>
+                <SelectItem value="rejection">Test : seuil non atteint</SelectItem>
                 <SelectItem value="results_notification">Notification des résultats</SelectItem>
                 <SelectItem value="information">Information générale</SelectItem>
               </SelectContent>
@@ -56,20 +59,23 @@ export function EmailDialog({
             <Textarea
               id="customMessage"
               value={customMessage}
-              onChange={(e) => setCustomMessage(e.target.value)}
+              onChange={(e) => { resetBatch(); setCustomMessage(e.target.value) }}
+              disabled={sendingEmails}
+              maxLength={5000}
               placeholder="Ajoutez un message personnalisé..."
               rows={4}
             />
           </div>
+          {batchId ? <InvitationDeliveryStatus endpoint={`/api/admin/tests/notifications/${batchId}`} title="Suivi des envois" /> : null}
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => { resetBatch(); onOpenChange(false) }}
               disabled={sendingEmails}
             >
-              Annuler
+              {batchId ? "Fermer" : "Annuler"}
             </Button>
-            <Button onClick={handleSendEmails} disabled={!emailType || sendingEmails}>
+            <Button onClick={handleSendEmails} disabled={!emailType || sendingEmails || !!batchId}>
               {sendingEmails ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

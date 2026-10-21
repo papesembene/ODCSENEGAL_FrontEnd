@@ -40,7 +40,7 @@ export default function AboutPage() {
     <div className="bg-white dark:bg-gray-900">
       {/* Hero Section */}
       <section className="relative py-20">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-10 dark:opacity-20"></div>
+        <div className="absolute inset-0 bg-linear-to-r/srgb from-orange-500 to-orange-600 opacity-10 dark:opacity-20"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <AnimatedSection>

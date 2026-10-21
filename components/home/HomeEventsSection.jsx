@@ -106,7 +106,7 @@ export default function HomeEventsSection({ upcomingEvents }) {
                     e.currentTarget.src = "/placeholder-event.jpg"
                   }}
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t/srgb from-black/70 to-transparent p-4">
                   <Badge className={getCategoryColor(event?.category)}>
                     {event?.category || "Événement"}
                   </Badge>

@@ -88,7 +88,7 @@ export default function EventsCarousel({ events }: Props) {
               <CardHeader>
                 <CardTitle className="line-clamp-2">{event.title}</CardTitle>
               </CardHeader>
-              <CardContent className="flex-grow">
+              <CardContent className="grow">
                 <CardDescription className="text-base line-clamp-3">
                   {event.description}
                 </CardDescription>
@@ -126,4 +126,3 @@ export default function EventsCarousel({ events }: Props) {
     </div>
   )
 }
- 

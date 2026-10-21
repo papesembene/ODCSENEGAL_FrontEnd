@@ -245,7 +245,7 @@ export default function AdminLayout({ children }) {
       <aside className={`hidden h-full shrink-0 overflow-hidden lg:flex lg:flex-col ${sidebarCollapsed ? "lg:w-16" : "lg:w-64"} bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-200`}>
         <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <div className={`${sidebarCollapsed ? "opacity-0 pointer-events-none w-0" : "opacity-100"} transition-opacity duration-200`}>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="text-xl font-bold bg-linear-to-r/srgb from-orange-500 to-purple-600 bg-clip-text text-transparent">
               ODC Admin
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
@@ -319,7 +319,7 @@ export default function AdminLayout({ children }) {
           <aside className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 flex flex-col">
             <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+                <h2 className="text-xl font-bold bg-linear-to-r/srgb from-orange-500 to-purple-600 bg-clip-text text-transparent">
                   ODC Admin
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -391,7 +391,7 @@ export default function AdminLayout({ children }) {
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-lg font-bold bg-linear-to-r/srgb from-orange-500 to-purple-600 bg-clip-text text-transparent">
             ODC Admin
           </h1>
           <Button variant="ghost" size="icon" onClick={handleLogout}>

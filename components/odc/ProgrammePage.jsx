@@ -9,7 +9,7 @@ export default function ProgrammesPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#ff7900] to-[#ff9d4d] py-16">
+      <section className="bg-linear-to-r/srgb from-[#ff7900] to-[#ff9d4d] py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center mb-8">
             <Button asChild variant="ghost" className="text-white hover:bg-white/10">
@@ -81,7 +81,7 @@ export default function ProgrammesPage() {
                       "Université Assane Seck de Ziguinchor",
                     ].map((university, index) => (
                       <li key={index} className="flex items-center">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 shrink-0">
                           <span className="text-blue-500 font-bold">•</span>
                         </div>
                         <span className="text-gray-700 dark:text-gray-300">{university}</span>
@@ -112,7 +112,7 @@ export default function ProgrammesPage() {
                       "Mentorat par des professionnels",
                     ].map((activity, index) => (
                       <li key={index} className="flex items-center">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-3 shrink-0">
                           <span className="text-blue-500 font-bold">•</span>
                         </div>
                         <span className="text-gray-700 dark:text-gray-300">{activity}</span>
@@ -197,7 +197,7 @@ export default function ProgrammesPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                      className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white"
+                      className="bg-linear-to-br/srgb from-green-500 to-green-600 p-6 rounded-xl text-white"
                     >
                       <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
                         {feature.icon}
@@ -234,7 +234,7 @@ export default function ProgrammesPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white">
+                <div className="bg-linear-to-br/srgb from-green-500 to-green-600 p-6 rounded-xl text-white">
                   <h4 className="text-xl font-bold mb-3">Réservez votre session</h4>
                   <p className="mb-4 text-white/90">
                     Vous avez un projet innovant ? Réservez une session au FabLab pour bénéficier de nos équipements et
@@ -311,7 +311,7 @@ export default function ProgrammesPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                      className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-xl text-white"
+                      className="bg-linear-to-br/srgb from-orange-500 to-orange-600 p-6 rounded-xl text-white"
                     >
                       <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
                         {feature.icon}
@@ -366,7 +366,7 @@ export default function ProgrammesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-[#ff7900] to-[#ff9d4d] py-16">
+      <section className="bg-linear-to-r/srgb from-[#ff7900] to-[#ff9d4d] py-16">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-3xl text-center text-white">
             <h2 className="text-3xl font-bold sm:text-4xl">Intéressé par nos programmes ?</h2>

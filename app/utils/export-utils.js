@@ -80,7 +80,7 @@ export async function downloadPDF(data, filename = "export.pdf", title = "Export
   try {
     // Importer dynamiquement la bibliothèque jspdf et jspdf-autotable
     const { jsPDF } = await import("jspdf")
-    const { default: autoTable } = await import("jspdf-autotable")
+    const { autoTable } = await import("jspdf-autotable")
 
     // Créer un nouveau document PDF
     const doc = new jsPDF()

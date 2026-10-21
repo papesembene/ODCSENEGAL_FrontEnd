@@ -22,6 +22,10 @@ function hasViolations(violationEntry) {
 
 export function ResultsTab({
   testResults,
+  resultsTotal,
+  resultsLoading,
+  resultsError,
+  exportingResults,
   refreshing,
   setShowImportResultsDialog,
   handleExportResults,
@@ -38,6 +42,7 @@ export function ResultsTab({
   setResultsPage,
   filteredResults,
   selectedResults,
+  onSendEmails,
   handleSelectAllResults,
   handleSelectResult,
   calculatePoints,
@@ -55,8 +60,8 @@ export function ResultsTab({
             <div>
               <CardTitle>Résultats des tests</CardTitle>
               <CardDescription>
-                Consultez et gérez les résultats des candidats ({testResults.length} résultat
-                {testResults.length > 1 ? "s" : ""})
+                Consultez et gérez les résultats des candidats ({resultsTotal} résultat
+                {resultsTotal > 1 ? "s" : ""})
               </CardDescription>
             </div>
             <div className="flex space-x-2">
@@ -64,11 +69,11 @@ export function ResultsTab({
                 <Upload className="h-4 w-4 mr-2" />
                 Importer
               </Button>
-              <Button variant="outline" size="sm" onClick={() => handleExportResults("csv")}>
+              <Button variant="outline" size="sm" onClick={() => handleExportResults("csv")} disabled={exportingResults}>
                 <Download className="h-4 w-4 mr-2" />
                 Exporter
               </Button>
-              <Button variant="outline" size="sm" onClick={fetchResults} disabled={refreshing}>
+              <Button variant="outline" size="sm" onClick={fetchResults} disabled={resultsLoading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
                 Actualiser
               </Button>
@@ -99,7 +104,7 @@ export function ResultsTab({
                   <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="admis">Passe en entretien</SelectItem>
                   <SelectItem value="rejeté">Rejeté</SelectItem>
-                  <SelectItem value="en_attente">En attente</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -117,27 +122,29 @@ export function ResultsTab({
           </div>
         </CardHeader>
         <CardContent>
+          {resultsError ? <div role="alert" className="mb-4 text-sm text-red-700">{resultsError} <Button variant="outline" size="sm" onClick={fetchResults}>Réessayer</Button></div> : null}
+          {resultsLoading ? <p role="status" className="mb-4 text-sm text-muted-foreground">Chargement des résultats...</p> : null}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <PageSizeSelector value={resultsItemsPerPage} onChange={setResultsItemsPerPage} />
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">{resultsTotal} résultat(s) au total</span>
+              <Button variant="outline" size="sm" disabled={resultsLoading || !selectedResults.length || selectedResults.length > 500} onClick={onSendEmails}>
+                Notifier la sélection ({selectedResults.length})
+              </Button>
+            </div>
+          </div>
           {resultsView === "list" && (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <PageSizeSelector
-                  value={resultsItemsPerPage}
-                  onChange={(value) => {
-                    setResultsItemsPerPage(value)
-                    setResultsPage(1)
-                  }}
-                />
-                <div className="text-sm text-muted-foreground">{filteredResults.length} résultat(s) au total</div>
-              </div>
-
               <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]">
                         <Checkbox
-                          checked={selectedResults.length === filteredResults.length && filteredResults.length > 0}
+                          checked={filteredResults.length > 0 && filteredResults.every((result) => selectedResults.includes(result.id))}
                           onCheckedChange={handleSelectAllResults}
+                          disabled={resultsLoading}
+                          aria-label="Sélectionner cette page"
                         />
                       </TableHead>
                       <TableHead>Nom</TableHead>
@@ -167,7 +174,7 @@ export function ResultsTab({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredResults.slice((resultsPage - 1) * resultsItemsPerPage, resultsPage * resultsItemsPerPage).map((result) => {
+                      filteredResults.map((result) => {
                         const candidateName = result.candidate?.name || result.candidateName || "N/A"
                         const candidateEmail = result.candidate?.email || result.candidateEmail || "N/A"
                         const status = result.status || "pending"
@@ -222,18 +229,12 @@ export function ResultsTab({
                 </Table>
               </div>
 
-              <PaginationControls
-                page={resultsPage}
-                itemsPerPage={resultsItemsPerPage}
-                totalItems={filteredResults.length}
-                itemLabel="résultats"
-                onPageChange={setResultsPage}
-              />
             </>
           )}
 
           {resultsView === "grouped" && (
             <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">Regroupement des résultats de cette page. Utilisez la pagination pour parcourir la suite.</p>
               {groupedResults().length === 0 ? (
                 <div className="text-center py-12">
                   <LayoutGrid className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -247,7 +248,7 @@ export function ResultsTab({
               ) : (
                 groupedResults().map((formationGroup, index) => (
                   <Card key={index} className="border-2">
-                    <CardHeader className="bg-gradient-to-r from-orange-50 to-purple-50 dark:from-gray-800 dark:to-gray-700">
+                    <CardHeader className="bg-linear-to-r/srgb from-orange-50 to-purple-50 dark:from-gray-800 dark:to-gray-700">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 bg-orange-500 rounded-lg">
@@ -375,6 +376,8 @@ export function ResultsTab({
               )}
             </div>
           )}
+          <PaginationControls page={resultsPage} itemsPerPage={resultsItemsPerPage}
+            totalItems={resultsTotal} itemLabel="résultats" onPageChange={setResultsPage} disabled={resultsLoading} />
         </CardContent>
       </Card>
     </TabsContent>

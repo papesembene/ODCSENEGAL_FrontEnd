@@ -388,7 +388,7 @@ function ModuleCard({
 }) {
   return (
     <Card className={`${dimmed ? "opacity-60" : "cursor-pointer transition-shadow duration-300 hover:shadow-lg"}`} onClick={disabled ? undefined : onClick}>
-      <CardHeader className={`rounded-t-lg bg-gradient-to-r text-white ${headerClassName}`}>
+      <CardHeader className={`rounded-t-lg bg-linear-to-r/srgb text-white ${headerClassName}`}>
         <CardTitle className="flex items-center">
           <Icon className="mr-2 h-5 w-5" />
           {title}

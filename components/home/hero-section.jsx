@@ -110,7 +110,7 @@ const HeroSection = () => {
         </div>
       ))}
 
-      <div className="absolute inset-x-0 bottom-0 z-10 h-32 bg-gradient-to-t from-black/70 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 z-10 h-32 bg-linear-to-t/srgb from-black/70 to-transparent" />
       <div className="container relative z-20 mx-auto flex h-full items-center px-4">
         <div className="max-w-3xl">
           {slides.map((slide, index) => (
@@ -136,7 +136,7 @@ const HeroSection = () => {
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </Button>
-                <div className="hidden h-px w-24 bg-gradient-to-r from-white/60 to-transparent sm:block" />
+                <div className="hidden h-px w-24 bg-linear-to-r/srgb from-white/60 to-transparent sm:block" />
               </div>
             </div>
           ))}

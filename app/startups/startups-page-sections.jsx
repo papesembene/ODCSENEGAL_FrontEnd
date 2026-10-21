@@ -20,7 +20,7 @@ export function StartupsHeroSection() {
   return (
     <section className="relative h-[500px] overflow-hidden">
       <Image src="/heross.jpeg" alt="Orange Startup Studio" fill priority className="object-cover object-[center_30%]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40" />
+      <div className="absolute inset-0 bg-linear-to-r/srgb from-black/70 to-black/40" />
       <div className="container relative z-10 mx-auto flex h-full items-center px-4">
         <div className="max-w-2xl text-white">
           <h1 className="text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">Accompagnements des startups</h1>
@@ -238,7 +238,7 @@ function ProgrammeCard({ compact, programme }) {
     <Card className={`overflow-hidden transition-all hover:shadow-lg ${compact ? "mx-auto max-w-md" : ""}`}>
       <div className="relative h-48">
         <Image src={programme.image || "/placeholder.svg"} alt={programme.title} fill className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t/srgb from-black/60 to-transparent" />
         <div className="absolute bottom-4 left-4">
           <Badge className="bg-orange-1 text-white">{programme.duration}</Badge>
         </div>

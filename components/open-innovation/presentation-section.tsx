@@ -111,7 +111,7 @@ export default function PresentationSection() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 shadow-lg">
+        <Card className="overflow-hidden border-0 bg-linear-to-br/srgb from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 shadow-lg">
           <CardContent className="p-8 md:p-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div>
@@ -123,7 +123,7 @@ export default function PresentationSection() {
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
+                    <div className="shrink-0 h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
                       <svg
                         className="h-4 w-4 text-green-600 dark:text-green-400"
                         fill="none"
@@ -138,7 +138,7 @@ export default function PresentationSection() {
                     </p>
                   </div>
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
+                    <div className="shrink-0 h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
                       <svg
                         className="h-4 w-4 text-green-600 dark:text-green-400"
                         fill="none"
@@ -153,7 +153,7 @@ export default function PresentationSection() {
                     </p>
                   </div>
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
+                    <div className="shrink-0 h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
                       <svg
                         className="h-4 w-4 text-green-600 dark:text-green-400"
                         fill="none"
@@ -219,7 +219,7 @@ export default function PresentationSection() {
                         <ul className="space-y-2">
                           {beneficiary.benefits.map((benefit, index) => (
                             <li key={index} className="flex items-start">
-                              <div className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5">
+                              <div className="shrink-0 h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5">
                                 <svg
                                   className="h-3 w-3 text-blue-600 dark:text-blue-400"
                                   fill="none"

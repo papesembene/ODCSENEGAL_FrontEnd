@@ -103,7 +103,7 @@
 //   return (
 //     <div className="fixed bottom-20 right-4 z-50 flex h-[500px] w-[350px] flex-col overflow-hidden rounded-lg border bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900 md:right-8 md:h-[600px] md:w-[400px]">
 //       {/* Header */}
-//       <div className="flex items-center justify-between border-b bg-gradient-to-r from-orange-500 to-orange-600 p-4 text-white">
+//       <div className="flex items-center justify-between border-b bg-linear-to-r/srgb from-orange-500 to-orange-600 p-4 text-white">
 //         <div className="flex items-center space-x-3">
 //           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
 //             <Bot className="h-6 w-6 text-orange-500" />
@@ -128,7 +128,7 @@
 //         {messages.map((message, index) => (
 //           <div key={index} className={`mb-4 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
 //             {message.role === "assistant" && (
-//               <div className="mr-2 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900">
+//               <div className="mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900">
 //                 <Bot className="h-5 w-5 text-orange-500 dark:text-orange-300" />
 //               </div>
 //             )}
@@ -156,7 +156,7 @@
 //               )}
 //             </div>
 //             {message.role === "user" && (
-//               <div className="ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-200 to-orange-300 dark:from-orange-700 dark:to-orange-800">
+//               <div className="ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br/srgb from-orange-200 to-orange-300 dark:from-orange-700 dark:to-orange-800">
 //                 <span className="font-semibold text-orange-600 dark:text-orange-200">VO</span>
 //               </div>
 //             )}
@@ -165,7 +165,7 @@
         
 //         {isLoading && (
 //           <div className="mb-4 flex justify-start">
-//             <div className="mr-2 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900">
+//             <div className="mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900">
 //               <Bot className="h-5 w-5 text-orange-500 dark:text-orange-300" />
 //             </div>
 //             <div className="flex max-w-[80%] flex-col rounded-lg bg-gray-100 px-4 py-3 dark:bg-gray-800">

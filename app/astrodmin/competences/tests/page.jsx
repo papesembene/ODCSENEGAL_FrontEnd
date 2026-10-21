@@ -71,11 +71,11 @@ export default function TestsManagementPage() {
       {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-orange-500 to-purple-600 rounded-xl shadow-lg ring-4 ring-orange-500/10">
+          <div className="p-3 bg-linear-to-br/srgb from-orange-500 to-purple-600 rounded-xl shadow-lg ring-4 ring-orange-500/10">
             <Wand2 className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
+            <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-linear-to-r/srgb from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
               Gestion des Tests
             </h1>
             <p className="text-muted-foreground font-medium flex items-center gap-2">
@@ -119,8 +119,8 @@ export default function TestsManagementPage() {
           scoreDistributionData={m.scoreDistributionData}
           statusDistributionData={m.statusDistributionData}
           setShowUploadDialog={m.setShowUploadDialog}
-          setShowEmailDialog={m.setShowEmailDialog}
-          setShowResultsDialog={m.setShowResultsDialog}
+          onSendInvitations={() => setActiveTab("groups")}
+          onViewResults={() => setActiveTab("results")}
           testsData={m.testsData}
           handleCopyTestLink={m.handleCopyTestLink}
           handleOpenTest={m.handleOpenTest}
@@ -168,6 +168,10 @@ export default function TestsManagementPage() {
 
         <ResultsTab
           testResults={m.testResults}
+          resultsTotal={m.resultsTotal}
+          resultsLoading={m.resultsLoading}
+          resultsError={m.resultsError}
+          exportingResults={m.exportingResults}
           refreshing={m.refreshing}
           setShowImportResultsDialog={m.setShowImportResultsDialog}
           handleExportResults={m.handleExportResults}
@@ -179,6 +183,7 @@ export default function TestsManagementPage() {
           resultsPage={m.resultsPage} setResultsPage={m.setResultsPage}
           filteredResults={m.filteredResults}
           selectedResults={m.selectedResults}
+          onSendEmails={() => m.setShowEmailResultsDialog(true)}
           handleSelectAllResults={(checked) => m.setSelectedResults(checked ? m.filteredResults.map(r => r.id) : [])}
           handleSelectResult={m.handleSelectResult}
           calculatePoints={m.calculatePoints}
@@ -241,6 +246,8 @@ export default function TestsManagementPage() {
       />
 
       <EmailDialog
+        batchId={m.resultEmailBatchId}
+        resetBatch={() => m.setResultEmailBatchId("")}
         open={m.showEmailResultsDialog} onOpenChange={m.setShowEmailResultsDialog}
         selectedResults={m.selectedResults}
         emailType={m.emailResultsType} setEmailType={m.setEmailResultsType}

@@ -1,6 +1,7 @@
 "use client"
 
 import { fetchWithTimeout } from "@/app/utils/fetchWithTimeout"
+import { API_BASE_URL } from "./test-session-utils"
 
 export function createSessionId() {
   return `${Date.now()}_${Math.random()}`
@@ -54,9 +55,10 @@ export function removeAntiCheatTabState(testId) {
   localStorage.removeItem(`${tabKey}_timestamp`)
 }
 
-export function buildViolationPayload({ candidateEmail, elapsedTime, message, testId, type }) {
+export function buildViolationPayload({ candidateEmail, candidatePhone, elapsedTime, message, testId, type }) {
   return {
     candidateEmail,
+    candidatePhone,
     elapsedTime,
     message,
     metadata: {
@@ -68,19 +70,14 @@ export function buildViolationPayload({ candidateEmail, elapsedTime, message, te
   }
 }
 
-export async function sendViolationToBackend({ candidateEmail, elapsedTime, message, testId, type }) {
+export async function sendViolationToBackend({ candidateEmail, candidatePhone, elapsedTime, message, testId, type }) {
   try {
-    const apiBaseUrl =
-      typeof window !== "undefined" && window.location.hostname === "localhost"
-        ? "http://localhost:5000"
-        : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-
-    const response = await fetchWithTimeout(`${apiBaseUrl}/api/admin/tests/${testId}/log-violation`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/admin/tests/${testId}/log-violation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       timeout: 5000,
       retries: 0,
-      body: JSON.stringify(buildViolationPayload({ candidateEmail, elapsedTime, message, testId, type })),
+      body: JSON.stringify(buildViolationPayload({ candidateEmail, candidatePhone, elapsedTime, message, testId, type })),
     })
 
     if (!response.ok) {

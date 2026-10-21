@@ -48,7 +48,7 @@ export default function FormationsSection() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex-grow">
+            <CardContent className="grow">
               <CardDescription className="text-base mb-4">{formation.description}</CardDescription>
               <div className="space-y-3 mt-4">
                 <div className="flex items-center text-sm text-gray-800 dark:text-gray-400">

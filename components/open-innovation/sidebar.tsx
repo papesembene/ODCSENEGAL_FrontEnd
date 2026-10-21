@@ -1,5 +1,4 @@
 "use client"
- 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
@@ -62,7 +61,7 @@ export default function OpenInnovationSidebar() {
     <Sidebar variant="floating" collapsible="icon">
       <SidebarHeader className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br/srgb from-blue-500 to-purple-600 text-white">
             <Rocket className="h-4 w-4" />
           </div>
           <span className="font-semibold">Espace Connect</span>
@@ -99,7 +98,7 @@ export default function OpenInnovationSidebar() {
       </SidebarContent>
  
       <SidebarFooter className="p-4">
-        <Button className="w-full gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+        <Button className="w-full gap-2 bg-linear-to-r/srgb from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
           <PlusCircle className="h-4 w-4" />
           <span>Publier un défi</span>
         </Button>
@@ -107,5 +106,3 @@ export default function OpenInnovationSidebar() {
     </Sidebar>
   )
 }
- 
- 

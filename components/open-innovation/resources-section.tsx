@@ -529,7 +529,7 @@ export default function ResourcesSection() {
           <div className="mt-8">
             <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Collections populaires</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-0 shadow-md">
+              <Card className="bg-linear-to-br/srgb from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-0 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-center">Ressources pour startups</CardTitle>
                 </CardHeader>
@@ -543,7 +543,7 @@ export default function ResourcesSection() {
                   <Button variant="outline">Explorer</Button>
                 </CardFooter>
               </Card>
-              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-0 shadow-md">
+              <Card className="bg-linear-to-br/srgb from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-0 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-center">Tutoriels techniques</CardTitle>
                 </CardHeader>
@@ -557,7 +557,7 @@ export default function ResourcesSection() {
                   <Button variant="outline">Explorer</Button>
                 </CardFooter>
               </Card>
-              <Card className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-0 shadow-md">
+              <Card className="bg-linear-to-br/srgb from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-0 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-center">Études de cas</CardTitle>
                 </CardHeader>

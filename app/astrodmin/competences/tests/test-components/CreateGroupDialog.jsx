@@ -285,7 +285,7 @@ export function CreateGroupDialog({
                               </div>
                               <div className="text-xs sm:text-sm text-muted-foreground truncate">{candidate.email}</div>
                             </div>
-                            <div className="flex-shrink-0 ml-2">
+                            <div className="shrink-0 ml-2">
                               {isSelected ? (
                                 <Badge className="bg-blue-500">Sélectionné</Badge>
                               ) : (

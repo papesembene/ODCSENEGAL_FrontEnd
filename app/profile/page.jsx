@@ -61,7 +61,7 @@ const ProfilePage = () => {
         <div className="text-center p-8 bg-white rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Connectez-vous pour accéder à votre profil</h2>
           <Link href="/login">
-            <button className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all">
+            <button className="px-6 py-3 bg-linear-to-r/srgb from-orange-500 to-orange-600 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all">
               Se connecter
             </button>
           </Link>

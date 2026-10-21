@@ -194,3 +194,10 @@ tsconfig.tsbuildinfo
 
 # executables
 *.exe
+
+# Deployment credentials and private certificates
+.env.production
+*.pem
+*.key
+*.p12
+*.pfx

@@ -36,7 +36,7 @@ const Header = () => {
       <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl">
         <div className="flex h-16 items-center justify-between">
           {/* Logo - Gauche */}
-          <Link href="/" className="flex items-center flex-shrink-0 z-60">
+          <Link href="/" className="flex items-center shrink-0 z-60">
             <Image
               src="/logoffodc.png"
               alt="Logo"
@@ -69,7 +69,7 @@ const Header = () => {
           </nav>
 
           {/* Actions - Tout à droite */}
-          <div className="flex items-center space-x-3 flex-shrink-0">
+          <div className="flex items-center space-x-3 shrink-0">
             {/* Mobile Toggle Button */}
             <Button
               variant="ghost"

@@ -29,27 +29,6 @@ export async function fetchTestsData({ setLoading, setRefreshing, setTestsData }
   }
 }
 
-export async function fetchResultsData({ setTestResults }) {
-  try {
-    const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/results`, {
-      timeout: 45000,
-      retries: 2,
-      retryDelay: 1500,
-    })
-
-    if (result.success) {
-      setTestResults(result.data || [])
-    } else {
-      toast.error(result.error || "Erreur lors du chargement des résultats")
-      setTestResults([])
-    }
-  } catch (error) {
-    console.error("Erreur lors du chargement des résultats:", error)
-    toast.error("Impossible de charger les résultats.")
-    setTestResults([])
-  }
-}
-
 export async function fetchTestSessionsData({
   filters = {},
   setTestSessions,
@@ -114,45 +93,6 @@ export async function fetchStatisticsData({ setStatistics }) {
     console.error("Erreur lors du chargement des statistiques:", error)
     toast.error("Impossible de charger les statistiques.")
     setStatistics(null)
-  }
-}
-
-export async function fetchViolationsData({ setTestViolations, testResults }) {
-  try {
-    const violationsMap = {}
-
-    for (const result of testResults) {
-      const candidateEmail = result.candidate?.email || result.candidateEmail
-      const testId = result.testId
-
-      if (!candidateEmail || !testId) {
-        continue
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}/violations?candidateEmail=${encodeURIComponent(candidateEmail)}`, {
-          headers: getAdminAuthHeaders(),
-        })
-        if (!response.ok) {
-          continue
-        }
-
-        const data = await response.json()
-        if (data.success && data.data) {
-          const violationEntry = Array.isArray(data.data) ? data.data[0] : data.data
-
-          if (violationEntry) {
-            violationsMap[result.id] = violationEntry
-          }
-        }
-      } catch (error) {
-        console.error(`Erreur violations pour ${candidateEmail}:`, error)
-      }
-    }
-
-    setTestViolations(violationsMap)
-  } catch (error) {
-    console.error("Erreur lors de la récupération des violations:", error)
   }
 }
 

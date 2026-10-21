@@ -62,7 +62,7 @@ const TestimonialsSection = () => {
                 }}
               >
                 {testimonials.map((testimonial) => (
-                  <div key={testimonial.id} className="w-full flex-shrink-0 px-4">
+                  <div key={testimonial.id} className="w-full shrink-0 px-4">
                     <Card className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-2xl shadow-orange-100/70 backdrop-blur dark:border-white/10 dark:bg-white/5 dark:shadow-none">
                       <CardContent className="p-8 sm:p-10">
                         <div className="flex flex-col items-center gap-8 text-center md:flex-row md:items-start md:text-left">

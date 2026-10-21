@@ -49,6 +49,13 @@ export default function useTestCandidateSession({ testId }) {
   const serverDraftTimerRef = useRef(null)
   const lastServerDraftRef = useRef("")
   const lastServerDraftAtRef = useRef(0)
+  const serverDraftInFlightRef = useRef(false)
+  const timeRemainingRef = useRef(timeRemaining)
+  const expirationSubmittedRef = useRef(false)
+
+  useEffect(() => {
+    timeRemainingRef.current = timeRemaining
+  }, [timeRemaining])
 
   const isExpectedAuthError = useCallback((message) => {
     return [
@@ -106,12 +113,12 @@ export default function useTestCandidateSession({ testId }) {
         if (violation.type === "tab_switch" || violation.type === "blur") {
           toast.warning(violation.message)
         }
-      })
+      }, authData.phone)
       antiCheatRef.current.start()
     } catch (error) {
       console.error("[AntiCheat] Erreur lors de l'initialisation du service:", error)
     }
-  }, [authData.email, stopAntiCheat, testId])
+  }, [authData.email, authData.phone, stopAntiCheat, testId])
 
   const updateCountdown = useCallback((targetDate) => {
     const nextLabel = calculateCountdownLabel(targetDate)
@@ -207,7 +214,10 @@ export default function useTestCandidateSession({ testId }) {
     setLoadingFullTest(true)
 
     try {
-      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testId}`, {
+      const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testId}/content`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authData.email, phone: authData.phone }),
         timeout: 20000,
         retries: 1,
       })
@@ -225,7 +235,7 @@ export default function useTestCandidateSession({ testId }) {
     } finally {
       setLoadingFullTest(false)
     }
-  }, [applyLoadedTest, testData, testId])
+  }, [applyLoadedTest, authData.email, authData.phone, testData, testId])
 
   const performAuthentication = useCallback(
     async ({ name, email, phone }, { silent = false, skipValidation = false } = {}) => {
@@ -430,11 +440,12 @@ export default function useTestCandidateSession({ testId }) {
           throw new Error(result.error || "Erreur lors de l'enregistrement des résultats")
         }
 
-        await fetchWithTimeout(`${API_BASE_URL}/api/admin/tests/${testData.id}/update-status`, {
+        // A confirmed result must not be reported as lost if this secondary update fails.
+        void fetchWithTimeout(`${API_BASE_URL}/api/admin/tests/${testData.id}/update-status`, {
           method: "POST",
           timeout: 10000,
           retries: 0,
-        })
+        }).catch(() => console.warn("Mise à jour du statut global différée; résultat enregistré."))
         return true
       } catch (error) {
         console.warn("Résultat non enregistré:", error)
@@ -543,7 +554,7 @@ export default function useTestCandidateSession({ testId }) {
         name: authData.name,
         answers,
         lastQuestion: currentQuestion,
-        remainingTime: timeRemaining,
+        remainingTime: timeRemainingRef.current,
       }
       const payloadSignature = JSON.stringify({
         answers,
@@ -559,8 +570,10 @@ export default function useTestCandidateSession({ testId }) {
       if (!force && now - lastServerDraftAtRef.current < 1500) {
         return
       }
+      if (serverDraftInFlightRef.current) return
 
       try {
+        serverDraftInFlightRef.current = true
         await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/${testData.id}/session-draft`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -572,9 +585,11 @@ export default function useTestCandidateSession({ testId }) {
         lastServerDraftAtRef.current = now
       } catch (error) {
         console.warn("Brouillon serveur non sauvegardé:", error)
+      } finally {
+        serverDraftInFlightRef.current = false
       }
     },
-    [answers, authData.email, authData.name, authData.phone, currentQuestion, isAuthenticated, testCompleted, testData?.id, testStarted, timeRemaining],
+    [answers, authData.email, authData.name, authData.phone, currentQuestion, isAuthenticated, testCompleted, testData?.id, testStarted],
   )
 
   useEffect(() => {
@@ -592,21 +607,27 @@ export default function useTestCandidateSession({ testId }) {
   useRestoreStoredAuth({ setAuthData, storageKey: storageKeys.auth })
 
   useEffect(() => {
-    if (!testStarted || timeRemaining <= 0 || testCompleted) {
+    if (!testStarted || timeRemainingRef.current <= 0 || testCompleted) {
       return
     }
 
+    const deadline = Date.now() + timeRemainingRef.current * 1000
     timerRef.current = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          handleSubmitTest(true)
-          return 0
-        }
-        return prev - 1
-      })
+      setTimeRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)))
     }, 1000)
 
     return () => clearInterval(timerRef.current)
+  }, [testCompleted, testStarted])
+
+  useEffect(() => {
+    if (!testStarted) {
+      expirationSubmittedRef.current = false
+      return
+    }
+    if (timeRemaining === 0 && !testCompleted && !expirationSubmittedRef.current) {
+      expirationSubmittedRef.current = true
+      handleSubmitTest(true)
+    }
   }, [handleSubmitTest, testCompleted, testStarted, timeRemaining])
 
   useAutoResumeAuthentication({ isAuthenticated, performAuthentication, resumeAttempted, setResumeAttempted, setResuming, storageKey: storageKeys.auth, testAccessStatus, testData })

@@ -23,10 +23,10 @@ export default function NewsMarquee({ news }: Props) {
   const hasNews = news.length > 0;
  
   return (
-    <div className="relative bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 dark:from-orange-900 dark:via-amber-900 dark:to-orange-900 border-y border-orange-200/50 dark:border-orange-800/50 py-3 overflow-hidden group">
+    <div className="relative bg-linear-to-r/srgb from-orange-50 via-amber-50 to-orange-50 dark:from-orange-900 dark:via-amber-900 dark:to-orange-900 border-y border-orange-200/50 dark:border-orange-800/50 py-3 overflow-hidden group">
      
       {/* Bandeau Breaking News fixe */}
-      <div className="absolute left-0 top-0 h-full flex items-center z-10 bg-gradient-to-r from-orange-100 to-orange-200 dark:from-orange-800 dark:to-orange-900 w-28 sm:w-36 md:w-44 px-2 sm:px-4 shadow-md">
+      <div className="absolute left-0 top-0 h-full flex items-center z-10 bg-linear-to-r/srgb from-orange-100 to-orange-200 dark:from-orange-800 dark:to-orange-900 w-28 sm:w-36 md:w-44 px-2 sm:px-4 shadow-md">
         <div className="flex items-center gap-2">
           <Zap className="h-3 w-3 sm:h-4 sm:w-4 fill-orange-500 stroke-orange-700 dark:fill-orange-300 dark:stroke-orange-100 animate-pulse" />
           <span className="font-bold text-[10px] sm:text-xs uppercase tracking-wider text-orange-700 dark:text-orange-200 whitespace-nowrap">

@@ -219,7 +219,7 @@ function MissionCard({ description, icon, title }) {
   return (
     <Card>
       <div className="flex gap-4 p-6">
-        <Icon className="h-12 w-12 flex-shrink-0 text-[#ff7900]" />
+        <Icon className="h-12 w-12 shrink-0 text-[#ff7900]" />
         <div className="flex-1 overflow-hidden">
           <h3 className="text-lg font-semibold">{title}</h3>
           <div className="pe-4">
@@ -274,7 +274,7 @@ function FormationCard({ formation, onClick }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className="grow">
         <CardDescription className="mb-4 text-base">{formation.description}</CardDescription>
         <div className="mt-4 space-y-3">
           <div className="flex items-center text-sm text-gray-800 dark:text-gray-400">

@@ -27,7 +27,7 @@ function buildRequestHeaders(url, headers) {
   return requestHeaders
 }
 
-function handleExpiredAdminSession(url) {
+export function handleExpiredAdminSession(url) {
   if (typeof window === "undefined" || !url.includes("/api/admin")) {
     return
   }

@@ -1,10 +1,8 @@
 import { toast } from "sonner"
 import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import { fetchJsonWithTimeout } from "@/app/utils/fetchWithTimeout"
-import { API_BASE_URL, CANDIDATES_LIST } from "../constants"
+import { API_BASE_URL } from "../constants"
 import {
-  buildResultsCsvContent,
-  createInitialEmailData,
   createInitialQuestion,
   createInitialTest,
   getTestUrl,
@@ -15,13 +13,10 @@ export function createTestHandlers({
   editingTest,
   fetchTests,
   newTest,
-  selectedTest,
   setCurrentQuestion,
   setEditingTest,
-  setEmailData,
   setNewTest,
   setShowCreateDialog,
-  setShowEmailDialog,
   setShowImportResultsDialog,
 }) {
   const handleImportResultsFromExcel = (event) => {
@@ -38,7 +33,7 @@ export function createTestHandlers({
 
         for (const result of importedResults) {
           try {
-            const response = await fetch(`${API_BASE_URL}/api/admin/tests/results`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/tests/results/import`, {
               method: "POST",
               headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify(result),
@@ -63,25 +58,6 @@ export function createTestHandlers({
       reader.readAsText(file)
     } else {
       toast.error("Veuillez sélectionner un fichier CSV")
-    }
-  }
-
-  const handleExportResults = (format, testResults) => {
-    try {
-      if (format === "csv") {
-        const csvContent = buildResultsCsvContent(testResults)
-        const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" })
-        const link = document.createElement("a")
-        link.href = URL.createObjectURL(blob)
-        link.download = `resultats_tests_${new Date().toISOString().split("T")[0]}.csv`
-        link.click()
-        toast.success("Export CSV réussi")
-      } else if (format === "excel") {
-        toast.info("Export Excel : Utilisez l'export CSV")
-      }
-    } catch (error) {
-      console.error("Erreur d'export:", error)
-      toast.error("Erreur lors de l'export")
     }
   }
 
@@ -159,45 +135,21 @@ export function createTestHandlers({
     const newStatus = currentStatus === "active" ? "scheduled" : "active"
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/tests/${testId}`, {
         method: "PATCH",
         headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ id: testId, status: newStatus }),
+        body: JSON.stringify({ status: newStatus }),
       })
 
-      if ((await response.json()).success) {
+      const result = await response.json()
+      if (response.ok && result.success) {
         toast.success(`Test ${newStatus === "active" ? "activé" : "désactivé"}`)
         fetchTests()
+      } else {
+        toast.error(result.error || "Erreur statut")
       }
     } catch {
       toast.error("Erreur statut")
-    }
-  }
-
-  const handleSendEmails = async (emailData) => {
-    try {
-      const selectedCandidatesData = CANDIDATES_LIST.filter((candidate) => emailData.selectedCandidates.includes(candidate.id))
-      const response = await fetch(`${API_BASE_URL}/api/admin/tests/send-emails`, {
-        method: "POST",
-        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          ...emailData,
-          recipients: selectedCandidatesData,
-          testDetails: selectedTest,
-          testUrl: selectedTest ? getTestUrl(selectedTest.id) : "",
-        }),
-      })
-
-      if ((await response.json()).success) {
-        toast.success("Emails envoyés !")
-      } else {
-        toast.success("Email envoyé ! (simulation)")
-      }
-    } catch {
-      toast.success("Email envoyé ! (simulation)")
-    } finally {
-      setShowEmailDialog(false)
-      setEmailData(createInitialEmailData())
     }
   }
 
@@ -211,10 +163,8 @@ export function createTestHandlers({
     handleCopyTestLink,
     handleCreateTest,
     handleEditTest,
-    handleExportResults,
     handleImportResultsFromExcel,
     handleOpenTest,
-    handleSendEmails,
     handleToggleTestStatus,
   }
 }

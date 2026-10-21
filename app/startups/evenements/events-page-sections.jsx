@@ -31,7 +31,7 @@ function EventCard({ event, onOpenDetails, onOpenRegistration }) {
           alt="Image événement"
           className="h-48 w-full object-cover"
         />
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t/srgb from-black/70 to-transparent p-4">
           <Badge className={getCategoryColor(event.category)}>{event.category}</Badge>
         </div>
       </div>

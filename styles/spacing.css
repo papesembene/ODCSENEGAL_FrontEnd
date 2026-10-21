@@ -1,0 +1,24 @@
+/* Preserve the existing form rhythm, including inline labels and hidden fields. */
+@utility space-y-* {
+  & > :not(:last-child) {
+    margin-block-end: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    --odc-space: calc(var(--spacing) * --value(number));
+    margin-top: calc(var(--odc-space) * (1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(var(--odc-space) * var(--tw-space-y-reverse));
+  }
+}
+
+@utility space-x-* {
+  & > :not(:last-child) {
+    margin-inline-end: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    --odc-space: calc(var(--spacing) * --value(number));
+    margin-right: calc(var(--odc-space) * var(--tw-space-x-reverse));
+    margin-left: calc(var(--odc-space) * (1 - var(--tw-space-x-reverse)));
+  }
+}

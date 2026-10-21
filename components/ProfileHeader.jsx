@@ -14,7 +14,7 @@ const ProfileHeader = ({ user, onEditAvatar, apiUrl }) => {
   const avatarUrl = getAvatarUrl()
 
   return (
-    <div className="relative bg-gradient-to-r from-orange-400 to-orange-600 h-48">
+    <div className="relative bg-linear-to-r/srgb from-orange-400 to-orange-600 h-48">
       <div className="absolute -bottom-16 left-8">
         <div className="relative group">
           <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow-lg">

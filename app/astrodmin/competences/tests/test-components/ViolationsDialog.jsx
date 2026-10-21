@@ -221,7 +221,7 @@ export function ViolationsDialog({
 
                       return (
                         <div key={idx} className="flex items-start space-x-3 p-3 border rounded hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <TypeIcon className="h-6 w-6 flex-shrink-0 text-gray-700 dark:text-gray-200" />
+                          <TypeIcon className="h-6 w-6 shrink-0 text-gray-700 dark:text-gray-200" />
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
                               <Badge className={typeInfo.badgeClassName}>{typeInfo.label}</Badge>

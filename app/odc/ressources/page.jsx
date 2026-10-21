@@ -179,7 +179,7 @@ export default function RessourcesPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-[#ff7900] to-[#ff9d4d] py-16">
+      <section className="relative bg-linear-to-r/srgb from-[#ff7900] to-[#ff9d4d] py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center mb-8">
             <Button asChild variant="ghost" className="text-white hover:bg-white/10">
@@ -207,7 +207,7 @@ export default function RessourcesPage() {
             <input
               type="text"
               placeholder="Rechercher une ressource..."
-              className="w-full border-0 bg-transparent px-4 py-2 focus:outline-none dark:text-white"
+              className="w-full border-0 bg-transparent px-4 py-2 focus:outline-hidden dark:text-white"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -331,7 +331,7 @@ export default function RessourcesPage() {
                           <CardTitle>{webinar.title}</CardTitle>
                         </div>
                       </CardHeader>
-                      <CardContent className="flex-grow">
+                      <CardContent className="grow">
                         <CardDescription className="text-base mb-4">{webinar.description}</CardDescription>
                         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                           <span>Durée: {webinar.duration}</span>
@@ -367,7 +367,7 @@ export default function RessourcesPage() {
                       className="flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
                     >
                       <div className="flex h-48 items-center justify-center bg-gray-100 p-4 dark:bg-gray-900">
-                        <div className="w-24 h-36 bg-gradient-to-br from-orange-500 to-orange-600 rounded-md flex items-center justify-center text-white font-bold p-2 text-center shadow-md">
+                        <div className="w-24 h-36 bg-linear-to-br/srgb from-orange-500 to-orange-600 rounded-md flex items-center justify-center text-white font-bold p-2 text-center shadow-md">
                           {book.title}
                         </div>
                       </div>
@@ -418,7 +418,7 @@ export default function RessourcesPage() {
                       key={index}
                       className="flex items-start rounded-lg border p-4 transition-all hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
                     >
-                      <div className="mr-4 flex-shrink-0">
+                      <div className="mr-4 shrink-0">
                         <div className="h-12 w-12 rounded-md bg-orange-100 flex items-center justify-center text-orange-500">
                           <Globe size={24} />
                         </div>

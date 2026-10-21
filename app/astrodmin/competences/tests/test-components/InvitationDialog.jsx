@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select"
 import { Mail, RefreshCw, Copy, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { InvitationDeliveryStatus } from "./InvitationDeliveryStatus"
 
 export function InvitationDialog({
   open,
@@ -55,6 +56,7 @@ export function InvitationDialog({
         </DialogHeader>
 
         <div className="space-y-4 overflow-y-auto flex-1 pr-2 -mr-2">
+          {selectedGroupForInvitation?.id ? <InvitationDeliveryStatus groupId={selectedGroupForInvitation.id} refreshToken={sendingInvitations} /> : null}
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md">
             <h4 className="font-medium mb-2">Groupe : {selectedGroupForInvitation?.name}</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
@@ -182,7 +184,7 @@ export function InvitationDialog({
 
         <DialogFooter className="mt-4 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sendingInvitations}>
-            Annuler
+            Fermer
           </Button>
           <Button
             onClick={handleConfirmAndSendInvitations}

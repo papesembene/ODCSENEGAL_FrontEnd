@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+.env
+.env.*
+*.log
+*.pem
+*.key
+*.p12
+*.pfx
+tests
+QA_MANUAL_CHECKLIST.md

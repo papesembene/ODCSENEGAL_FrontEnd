@@ -288,7 +288,7 @@ export function CreateTestDialog({
                     <Label>Options et bonne(s) réponse(s)</Label>
                     {currentQuestion.options.map((option, idx) => (
                       <div key={idx} className="flex items-center gap-3 group">
-                        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold">
+                        <div className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold">
                           {String.fromCharCode(65 + idx)}
                         </div>
                         <Input
@@ -304,7 +304,7 @@ export function CreateTestDialog({
                         {currentQuestion.type === "qcm_simple" ? (
                           <button
                             type="button"
-                            className={`flex-shrink-0 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
+                            className={`shrink-0 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
                               currentQuestion.correctAnswer === idx
                                 ? "border-green-300 bg-green-50 text-green-700"
                                 : "border-gray-200 bg-white text-gray-500 hover:border-green-200 hover:bg-green-50"
@@ -321,7 +321,7 @@ export function CreateTestDialog({
                         ) : (
                           <button
                             type="button"
-                            className={`flex-shrink-0 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
+                            className={`shrink-0 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
                               currentQuestion.correctAnswers.includes(idx)
                                 ? "border-green-300 bg-green-50 text-green-700"
                                 : "border-gray-200 bg-white text-gray-500 hover:border-green-200 hover:bg-green-50"

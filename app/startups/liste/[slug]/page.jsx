@@ -84,7 +84,7 @@ export default async function StartupDetailPage({ params }) {
       {/* Hero Section */}
       <section className="relative h-[400px] overflow-hidden">
         <Image src={startup.image || "/placeholder.svg"} alt={startup.name} fill className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/40" />
+        <div className="absolute inset-0 bg-linear-to-t/srgb from-black/80 to-black/40" />
         <div className="container relative z-10 mx-auto flex h-full items-end px-4 pb-12">
           <div className="flex items-center space-x-6">
             <div className="relative h-32 w-32 overflow-hidden rounded-lg border-4 border-white bg-white">

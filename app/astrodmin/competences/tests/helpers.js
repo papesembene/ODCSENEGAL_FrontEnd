@@ -1,4 +1,4 @@
-import { FORMATION_OPTIONS } from "./constants"
+import { FORMATION_OPTIONS } from "./constants.js"
 
 export const createInitialGroup = () => ({
   name: "",
@@ -42,13 +42,6 @@ export const createInitialQuestion = () => ({
   score: 5,
   image: null,
   imageFile: null,
-})
-
-export const createInitialEmailData = () => ({
-  type: "invitation",
-  customMessage: "",
-  selectedCandidates: [],
-  timeSlot: "",
 })
 
 export const validateQuestionBeforeSave = (question) => {
@@ -186,36 +179,6 @@ export const parseImportedResultsCsv = (content) => {
     }, [])
 }
 
-export const escapeCsvValue = (value) => {
-  const stringValue = String(value)
-  if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
-    return `"${stringValue.replace(/"/g, '""')}"`
-  }
-
-  return stringValue
-}
-
-export const buildResultsCsvContent = (results) => {
-  const headers = ["Nom", "Email", "Téléphone", "Test", "Référentiel", "Score", "Statut", "Date", "Heure"]
-  const rows = results.map((result) => [
-    result.candidate?.name || result.candidateName || "",
-    result.candidate?.email || result.candidateEmail || "",
-    result.candidate?.phone || result.candidatePhone || "",
-    result.testTitle || "",
-    result.referentiel || "",
-    result.score || 0,
-    result.status === "admis" || result.status === "selected"
-      ? "Passe en entretien"
-      : result.status === "rejeté" || result.status === "not_selected"
-        ? "Rejeté"
-        : "En attente",
-    result.submittedDate || new Date(result.completedAt).toLocaleDateString("fr-FR"),
-    result.submittedTime || new Date(result.completedAt).toLocaleTimeString("fr-FR"),
-  ])
-
-  return [headers.map(escapeCsvValue).join(","), ...rows.map((row) => row.map(escapeCsvValue).join(","))].join("\r\n")
-}
-
 export const calculateResultScorePercentage = (selectedResult, testsData, manualGrades) => {
   if (!selectedResult || !selectedResult.answers) return selectedResult?.score || 0
 
@@ -251,6 +214,7 @@ export const calculateResultScorePercentage = (selectedResult, testsData, manual
 }
 
 export const calculateResultPoints = (result, testsData) => {
+  if (result?.points) return result.points
   if (!result || !result.answers) {
     const test = testsData.find((item) => item.id === result?.testId)
     if (test?.questions) {
@@ -352,24 +316,19 @@ export const buildAdminStats = (testsData, testResults, statistics) => ({
   totalTests: testsData.length,
   activeTests: testsData.filter((test) => test.status === "active").length,
   completedTests: testsData.filter((test) => test.status === "completed").length,
-  totalCandidates: statistics?.total || testResults.length,
-  selectedCandidates: statistics?.admis || testResults.filter((result) => isSelectedStatus(result.status)).length,
+  totalCandidates: statistics?.total ?? 0,
+  selectedCandidates: statistics?.admis ?? 0,
   averageScore: Math.round(statistics?.average_score || 0),
   passRate: Math.round(statistics?.pass_rate || 0),
 })
 
-export const buildScoreDistributionData = (testResults) => [
-  { range: "0-20", count: testResults.filter((result) => (result.score || 0) < 20).length },
-  { range: "20-40", count: testResults.filter((result) => (result.score || 0) >= 20 && (result.score || 0) < 40).length },
-  { range: "40-60", count: testResults.filter((result) => (result.score || 0) >= 40 && (result.score || 0) < 60).length },
-  { range: "60-80", count: testResults.filter((result) => (result.score || 0) >= 60 && (result.score || 0) < 80).length },
-  { range: "80-100", count: testResults.filter((result) => (result.score || 0) >= 80).length },
-]
+export const buildScoreDistributionData = (statistics) => statistics?.score_distribution ??
+  [0, 20, 40, 60, 80].map((lower) => ({ range: `${lower}-${lower + 20}`, count: 0 }))
 
-export const buildStatusDistributionData = (testResults) => [
-  { name: "Passe en entretien", value: testResults.filter((result) => isSelectedStatus(result.status)).length, color: "#10B981" },
-  { name: "Rejetés", value: testResults.filter((result) => isNotSelectedStatus(result.status)).length, color: "#EF4444" },
-  { name: "En attente", value: testResults.filter((result) => isPendingStatus(result.status)).length, color: "#F59E0B" },
+export const buildStatusDistributionData = (statistics) => [
+  { name: "Passe en entretien", value: statistics?.admis ?? 0, color: "#10B981" },
+  { name: "Rejetés", value: statistics?.rejetes ?? 0, color: "#EF4444" },
+  { name: "En attente", value: statistics?.pending ?? 0, color: "#F59E0B" },
 ]
 
 export const getTestUrl = (testId) => {

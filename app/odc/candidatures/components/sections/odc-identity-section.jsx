@@ -49,7 +49,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.firstName = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.firstName ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -69,7 +69,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.lastName = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.lastName ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -90,7 +90,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.email = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.email ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -108,7 +108,7 @@ export default function OdcIdentitySection({
             <div className="relative w-1/4 md:w-1/5">
               <button
                 type="button"
-                className={`flex w-full items-center justify-between rounded-l-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+                className={`flex w-full items-center justify-between rounded-l-md border px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
                   errors.phone ? "border-red-500" : "border-gray-300"
                 }`}
                 onClick={() => setShowCountryDropdown(!showCountryDropdown)}
@@ -165,7 +165,7 @@ export default function OdcIdentitySection({
                 onChange={handleChange}
                 onBlur={handleBlur}
                 ref={(el) => (fieldRefs.current.phone = el)}
-                className={`w-full rounded-r-md border px-4 py-2 pl-16 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+                className={`w-full rounded-r-md border px-4 py-2 pl-16 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
                   errors.phone ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder={selectedCountry.format}
@@ -188,7 +188,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.birthDate = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.birthDate ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -207,7 +207,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.birthPlace = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.birthPlace ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -226,7 +226,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.gender = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.gender ? "border-red-500" : "border-gray-300"
             }`}
           >
@@ -263,7 +263,7 @@ export default function OdcIdentitySection({
             }}
             onBlur={() => setTouchedFields((prev) => ({ ...prev, idType: true }))}
             ref={(el) => (fieldRefs.current.idType = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.idType ? "border-red-500" : "border-gray-300"
             }`}
           >
@@ -288,7 +288,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.idNumber = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.idNumber ? "border-red-500" : "border-gray-300"
             }`}
             placeholder={idType === "cni" ? "13 à 14 caractères alphanumériques" : idType === "passport" ? "8 ou 9 caractères" : ""}
@@ -308,7 +308,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.nationality = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.nationality ? "border-red-500" : "border-gray-300"
             }`}
             style={{ direction: "ltr" }}
@@ -340,7 +340,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.region = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.region ? "border-red-500" : "border-gray-300"
             }`}
           >
@@ -365,7 +365,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.formation = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.formation ? "border-red-500" : "border-gray-300"
             }`}
           >
@@ -392,7 +392,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.currentStructure = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.currentStructure ? "border-red-500" : "border-gray-300"
             }`}
           >
@@ -431,7 +431,7 @@ export default function OdcIdentitySection({
             onChange={handleChange}
             onBlur={handleBlur}
             ref={(el) => (fieldRefs.current.education = el)}
-            className={`w-full rounded-md border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900] ${
+            className={`w-full rounded-md border px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900] ${
               errors.education ? "border-red-500" : "border-gray-300"
             }`}
           >
@@ -480,7 +480,7 @@ export default function OdcIdentitySection({
             value={formData.speciality}
             onChange={handleChange}
             placeholder="Faculté, UFR, Série..."
-            className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ff7900]"
+            className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-[#ff7900]"
           />
         </div>
       </div>

@@ -21,7 +21,7 @@ export default function CompetencesAutoGroupDialog({
   const alreadyAssignedCount = assignedCandidateIds.filter((id) => eligibleCandidates.find((candidate) => candidate.id === id)).length
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
         <div className="space-y-4">
           <div>

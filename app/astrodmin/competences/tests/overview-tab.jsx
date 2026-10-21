@@ -19,14 +19,13 @@ import { FileText, Users, CheckCircle, Clock, RefreshCw, Upload, Mail, Eye, Copy
 
 export function OverviewTab({
   stats,
-  testResults,
   fetchResults,
   refreshing,
   scoreDistributionData,
   statusDistributionData,
   setShowUploadDialog,
-  setShowEmailDialog,
-  setShowResultsDialog,
+  onSendInvitations,
+  onViewResults,
   testsData,
   handleCopyTestLink,
   handleOpenTest,
@@ -77,7 +76,7 @@ export function OverviewTab({
         </Card>
       </div>
 
-      {testResults.length > 0 && (
+      {stats.totalCandidates > 0 && (
         <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <RefreshCw className="h-4 w-4 text-blue-600" />
           <AlertDescription className="flex items-center justify-between">
@@ -85,8 +84,8 @@ export function OverviewTab({
               <strong className="text-blue-900 dark:text-blue-100">Synchronisation active</strong>
               <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
                 Les tests effectués par les candidats s'affichent automatiquement ici.
-                {testResults.length} résultat{testResults.length > 1 ? "s" : ""} disponible
-                {testResults.length > 1 ? "s" : ""}.
+                {stats.totalCandidates} résultat{stats.totalCandidates > 1 ? "s" : ""} disponible
+                {stats.totalCandidates > 1 ? "s" : ""}.
               </p>
             </div>
             <Button
@@ -165,11 +164,11 @@ export function OverviewTab({
               <Upload className="mr-2 h-4 w-4" />
               Importer un test (CSV/Excel)
             </Button>
-            <Button variant="outline" className="w-full justify-start bg-transparent" onClick={() => setShowEmailDialog(true)}>
+            <Button variant="outline" className="w-full justify-start bg-transparent" onClick={onSendInvitations}>
               <Mail className="mr-2 h-4 w-4" />
               Envoyer des invitations
             </Button>
-            <Button variant="outline" className="w-full justify-start bg-transparent" onClick={() => setShowResultsDialog(true)}>
+            <Button variant="outline" className="w-full justify-start bg-transparent" onClick={onViewResults}>
               <Eye className="mr-2 h-4 w-4" />
               Consulter les résultats
             </Button>

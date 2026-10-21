@@ -24,7 +24,7 @@ function TextField({ id, label, value, onChange, error, required = false, type =
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
+        className={`w-full rounded-md border px-3 py-2 focus:outline-hidden focus:ring-2 ${
           error
             ? "border-red-500 focus:ring-red-500"
             : "border-gray-300 focus:border-[#ff7900] focus:ring-[#ff7900]"
@@ -47,7 +47,7 @@ function TextAreaField({ id, label, value, onChange, error, rows = 3, required =
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
+        className={`w-full rounded-md border px-3 py-2 focus:outline-hidden focus:ring-2 ${
           error
             ? "border-red-500 focus:ring-red-500"
             : "border-gray-300 focus:border-[#ff7900] focus:ring-[#ff7900]"
@@ -68,7 +68,7 @@ function SelectField({ id, label, value, onChange, options, error, required = fa
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
+        className={`w-full rounded-md border px-3 py-2 focus:outline-hidden focus:ring-2 ${
           error
             ? "border-red-500 focus:ring-red-500"
             : "border-gray-300 focus:border-[#ff7900] focus:ring-[#ff7900]"

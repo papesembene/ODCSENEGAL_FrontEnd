@@ -44,7 +44,7 @@ const PartnersSection = () => {
 
   return (
     <section className="relative overflow-hidden bg-white py-24 dark:bg-gray-950">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r/srgb from-transparent via-orange-500/40 to-transparent" />
       <div className="absolute left-1/2 top-0 h-64 w-[42rem] -translate-x-1/2 rounded-full bg-orange-100/80 blur-3xl dark:bg-orange-500/10" />
       <div className="container relative z-10 mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">

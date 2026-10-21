@@ -1,3 +1,5 @@
+const designTokens = require("./styles/design-tokens")
+
 /** @type {import('tailwindcss').Config} */
 const config = {
   darkMode: ["class"],
@@ -9,14 +11,18 @@ const config = {
     "*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+    colors: {
+      ...designTokens.colors,
+      inherit: "inherit",
+      current: "currentColor",
+      transparent: "transparent",
+      black: "#000",
+      white: "#fff",
     },
     extend: {
+      boxShadow: designTokens.boxShadow,
+      blur: designTokens.blur,
+      dropShadow: designTokens.dropShadow,
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

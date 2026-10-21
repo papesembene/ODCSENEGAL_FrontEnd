@@ -9,7 +9,7 @@ export default function ProgrammesPage() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#ff7900] to-[#ff9d4d] py-8 md:py-10">
+      <section className="bg-linear-to-r/srgb from-[#ff7900] to-[#ff9d4d] py-8 md:py-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center mb-6 md:mb-8">
             <Button asChild variant="secondary" className="bg-white">
@@ -35,7 +35,7 @@ export default function ProgrammesPage() {
           <div className="mx-auto max-w-5xl">
             <AnimatedSection className="mb-8 md:mb-12">
               <div className="flex items-center mb-4">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 flex-shrink-0">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 shrink-0">
                   <Users size={24} className="md:w-8 md:h-8" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">ODC Clubs</h2>
@@ -58,7 +58,7 @@ export default function ProgrammesPage() {
 
                 <div className="bg-white dark:bg-gray-700 p-4 md:p-6 rounded-xl mb-6 md:mb-8 shadow-md">
                   <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#ff7900] flex items-center justify-center mr-3 flex-shrink-0">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#ff7900] flex items-center justify-center mr-3 shrink-0">
                       <MapPin className="text-white w-4 h-4 md:w-5 md:h-5" />
                     </div>
                     <h4 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
@@ -73,7 +73,7 @@ export default function ProgrammesPage() {
                       "Université Assane Seck de Ziguinchor",
                     ].map((university, index) => (
                       <li key={index} className="flex items-start">
-                        <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center mr-3 flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center mr-3 shrink-0 mt-0.5">
                           <span className="text-[#ff7900] font-bold text-sm">•</span>
                         </div>
                         <span className="text-gray-700 dark:text-gray-300 text-sm md:text-base">{university}</span>
@@ -105,7 +105,7 @@ export default function ProgrammesPage() {
           <div className="mx-auto max-w-5xl">
             <AnimatedSection className="mb-8 md:mb-12">
               <div className="flex items-center mb-4">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 flex-shrink-0">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 shrink-0">
                   <Tool size={24} className="md:w-8 md:h-8" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">FabLab (Lab-S)</h2>
@@ -147,7 +147,7 @@ export default function ProgrammesPage() {
                     ].map((feature, index) => (
                       <div
                         key={index}
-                        className="bg-gradient-to-br from-[#ff7900] to-[#e56b00] p-4 md:p-6 rounded-xl text-white h-full"
+                        className="bg-linear-to-br/srgb from-[#ff7900] to-[#e56b00] p-4 md:p-6 rounded-xl text-white h-full"
                       >
                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 md:mb-4">
                           {feature.icon}
@@ -173,7 +173,7 @@ export default function ProgrammesPage() {
                       "Projets Collaboratifs",
                     ].map((equipment, index) => (
                       <div key={index} className="flex items-center">
-                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-orange-100 flex items-center justify-center mr-3 flex-shrink-0">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-orange-100 flex items-center justify-center mr-3 shrink-0">
                           <span className="text-[#ff7900] font-bold text-sm">•</span>
                         </div>
                         <span className="text-gray-700 dark:text-gray-300 text-sm md:text-base">{equipment}</span>
@@ -212,7 +212,7 @@ export default function ProgrammesPage() {
           <div className="mx-auto max-w-5xl">
             <AnimatedSection className="mb-8 md:mb-12">
               <div className="flex items-center mb-4">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 flex-shrink-0">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#ff7900] flex items-center justify-center text-white mr-4 shrink-0">
                   <Lightbulb size={24} className="md:w-8 md:h-8" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Acculturation numérique : Tech Ki</h2>
@@ -257,7 +257,7 @@ export default function ProgrammesPage() {
                   ].map((feature, index) => (
                     <div
                       key={index}
-                      className="bg-gradient-to-br from-[#ff7900] to-[#e56b00] p-3 md:p-4 rounded-xl text-white h-full"
+                      className="bg-linear-to-br/srgb from-[#ff7900] to-[#e56b00] p-3 md:p-4 rounded-xl text-white h-full"
                     >
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 md:mb-4">
                         {feature.icon}

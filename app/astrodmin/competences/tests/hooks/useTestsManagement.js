@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useTestResults } from "./use-test-results"
 import { toast } from "sonner"
 import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import {
@@ -9,7 +10,6 @@ import {
   createInitialInvitationDetails,
   createInitialQuestion,
   createInitialTest,
-  createInitialEmailData,
   calculateResultScorePercentage,
   calculateResultPoints,
   buildGroupedResults,
@@ -20,12 +20,10 @@ import {
 } from "../helpers"
 import {
   fetchAvailableCandidatesData,
-  fetchResultsData,
   fetchStatisticsData,
   fetchTestGroupsData,
   fetchTestSessionsData,
   fetchTestsData,
-  fetchViolationsData,
 } from "./test-management-fetchers"
 import {
   createGroupHandlers,
@@ -41,15 +39,15 @@ export const useTestsManagement = (router) => {
 
   // États pour les tests
   const [testsData, setTestsData] = useState([])
-  const [testResults, setTestResults] = useState([])
+  const results = useTestResults(isAuthenticated)
+  const { testResults, selectedResults, setSelectedResults, reloadResults } = results
+  const resultRequestRef = useRef(0)
   const [testSessions, setTestSessions] = useState([])
   const [testSessionsTotal, setTestSessionsTotal] = useState(0)
   const [statistics, setStatistics] = useState(null)
   const [selectedTest, setSelectedTest] = useState(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showUploadDialog, setShowUploadDialog] = useState(false)
-  const [showEmailDialog, setShowEmailDialog] = useState(false)
-  const [showResultsDialog, setShowResultsDialog] = useState(false)
   const [editingTest, setEditingTest] = useState(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [selectedResult, setSelectedResult] = useState(null)
@@ -58,17 +56,15 @@ export const useTestsManagement = (router) => {
   // Filtres
   const [searchTerm, setSearchTerm] = useState("")
   const [referentielFilter, setReferentielFilter] = useState("all")
-  const [resultsReferentielFilter, setResultsReferentielFilter] = useState("all")
-  const [resultsStatusFilter, setResultsStatusFilter] = useState("all")
   const [resultsView, setResultsView] = useState("list")
   const [sessionsSearchTerm, setSessionsSearchTerm] = useState("")
   const [sessionsStatusFilter, setSessionsStatusFilter] = useState("all")
   const [sessionsTestFilter, setSessionsTestFilter] = useState("all")
-  const [selectedResults, setSelectedResults] = useState([])
   const [showEmailResultsDialog, setShowEmailResultsDialog] = useState(false)
   const [emailResultsType, setEmailResultsType] = useState("")
   const [customResultsMessage, setCustomResultsMessage] = useState("")
   const [sendingResultsEmails, setSendingResultsEmails] = useState(false)
+  const [resultEmailBatchId, setResultEmailBatchId] = useState("")
   const [selectedFormationResults, setSelectedFormationResults] = useState(null)
   const [selectedGroupResults, setSelectedGroupResults] = useState(null)
 
@@ -86,8 +82,6 @@ export const useTestsManagement = (router) => {
   const [testsItemsPerPage, setTestsItemsPerPage] = useState(20)
   const [groupsPage, setGroupsPage] = useState(1)
   const [groupsItemsPerPage, setGroupsItemsPerPage] = useState(20)
-  const [resultsPage, setResultsPage] = useState(1)
-  const [resultsItemsPerPage, setResultsItemsPerPage] = useState(20)
   const [sessionsPage, setSessionsPage] = useState(1)
   const [sessionsItemsPerPage, setSessionsItemsPerPage] = useState(20)
   const [newGroup, setNewGroup] = useState(createInitialGroup())
@@ -100,7 +94,6 @@ export const useTestsManagement = (router) => {
   const [selectedGroupForInvitation, setSelectedGroupForInvitation] = useState(null)
   const [invitationDetails, setInvitationDetails] = useState(createInitialInvitationDetails())
   const [sendingInvitations, setSendingInvitations] = useState(false)
-  const [testViolations, setTestViolations] = useState({})
   const [showViolationsDialog, setShowViolationsDialog] = useState(false)
   const [selectedResultViolations, setSelectedResultViolations] = useState(null)
 
@@ -124,20 +117,20 @@ export const useTestsManagement = (router) => {
   const [showImportResultsDialog, setShowImportResultsDialog] = useState(false)
 
   // Email data et gestion de groupes
-  const [emailData, setEmailData] = useState(createInitialEmailData())
   const [showCandidateSelection, setShowCandidateSelection] = useState(false)
 
   const fetchTests = useCallback(async () => {
     await fetchTestsData({ setLoading, setRefreshing, setTestsData })
   }, [])
 
-  const fetchResults = useCallback(async () => {
-    await fetchResultsData({ setTestResults })
-  }, [])
-
   const fetchStatistics = useCallback(async () => {
     await fetchStatisticsData({ setStatistics })
   }, [])
+
+  const fetchResults = useCallback(async () => {
+    reloadResults()
+    await fetchStatistics()
+  }, [reloadResults, fetchStatistics])
 
   const fetchTestSessions = useCallback(async () => {
     await fetchTestSessionsData({
@@ -152,10 +145,6 @@ export const useTestsManagement = (router) => {
       setTestSessionsTotal,
     })
   }, [sessionsItemsPerPage, sessionsPage, sessionsSearchTerm, sessionsStatusFilter, sessionsTestFilter])
-
-  const fetchAllViolations = useCallback(async () => {
-    await fetchViolationsData({ setTestViolations, testResults })
-  }, [testResults])
 
   const fetchTestGroups = useCallback(async () => {
     await fetchTestGroupsData({
@@ -209,11 +198,8 @@ export const useTestsManagement = (router) => {
     }
     setIsAuthenticated(true)
     fetchTests()
-    fetchResults()
     fetchStatistics()
-    fetchTestGroups()
-    fetchTestSessions()
-  }, [router, fetchTests, fetchResults, fetchStatistics, fetchTestGroups, fetchTestSessions, fetchAvailableCandidates])
+  }, [router, fetchTests, fetchStatistics])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -226,12 +212,6 @@ export const useTestsManagement = (router) => {
       fetchTestSessions()
     }
   }, [fetchTestSessions, isAuthenticated])
-
-  useEffect(() => {
-    if (testResults.length > 0) {
-      fetchAllViolations()
-    }
-  }, [testResults, fetchAllViolations])
 
   const questionHandlers = createQuestionHandlers({
     currentQuestion,
@@ -247,14 +227,11 @@ export const useTestsManagement = (router) => {
     editingTest,
     fetchTests,
     newTest,
-    selectedTest,
     setCurrentQuestion,
     setEditingTest,
-    setEmailData,
     setNewTest,
     setSelectedTest,
     setShowCreateDialog,
-    setShowEmailDialog,
     setShowImportResultsDialog,
   })
 
@@ -316,6 +293,10 @@ export const useTestsManagement = (router) => {
   })
 
   const resultHandlers = createResultHandlers({
+    resultRequestRef,
+    emailResultsType,
+    customResultsMessage,
+    setResultEmailBatchId,
     fetchResults,
     manualGrades,
     selectedResult,
@@ -330,7 +311,6 @@ export const useTestsManagement = (router) => {
     setShowDetailsDialog,
     setShowEmailResultsDialog,
     setShowViolationsDialog,
-    testViolations,
   })
 
   // Derived state
@@ -340,13 +320,10 @@ export const useTestsManagement = (router) => {
     return matchesSearch && matchesReferentiel
   })
 
-  const filteredResults = testResults.filter((result) => {
-    const matchesReferentiel = resultsReferentielFilter === "all" || normalizeFormationName(result.referentiel) === normalizeFormationName(resultsReferentielFilter)
-    const matchesStatus = resultsStatusFilter === "all" || result.status === resultsStatusFilter
-    return matchesReferentiel && matchesStatus
-  })
+  const filteredResults = testResults
 
   return {
+    ...results,
     isAuthenticated,
     loading,
     refreshing,
@@ -358,16 +335,12 @@ export const useTestsManagement = (router) => {
     selectedTest, setSelectedTest,
     showCreateDialog, setShowCreateDialog,
     showUploadDialog, setShowUploadDialog,
-    showEmailDialog, setShowEmailDialog,
-    showResultsDialog, setShowResultsDialog,
     editingTest, setEditingTest,
     showDetailsDialog, setShowDetailsDialog,
     selectedResult, setSelectedResult,
     manualGrades, setManualGrades,
     searchTerm, setSearchTerm,
     referentielFilter, setReferentielFilter,
-    resultsReferentielFilter, setResultsReferentielFilter,
-    resultsStatusFilter, setResultsStatusFilter,
     resultsView, setResultsView,
     sessionsSearchTerm, setSessionsSearchTerm,
     sessionsStatusFilter, setSessionsStatusFilter,
@@ -377,6 +350,7 @@ export const useTestsManagement = (router) => {
     emailResultsType, setEmailResultsType,
     customResultsMessage, setCustomResultsMessage,
     sendingResultsEmails, setSendingResultsEmails,
+    resultEmailBatchId, setResultEmailBatchId,
     selectedFormationResults, setSelectedFormationResults,
     selectedGroupResults, setSelectedGroupResults,
     testGroups, setTestGroups,
@@ -390,8 +364,6 @@ export const useTestsManagement = (router) => {
     testsItemsPerPage, setTestsItemsPerPage,
     groupsPage, setGroupsPage,
     groupsItemsPerPage, setGroupsItemsPerPage,
-    resultsPage, setResultsPage,
-    resultsItemsPerPage, setResultsItemsPerPage,
     sessionsPage, setSessionsPage,
     sessionsItemsPerPage, setSessionsItemsPerPage,
     newGroup, setNewGroup,
@@ -404,7 +376,6 @@ export const useTestsManagement = (router) => {
     selectedGroupForInvitation, setSelectedGroupForInvitation,
     invitationDetails, setInvitationDetails,
     sendingInvitations, setSendingInvitations,
-    testViolations, setTestViolations,
     showViolationsDialog, setShowViolationsDialog,
     selectedResultViolations, setSelectedResultViolations,
     showDeleteTestDialog, setShowDeleteTestDialog,
@@ -420,7 +391,6 @@ export const useTestsManagement = (router) => {
     editingQuestionIndex, setEditingQuestionIndex,
     showImportQuestionsDialog, setShowImportQuestionsDialog,
     showImportResultsDialog, setShowImportResultsDialog,
-    emailData, setEmailData,
     showCandidateSelection, setShowCandidateSelection,
     
     // Handlers
@@ -429,7 +399,6 @@ export const useTestsManagement = (router) => {
     fetchStatistics,
     fetchTestSessions,
     handleMarkSessionForReschedule,
-    fetchAllViolations,
     fetchAvailableCandidates,
     handleCreateTest: testHandlers.handleCreateTest,
     handleEditTest: testHandlers.handleEditTest,
@@ -444,7 +413,6 @@ export const useTestsManagement = (router) => {
     handleRemoveImage: questionHandlers.handleRemoveImage,
     handleImportQuestionsFromExcel: questionHandlers.handleImportQuestionsFromExcel,
     handleImportResultsFromExcel: testHandlers.handleImportResultsFromExcel,
-    handleExportResults: (format) => testHandlers.handleExportResults(format, testResults),
     handleCreateGroup: groupHandlers.handleCreateGroup,
     handleOpenInvitationDialog: groupHandlers.handleOpenInvitationDialog,
     handleTestSelection: groupHandlers.handleTestSelection,
@@ -453,7 +421,6 @@ export const useTestsManagement = (router) => {
     handleConfirmDeleteGroup: () => groupHandlers.handleConfirmDeleteGroup(groupToDelete),
     handleViewGroupCandidates: groupHandlers.handleViewGroupCandidates,
     handleSelectCandidateForGroup: groupHandlers.handleSelectCandidateForGroup,
-    handleSendEmails: () => testHandlers.handleSendEmails(emailData),
     handleCopyTestLink: testHandlers.handleCopyTestLink,
     handleOpenTest: testHandlers.handleOpenTest,
     handleViewDetails: resultHandlers.handleViewDetails,
@@ -467,8 +434,8 @@ export const useTestsManagement = (router) => {
     filteredTests,
     filteredResults,
     stats: buildAdminStats(testsData, testResults, statistics),
-    scoreDistributionData: buildScoreDistributionData(testResults),
-    statusDistributionData: buildStatusDistributionData(testResults),
+    scoreDistributionData: buildScoreDistributionData(statistics),
+    statusDistributionData: buildStatusDistributionData(statistics),
     groupedResults: () => buildGroupedResults(filteredResults, testsData, testGroups),
     calculateTotalScore: () => calculateResultScorePercentage(selectedResult, testsData, manualGrades),
     calculatePoints: (result) => calculateResultPoints(result, testsData),
