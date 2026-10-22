@@ -13,6 +13,7 @@
     "test:styles": "node tests/browser/styles.mjs",
     "test:portal": "node tests/browser/portal.mjs",
     "test:admin": "node tests/browser/admin-tests.mjs",
+    "test:candidates": "node tests/browser/competences-candidates.mjs",
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
     "clean:win": "if exist .next rmdir /s /q .next && if exist node_modules\\.cache rmdir /s /q node_modules\\.cache"
   },

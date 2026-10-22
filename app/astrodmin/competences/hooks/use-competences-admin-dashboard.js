@@ -1,23 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useAdminApi } from "@/app/hooks/useAdminApi"
 import odcFormations from "@/data/odcFormations"
 import { FORMATION_MAPPING } from "../dashboard-config"
 import { calculateAge } from "../dashboard-utils"
+import useCandidateDirectory from "./use-candidate-directory"
 
 export default function useCompetencesAdminDashboard() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedFormation, setSelectedFormation] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedGender, setSelectedGender] = useState("all")
   const [selectedCandidate, setSelectedCandidate] = useState(null)
-  const [candidatesData, setCandidatesData] = useState([])
-  const [filteredCandidates, setFilteredCandidates] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
   const [showFormationCandidatesDialog, setShowFormationCandidatesDialog] = useState(false)
   const [selectedFormationData, setSelectedFormationData] = useState(null)
@@ -34,60 +26,12 @@ export default function useCompetencesAdminDashboard() {
   const [daysRange, setDaysRange] = useState(7)
   const [eligiblePage, setEligiblePage] = useState(1)
   const [eligibleItemsPerPage, setEligibleItemsPerPage] = useState(20)
-  const [candidatesMainPage, setCandidatesMainPage] = useState(1)
-  const [candidatesMainItemsPerPage, setCandidatesMainItemsPerPage] = useState(20)
-  const [stats, setStats] = useState({
-    total: 0,
-    femmes: 0,
-    hommes: 0,
-    acceptes: 0,
-    enAttente: 0,
-    refuses: 0,
-  })
+  const detailRequest = useRef(0)
+  const formationRequest = useRef(0)
 
   const { candidatures, testGroups: testGroupsApi } = useAdminApi()
-
-  const fetchCandidates = useCallback(async () => {
-    try {
-      setRefreshing(true)
-      setError(null)
-
-      const result = await candidatures.getAll()
-
-      if (!result.success) {
-        throw new Error(result.error || "Erreur lors de la récupération des données")
-      }
-
-      const candidates = result.data || []
-      setCandidatesData(candidates)
-      setStats({
-        total: candidates.length,
-        femmes: candidates.filter((c) => {
-          const gender = (c.gender || "").toLowerCase().trim()
-          return ["femme", "f", "female", "féminin"].includes(gender)
-        }).length,
-        hommes: candidates.filter((c) => {
-          const gender = (c.gender || "").toLowerCase().trim()
-          return ["homme", "h", "male", "m", "masculin"].includes(gender)
-        }).length,
-        acceptes: candidates.filter((c) => (c.status || "pending") === "accepted").length,
-        enAttente: candidates.filter((c) => {
-          const status = c.status || "pending"
-          return status === "pending" || !status || status === ""
-        }).length,
-        refuses: candidates.filter((c) => (c.status || "pending") === "rejected").length,
-      })
-    } catch (fetchError) {
-      console.error("Erreur lors de la récupération des candidatures:", fetchError)
-      setError(fetchError.message)
-      if (candidatesData.length === 0) {
-        setCandidatesData([])
-      }
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [candidatures, candidatesData.length])
+  const directory = useCandidateDirectory(candidatures, daysRange, activeTab === "candidates")
+  const { stats, formationStats, fetchCandidates } = directory
 
   const fetchAssignedCandidates = useCallback(async () => {
     try {
@@ -115,36 +59,6 @@ export default function useCompetencesAdminDashboard() {
     }
   }, [testGroupsApi])
 
-  useEffect(() => {
-    fetchCandidates()
-    fetchAssignedCandidates()
-
-    const interval = setInterval(fetchCandidates, 60000)
-    return () => clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    const filtered = candidatesData.filter((candidate) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        candidate.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (candidate.nationality && candidate.nationality.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (candidate.pays && candidate.pays.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (candidate.country && candidate.country.toString().toLowerCase().includes(searchTerm.toLowerCase()))
-
-      const matchesFormation = selectedFormation === "all" || candidate.desired_training === selectedFormation
-      const matchesStatus = selectedStatus === "all" || candidate.status === selectedStatus
-      const matchesGender = selectedGender === "all" || candidate.gender === selectedGender
-
-      return matchesSearch && matchesFormation && matchesStatus && matchesGender
-    })
-
-    setFilteredCandidates(filtered)
-  }, [searchTerm, selectedFormation, selectedStatus, selectedGender, candidatesData])
-
   const genderData = useMemo(
     () => [
       { name: "Femmes", value: stats.femmes },
@@ -169,8 +83,6 @@ export default function useCompetencesAdminDashboard() {
           const desiredTrainingValue = FORMATION_MAPPING[formation.title]
           if (!desiredTrainingValue) return null
 
-          const candidatesForFormation = candidatesData.filter((candidate) => candidate.desired_training === desiredTrainingValue)
-
           return {
             id: formation.id,
             name: formation.title,
@@ -178,88 +90,27 @@ export default function useCompetencesAdminDashboard() {
             description: formation.description,
             duration: formation.duration,
             level: formation.level,
-            total: candidatesForFormation.length,
-            femmes: candidatesForFormation.filter((c) => {
-              const gender = (c.gender || "").toLowerCase().trim()
-              return ["femme", "f", "female", "féminin"].includes(gender)
-            }).length,
-            hommes: candidatesForFormation.filter((c) => {
-              const gender = (c.gender || "").toLowerCase().trim()
-              return ["homme", "h", "male", "m", "masculin"].includes(gender)
-            }).length,
-            enAttente: candidatesForFormation.filter((c) => {
-              const status = c.status || "pending"
-              return status === "pending" || !status || status === ""
-            }).length,
-            acceptes: candidatesForFormation.filter((c) => (c.status || "pending") === "accepted").length,
-            refuses: candidatesForFormation.filter((c) => (c.status || "pending") === "rejected").length,
+            total: 0, femmes: 0, hommes: 0, enAttente: 0, acceptes: 0, refuses: 0,
+            ...formationStats[desiredTrainingValue],
           }
         })
         .filter(Boolean),
-    [candidatesData],
+    [formationStats],
   )
 
-  const dailyApplicationsData = useMemo(() => {
-    const days = []
-    const now = new Date()
-
-    for (let i = daysRange - 1; i >= 0; i--) {
-      const date = new Date(now)
-      date.setDate(date.getDate() - i)
-
-      const day = String(date.getDate()).padStart(2, "0")
-      const month = String(date.getMonth() + 1).padStart(2, "0")
-      const dateStr = `${day}/${month}`
-
-      const count = candidatesData.filter((candidate) => {
-        const appDate = candidate.application_date || candidate.created_at
-        if (!appDate) return false
-
-        try {
-          const candidateDate = new Date(appDate)
-          return (
-            candidateDate.getDate() === date.getDate() &&
-            candidateDate.getMonth() === date.getMonth() &&
-            candidateDate.getFullYear() === date.getFullYear()
-          )
-        } catch {
-          return appDate.toString().includes(`${date.getFullYear()}-${month}-${day}`) || appDate.toString().includes(`${day}/${month}`)
-        }
-      }).length
-
-      days.push({ date: dateStr, applications: count })
+  const viewCandidateDetails = useCallback(async (candidate) => {
+    const request = ++detailRequest.current
+    try {
+      const result = await candidatures.get(candidate.id)
+      if (!result.success) throw new Error("Fiche indisponible")
+      if (request === detailRequest.current) setSelectedCandidate(result.data)
+    } catch {
+      if (request === detailRequest.current) toast.error("Impossible de charger la fiche du candidat")
     }
-
-    return days
-  }, [candidatesData, daysRange])
-
-  const nationalityData = useMemo(() => {
-    const counts = {}
-    candidatesData.forEach((candidate) => {
-      const raw = (candidate.nationality || candidate.pays || candidate.country || "").toString().trim()
-      if (!raw) return
-      const name = raw.charAt(0).toUpperCase() + raw.slice(1)
-      counts[name] = (counts[name] || 0) + 1
-    })
-
-    return Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-  }, [candidatesData])
-
-  const handleExportCSV = useCallback(() => {
-    downloadCSV(filteredCandidates, "candidats-competences.csv")
-  }, [filteredCandidates])
-
-  const handleExportExcel = useCallback(() => {
-    downloadExcel(filteredCandidates, "candidats-competences.xlsx")
-  }, [filteredCandidates])
-
-  const viewCandidateDetails = useCallback((candidate) => {
-    setSelectedCandidate(candidate)
-  }, [])
+  }, [candidatures])
 
   const closeCandidateDetails = useCallback(() => {
+    detailRequest.current++
     setSelectedCandidate(null)
   }, [])
 
@@ -370,8 +221,21 @@ export default function useCompetencesAdminDashboard() {
     testGroupsApi,
   ])
 
-  const handleManageCandidates = useCallback((formation) => {
-    const candidates = candidatesData.filter((candidate) => candidate.desired_training === formation.shortName)
+  const handleManageCandidates = useCallback(async (formation) => {
+    const request = ++formationRequest.current
+    let candidates
+    try {
+      const [result] = await Promise.all([
+        candidatures.getAll({ desired_training: formation.shortName }),
+        fetchAssignedCandidates(),
+      ])
+      if (!result.success) throw new Error("Candidats indisponibles")
+      if (request !== formationRequest.current) return
+      candidates = result.data || []
+    } catch {
+      if (request === formationRequest.current) toast.error("Impossible de charger les candidats de cette formation")
+      return
+    }
     const eligible = []
     const ineligible = []
 
@@ -394,7 +258,7 @@ export default function useCompetencesAdminDashboard() {
     setIneligibleCandidates(ineligible)
     setEligiblePage(1)
     setShowFormationCandidatesDialog(true)
-  }, [candidatesData])
+  }, [candidatures, fetchAssignedCandidates])
 
   const updateCandidateStatus = useCallback(
     async (id, newStatus) => {
@@ -417,20 +281,8 @@ export default function useCompetencesAdminDashboard() {
   )
 
   return {
-    searchTerm,
-    setSearchTerm,
-    selectedFormation,
-    setSelectedFormation,
-    selectedStatus,
-    setSelectedStatus,
-    selectedGender,
-    setSelectedGender,
+    ...directory,
     selectedCandidate,
-    filteredCandidates,
-    candidatesData,
-    loading,
-    error,
-    refreshing,
     activeTab,
     setActiveTab,
     showFormationCandidatesDialog,
@@ -455,19 +307,9 @@ export default function useCompetencesAdminDashboard() {
     setEligiblePage,
     eligibleItemsPerPage,
     setEligibleItemsPerPage,
-    candidatesMainPage,
-    setCandidatesMainPage,
-    candidatesMainItemsPerPage,
-    setCandidatesMainItemsPerPage,
-    stats,
-    fetchCandidates,
     genderData,
     statusData,
     formationData,
-    dailyApplicationsData,
-    nationalityData,
-    handleExportCSV,
-    handleExportExcel,
     viewCandidateDetails,
     closeCandidateDetails,
     handleCreateAutoGroups,

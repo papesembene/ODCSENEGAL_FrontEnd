@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useTestResults } from "./use-test-results"
+import { useTestSessions } from "./use-test-sessions"
 import { toast } from "sonner"
 import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import {
@@ -22,7 +23,6 @@ import {
   fetchAvailableCandidatesData,
   fetchStatisticsData,
   fetchTestGroupsData,
-  fetchTestSessionsData,
   fetchTestsData,
 } from "./test-management-fetchers"
 import {
@@ -32,18 +32,23 @@ import {
   createTestHandlers,
 } from "./test-management-actions"
 
-export const useTestsManagement = (router) => {
+export const useTestsManagement = (router, activeTab = "overview") => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
   // États pour les tests
   const [testsData, setTestsData] = useState([])
-  const results = useTestResults(isAuthenticated)
+  const results = useTestResults(isAuthenticated && activeTab === "results")
   const { testResults, selectedResults, setSelectedResults, reloadResults } = results
+  const sessions = useTestSessions(isAuthenticated && activeTab === "sessions")
+  const {
+    testSessions, testSessionsTotal, fetchTestSessions,
+    sessionsSearchTerm, setSessionsSearchTerm, sessionsStatusFilter, setSessionsStatusFilter,
+    sessionsTestFilter, setSessionsTestFilter, sessionsPage, setSessionsPage,
+    sessionsItemsPerPage, setSessionsItemsPerPage,
+  } = sessions
   const resultRequestRef = useRef(0)
-  const [testSessions, setTestSessions] = useState([])
-  const [testSessionsTotal, setTestSessionsTotal] = useState(0)
   const [statistics, setStatistics] = useState(null)
   const [selectedTest, setSelectedTest] = useState(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -57,9 +62,6 @@ export const useTestsManagement = (router) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [referentielFilter, setReferentielFilter] = useState("all")
   const [resultsView, setResultsView] = useState("list")
-  const [sessionsSearchTerm, setSessionsSearchTerm] = useState("")
-  const [sessionsStatusFilter, setSessionsStatusFilter] = useState("all")
-  const [sessionsTestFilter, setSessionsTestFilter] = useState("all")
   const [showEmailResultsDialog, setShowEmailResultsDialog] = useState(false)
   const [emailResultsType, setEmailResultsType] = useState("")
   const [customResultsMessage, setCustomResultsMessage] = useState("")
@@ -74,16 +76,12 @@ export const useTestsManagement = (router) => {
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
   const [availableCandidates, setAvailableCandidates] = useState([])
   const [availableCandidatesTotal, setAvailableCandidatesTotal] = useState(0)
-  const [assignedCandidateIds, setAssignedCandidateIds] = useState([])
-  const [candidateToGroupMap, setCandidateToGroupMap] = useState({})
 
   // États pour la pagination
   const [testsPage, setTestsPage] = useState(1)
   const [testsItemsPerPage, setTestsItemsPerPage] = useState(20)
   const [groupsPage, setGroupsPage] = useState(1)
   const [groupsItemsPerPage, setGroupsItemsPerPage] = useState(20)
-  const [sessionsPage, setSessionsPage] = useState(1)
-  const [sessionsItemsPerPage, setSessionsItemsPerPage] = useState(20)
   const [newGroup, setNewGroup] = useState(createInitialGroup())
   const [groupFormationFilter, setGroupFormationFilter] = useState("all")
   const [showGroupCandidatesDialog, setShowGroupCandidatesDialog] = useState(false)
@@ -132,25 +130,9 @@ export const useTestsManagement = (router) => {
     await fetchStatistics()
   }, [reloadResults, fetchStatistics])
 
-  const fetchTestSessions = useCallback(async () => {
-    await fetchTestSessionsData({
-      filters: {
-        page: sessionsPage,
-        perPage: sessionsItemsPerPage,
-        search: sessionsSearchTerm,
-        status: sessionsStatusFilter,
-        testId: sessionsTestFilter,
-      },
-      setTestSessions,
-      setTestSessionsTotal,
-    })
-  }, [sessionsItemsPerPage, sessionsPage, sessionsSearchTerm, sessionsStatusFilter, sessionsTestFilter])
-
   const fetchTestGroups = useCallback(async () => {
     await fetchTestGroupsData({
       groupFormationFilter,
-      setAssignedCandidateIds,
-      setCandidateToGroupMap,
       setTestGroups,
     })
   }, [groupFormationFilter])
@@ -182,7 +164,7 @@ export const useTestsManagement = (router) => {
   }, [fetchTestGroups, fetchTestSessions])
 
   const fetchAvailableCandidates = useCallback(async (filters = {}) => {
-    await fetchAvailableCandidatesData({
+    return fetchAvailableCandidatesData({
       ...filters,
       setAvailableCandidates,
       setAvailableCandidatesTotal,
@@ -202,16 +184,10 @@ export const useTestsManagement = (router) => {
   }, [router, fetchTests, fetchStatistics])
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && (activeTab === "groups" || (activeTab === "results" && resultsView === "grouped"))) {
       fetchTestGroups()
     }
-  }, [groupFormationFilter, isAuthenticated, fetchTestGroups])
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchTestSessions()
-    }
-  }, [fetchTestSessions, isAuthenticated])
+  }, [activeTab, resultsView, isAuthenticated, fetchTestGroups])
 
   const questionHandlers = createQuestionHandlers({
     currentQuestion,
@@ -269,7 +245,6 @@ export const useTestsManagement = (router) => {
   }
 
   const groupHandlers = createGroupHandlers({
-    assignedCandidateIds,
     fetchTestGroups,
     invitationDetails,
     newGroup,
@@ -324,6 +299,7 @@ export const useTestsManagement = (router) => {
 
   return {
     ...results,
+    ...sessions,
     isAuthenticated,
     loading,
     refreshing,
@@ -358,8 +334,6 @@ export const useTestsManagement = (router) => {
     showCreateGroupDialog, setShowCreateGroupDialog,
     availableCandidates, setAvailableCandidates,
     availableCandidatesTotal, setAvailableCandidatesTotal,
-    assignedCandidateIds, setAssignedCandidateIds,
-    candidateToGroupMap, setCandidateToGroupMap,
     testsPage, setTestsPage,
     testsItemsPerPage, setTestsItemsPerPage,
     groupsPage, setGroupsPage,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Users } from "lucide-react"
 import { FORMATION_OPTIONS } from "../constants"
 import { normalizeFormationName } from "../helpers"
+import { PaginationControls } from "./CommonComponents"
 
 function parseNumberInput(value, fallback) {
   if (value === "") {
@@ -39,7 +40,6 @@ export function CreateGroupDialog({
   testsData,
   availableCandidates,
   availableCandidatesTotal = 0,
-  assignedCandidateIds,
   selectedCandidatesForGroup,
   fetchAvailableCandidates,
   handleSelectCandidateForGroup,
@@ -48,24 +48,14 @@ export function CreateGroupDialog({
   handleCancelCreateGroup,
 }) {
   const [candidateSearch, setCandidateSearch] = useState("")
+  const [candidatePage, setCandidatePage] = useState(1)
+  const [candidatesLoading, setCandidatesLoading] = useState(false)
+  const [candidatesError, setCandidatesError] = useState("")
+  const [candidateRevision, setCandidateRevision] = useState(0)
   const matchingTests = testsData.filter((test) => normalizeFormationName(test.referentiel) === newGroup.formation)
   const availableCandidatesForFormation = availableCandidates
-  const selectableCandidatesForFormation = availableCandidatesForFormation.filter(
-    (candidate) => !assignedCandidateIds.includes(candidate.id),
-  )
-  const filteredCandidates = useMemo(() => {
-    const normalizedSearch = candidateSearch.trim().toLowerCase()
-
-    if (!normalizedSearch) {
-      return selectableCandidatesForFormation
-    }
-
-    return selectableCandidatesForFormation.filter((candidate) => {
-      const fullName = `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim().toLowerCase()
-      const email = (candidate.email || "").toLowerCase()
-      return fullName.includes(normalizedSearch) || email.includes(normalizedSearch)
-    })
-  }, [selectableCandidatesForFormation, candidateSearch])
+  // Availability and search are authoritative on the server, including rescheduled sessions.
+  const filteredCandidates = candidatesLoading || candidatesError ? [] : availableCandidatesForFormation
 
   const selectableCandidateIds = filteredCandidates.map((candidate) => candidate.id)
 
@@ -78,15 +68,25 @@ export function CreateGroupDialog({
       return
     }
 
-    const timer = window.setTimeout(() => {
-      fetchAvailableCandidates?.({
-        formation: newGroup.formation,
-        search: candidateSearch,
+    const controller = new AbortController()
+    let active = true
+    setCandidatesLoading(true)
+    setCandidatesError("")
+    const timeout = window.setTimeout(() => controller.abort(), 30000)
+    const timer = window.setTimeout(async () => {
+      const success = await fetchAvailableCandidates?.({
+        formation: newGroup.formation, search: candidateSearch,
+        page: candidatePage, perPage: 50, signal: controller.signal,
       })
+      if (active) {
+        setCandidatesLoading(false)
+        setCandidatesError(success ? "" : "Impossible de charger les candidats. Reessayez.")
+      }
+      window.clearTimeout(timeout)
     }, 250)
 
-    return () => window.clearTimeout(timer)
-  }, [candidateSearch, fetchAvailableCandidates, newGroup.formation, open])
+    return () => { active = false; controller.abort(); window.clearTimeout(timer); window.clearTimeout(timeout) }
+  }, [candidateSearch, candidatePage, candidateRevision, fetchAvailableCandidates, newGroup.formation, open])
 
   const handleSelectVisibleCandidates = () => {
     setSelectedCandidatesForGroup((previous) => Array.from(new Set([...previous, ...selectableCandidateIds])))
@@ -123,6 +123,7 @@ export function CreateGroupDialog({
                 onValueChange={(value) => {
                   setNewGroup({ ...newGroup, formation: value })
                   setSelectedCandidatesForGroup([])
+                  setCandidatePage(1)
                 }}
               >
                 <SelectTrigger id="groupFormation">
@@ -231,8 +232,11 @@ export function CreateGroupDialog({
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       value={candidateSearch}
-                      onChange={(e) => setCandidateSearch(e.target.value)}
-                      placeholder="Rechercher par nom ou email"
+                      type="search"
+                      aria-label="Rechercher un candidat pour le groupe"
+                      maxLength={200}
+                      onChange={(e) => { setCandidateSearch(e.target.value); setCandidatePage(1) }}
+                      placeholder="Nom, email ou téléphone"
                       className="pl-9"
                     />
                   </div>
@@ -252,14 +256,11 @@ export function CreateGroupDialog({
                   <Badge variant="outline">{selectedCandidatesForGroup.length} sélectionné(s)</Badge>
                 </div>
               </div>
+              {candidatesError ? <div role="alert" className="mt-2 text-sm text-red-700">{candidatesError} <Button type="button" variant="outline" size="sm" onClick={() => setCandidateRevision((value) => value + 1)}>Réessayer</Button></div> : null}
               <div className="mt-2 border rounded-md p-4 max-h-[40vh] overflow-y-auto custom-scrollbar">
-                {availableCandidatesForFormation.length === 0 ? (
+                {candidatesLoading ? <p role="status" className="py-4 text-center text-sm text-muted-foreground">Chargement des candidats...</p> : availableCandidatesForFormation.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Aucun candidat trouvé pour cette formation
-                  </p>
-                ) : selectableCandidatesForFormation.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Tous les candidats de cette formation sont déjà dans un groupe actif.
                   </p>
                 ) : filteredCandidates.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
@@ -300,6 +301,8 @@ export function CreateGroupDialog({
                   </div>
                 )}
               </div>
+              <PaginationControls page={candidatePage} itemsPerPage={50} totalItems={availableCandidatesTotal}
+                itemLabel="candidat(s)" onPageChange={setCandidatePage} disabled={candidatesLoading} />
             </div>
           )}
 

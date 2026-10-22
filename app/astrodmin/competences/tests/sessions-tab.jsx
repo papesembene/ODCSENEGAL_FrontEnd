@@ -76,6 +76,8 @@ function SessionStatusBadge({ status }) {
 
 export function SessionsTab({
   fetchTestSessions,
+  sessionsLoading,
+  sessionsError,
   handleMarkSessionForReschedule,
   sessionsItemsPerPage,
   sessionsPage,
@@ -102,7 +104,7 @@ export function SessionsTab({
                 Suivi des tests commencés, repris, expirés ou soumis.
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchTestSessions}>
+            <Button variant="outline" size="sm" onClick={fetchTestSessions} disabled={sessionsLoading}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Actualiser
             </Button>
@@ -112,12 +114,14 @@ export function SessionsTab({
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
+                type="search"
+                aria-label="Rechercher une session"
+                maxLength={200}
                 className="pl-9"
                 placeholder="Rechercher par nom, email ou téléphone"
                 value={sessionsSearchTerm}
                 onChange={(event) => {
                   setSessionsSearchTerm(event.target.value)
-                  setSessionsPage(1)
                 }}
               />
             </div>
@@ -164,6 +168,7 @@ export function SessionsTab({
         </CardHeader>
 
         <CardContent>
+          {sessionsError ? <div role="alert" className="mb-4 text-sm text-red-700">{sessionsError} <Button variant="outline" size="sm" onClick={fetchTestSessions}>Réessayer</Button></div> : null}
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <PageSizeSelector
               value={sessionsItemsPerPage}
@@ -191,7 +196,9 @@ export function SessionsTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {testSessions.length === 0 ? (
+                {sessionsLoading ? (
+                  <TableRow><TableCell colSpan={7} className="py-10 text-center" role="status">Chargement des sessions...</TableCell></TableRow>
+                ) : testSessions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="py-10 text-center">
                       <FileClock className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
@@ -246,6 +253,7 @@ export function SessionsTab({
             totalItems={testSessionsTotal}
             itemLabel="session(s)"
             onPageChange={setSessionsPage}
+            disabled={sessionsLoading}
           />
         </CardContent>
       </Card>

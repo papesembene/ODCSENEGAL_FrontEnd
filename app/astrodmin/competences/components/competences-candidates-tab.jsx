@@ -13,10 +13,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { PaginationControls } from "@/components/ui/data-pagination"
 
 export default function CompetencesCandidatesTab({
   filteredCandidates,
-  candidatesData,
+  candidatesTotal,
+  candidatesLoading,
   candidatesMainItemsPerPage,
   setCandidatesMainItemsPerPage,
   candidatesMainPage,
@@ -35,12 +37,6 @@ export default function CompetencesCandidatesTab({
   getStatusLabel,
   viewCandidateDetails,
 }) {
-  const totalPages = Math.ceil(filteredCandidates.length / candidatesMainItemsPerPage)
-  const visibleCandidates = filteredCandidates.slice(
-    (candidatesMainPage - 1) * candidatesMainItemsPerPage,
-    candidatesMainPage * candidatesMainItemsPerPage,
-  )
-
   return (
     <Card className="col-span-3">
       <CardHeader>
@@ -71,13 +67,13 @@ export default function CompetencesCandidatesTab({
             </Select>
             <span className="text-sm text-muted-foreground">par page</span>
           </div>
-          <div className="text-sm text-muted-foreground">{filteredCandidates.length} candidat(s) au total</div>
+          <div className="text-sm text-muted-foreground" aria-live="polite">{candidatesLoading ? "Chargement..." : `${candidatesTotal} candidat(s) au total`}</div>
         </div>
 
         <div className="mb-4 flex flex-col gap-4 sm:flex-row">
           <div className="relative min-w-0 flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Rechercher..." className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <Input type="search" aria-label="Rechercher un candidat" placeholder="Nom, email, téléphone ou nationalité" maxLength={200} className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
@@ -120,7 +116,7 @@ export default function CompetencesCandidatesTab({
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-md border">
+        <div className="overflow-x-auto rounded-md border" aria-busy={candidatesLoading}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -134,14 +130,16 @@ export default function CompetencesCandidatesTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCandidates.length === 0 ? (
+              {candidatesLoading ? (
+                <TableRow><TableCell colSpan={7} className="py-4 text-center" role="status">Chargement des candidats...</TableCell></TableRow>
+              ) : filteredCandidates.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-4 text-center">
-                    {candidatesData.length === 0 ? "Aucune candidature trouvée" : "Aucun résultat pour les filtres sélectionnés"}
+                    Aucun résultat pour les filtres sélectionnés
                   </TableCell>
                 </TableRow>
               ) : (
-                visibleCandidates.map((candidate, index) => (
+                filteredCandidates.map((candidate, index) => (
                   <TableRow key={candidate.id || index}>
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-2">
@@ -186,58 +184,10 @@ export default function CompetencesCandidatesTab({
           </Table>
         </div>
 
-        {filteredCandidates.length > 0 ? (
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Affichage de {Math.min((candidatesMainPage - 1) * candidatesMainItemsPerPage + 1, filteredCandidates.length)} à{" "}
-              {Math.min(candidatesMainPage * candidatesMainItemsPerPage, filteredCandidates.length)} sur {filteredCandidates.length} candidats
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setCandidatesMainPage((prev) => Math.max(1, prev - 1))} disabled={candidatesMainPage === 1}>
-                Précédent
-              </Button>
-
-              <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((page) => {
-                    if (totalPages <= 7) return true
-                    if (page === 1 || page === totalPages) return true
-                    if (Math.abs(page - candidatesMainPage) <= 1) return true
-                    if (page === candidatesMainPage - 2 || page === candidatesMainPage + 2) return "..."
-                    return false
-                  })
-                  .map((page, idx) => {
-                    if (page === "...") {
-                      return (
-                        <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
-                          ...
-                        </span>
-                      )
-                    }
-
-                    return (
-                      <Button
-                        key={page}
-                        variant={candidatesMainPage === page ? "default" : "outline"}
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setCandidatesMainPage(page)}
-                      >
-                        {page}
-                      </Button>
-                    )
-                  })}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCandidatesMainPage((prev) => Math.min(totalPages, prev + 1))}
-                disabled={candidatesMainPage >= totalPages}
-              >
-                Suivant
-              </Button>
-            </div>
+        {!candidatesLoading && !Number.isNaN(candidatesTotal) ? (
+          <div className="mt-4">
+            <PaginationControls page={candidatesMainPage} pageSize={candidatesMainItemsPerPage}
+              totalItems={candidatesTotal} itemLabel="candidats" onPageChange={setCandidatesMainPage} />
           </div>
         ) : null}
       </CardContent>

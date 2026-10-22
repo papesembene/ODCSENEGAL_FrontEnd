@@ -8,7 +8,7 @@ const admin = { id: "admin", email: "admin@example.org", admin_type: "super_admi
 const batchId = "b".repeat(64)
 const results = Array.from({ length: 45 }, (_, index) => index + 1).map((id) => ({
   id: String(id).padStart(24, "0"), testId: "test", testTitle: "Test local", referentiel: id % 2 ? "Dev Web" : "Data",
-  candidate: { name: `Candidat ${id}`, email: `candidate${id}@example.org` }, score: 100, status: "admis",
+  candidate: { name: id === 44 ? "\u00c9milie Diop" : `Candidat ${id}`, email: `candidate${id}@example.org`, phone: `+22177${String(id).padStart(7, "0")}` }, score: 100, status: "admis",
   completedAt: "2026-10-21T10:00:00Z", points: { obtained: 5, total: 5 },
   violationSummary: { totalViolations: id === 2 ? 8 : 0 },
 }))
@@ -29,6 +29,9 @@ try {
   const emails = []
   const resultRequests = []
   const detailRequests = []
+  const sessionRequests = []
+  let groupsReads = 0
+  const availableRequests = []
   let violationReads = 0
   let failEmail = true
   let failResults = false
@@ -43,16 +46,40 @@ try {
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers })
     let status = 200
     let data = { success: true, data: [] }
+    const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    const search = normalize(url.searchParams.get("search") || "").trim()
     const filtered = results.filter((result) => (!url.searchParams.get("referentiel") || url.searchParams.get("referentiel") === "all" || result.referentiel === url.searchParams.get("referentiel")) &&
-      (!url.searchParams.get("status") || url.searchParams.get("status") === "all" || result.status === url.searchParams.get("status")))
+      (!url.searchParams.get("status") || url.searchParams.get("status") === "all" || result.status === url.searchParams.get("status")) &&
+      search.split(/\s+/).every((term) => normalize(`${result.candidate.name} ${result.candidate.email} ${result.candidate.phone} ${result.testTitle}`).includes(term)))
     if (path.endsWith("/tests/results")) {
       const number = Number(url.searchParams.get("page"))
       const size = Number(url.searchParams.get("per_page"))
       assert.ok(number >= 1 && size >= 1 && size <= 100, "Browser must request a bounded server page")
-      resultRequests.push({ page: number, per_page: size, referentiel: url.searchParams.get("referentiel") })
+      resultRequests.push({ page: number, per_page: size, referentiel: url.searchParams.get("referentiel"), search })
       if (failResults) { status = 503; data = { success: false, error: "Temporary" } }
       else data = { success: true, data: filtered.slice((number - 1) * size, number * size), total: filtered.length,
         pagination: { page: number, per_page: size, total: filtered.length, total_pages: Math.ceil(filtered.length / size) } }
+    }
+    if (path.endsWith("/test-groups")) groupsReads++
+    if (path.endsWith("/test-groups/available-candidates")) {
+      const number = Number(url.searchParams.get("page"))
+      const size = Number(url.searchParams.get("per_page"))
+      availableRequests.push({ page: number, search })
+      const pool = Array.from({ length: 75 }, (_, index) => ({
+        id: String(index + 1).padStart(24, "0"), first_name: index === 74 ? "\u00c9milie" : `Disponible ${index + 1}`,
+        last_name: "Diop", email: `available${index + 1}@example.org`, desired_training: "dev-web-mobile",
+      })).filter((candidate) => search.split(/\s+/).every((term) => normalize(`${candidate.first_name} ${candidate.last_name}`).includes(term)))
+      data = { success: true, total: pool.length, data: pool.slice((number - 1) * size, number * size) }
+    }
+    if (path.endsWith("/tests/sessions")) {
+      const number = Number(url.searchParams.get("page"))
+      const size = Number(url.searchParams.get("per_page"))
+      sessionRequests.push({ page: number, search })
+      const matching = results.filter((result) => search.split(/\s+/).every((term) => normalize(`${result.candidate.name} ${result.candidate.email}`).includes(term)))
+      data = { success: true, total: matching.length, page: number, per_page: size,
+        data: matching.slice((number - 1) * size, number * size).map((result) => ({ id: result.id,
+          candidateName: result.candidate.name, candidateEmail: result.candidate.email, candidatePhone: result.candidate.phone,
+          testTitle: result.testTitle, referentiel: result.referentiel, status: "submitted", answeredCount: 1, remainingTime: 0 })) }
     }
     if (path.endsWith("/tests")) data.data = [{ id: "test", title: "Test local", referentiel: "Dev Web", questions: [
       { question: "Question locale", type: "qcm_simple", options: ["A", "B"], correctAnswer: 1, correctAnswers: [], score: 5 },
@@ -81,6 +108,9 @@ try {
     return route.fulfill({ status, headers, contentType: "application/json", body: JSON.stringify(data) })
   })
   await page.goto(`${baseUrl}/astrodmin/competences/tests`, { waitUntil: "networkidle", timeout: 90000 })
+  assert.equal(resultRequests.length, 0, "Do not download results before their tab is opened")
+  assert.equal(sessionRequests.length, 0, "Do not download sessions before their tab is opened")
+  assert.equal(groupsReads, 0, "Do not download candidate group assignments on the overview")
   await page.getByRole("button", { name: "Consulter les résultats", exact: true }).click()
   const row = (name) => page.getByRole("row").filter({ has: page.getByRole("cell", { name, exact: true }) })
   const panel = page.getByRole("tabpanel", { name: "Résultats", exact: true })
@@ -128,7 +158,7 @@ try {
   await panel.getByRole("combobox").first().click()
   await page.getByRole("option", { name: "Data", exact: true }).click()
   await row("Candidat 2").waitFor()
-  assert.deepEqual(resultRequests.at(-1), { page: 1, per_page: 20, referentiel: "Data" })
+  assert.deepEqual(resultRequests.at(-1), { page: 1, per_page: 20, referentiel: "Data", search: "" })
   await panel.getByRole("combobox").last().click()
   await page.getByRole("option", { name: "10", exact: true }).click()
   await panel.getByText("Affichage de 1 à 10 sur 22 résultats", { exact: true }).waitFor()
@@ -145,14 +175,47 @@ try {
   for await (const chunk of await download.createReadStream()) csv += chunk.toString()
   assert.equal(csv.split("\n").length, 23, "Export includes all 22 filtered candidates, not only 10 visible rows")
   assert.ok(csv.includes("candidate44@example.org"))
+  await panel.getByRole("searchbox", { name: "Rechercher un r\u00e9sultat" }).fill("   EMILIE   DIOP   ")
+  await row("\u00c9milie Diop").waitFor()
+  assert.equal(resultRequests.at(-1).page, 1)
+  await panel.getByText("Affichage de 1 à 1 sur 1 résultats", { exact: true }).waitFor()
+  const filteredDownloadPromise = page.waitForEvent("download")
+  await panel.getByRole("button", { name: "Exporter", exact: true }).click()
+  let filteredCsv = ""
+  for await (const chunk of await (await filteredDownloadPromise).createReadStream()) filteredCsv += chunk.toString()
+  assert.ok(filteredCsv.includes("candidate44@example.org"))
+  assert.ok(!filteredCsv.includes("candidate2@example.org"))
+  await panel.getByRole("searchbox", { name: "Rechercher un r\u00e9sultat" }).fill("")
+  await row("Candidat 2").waitFor()
   failResults = true
   await panel.getByRole("button", { name: "Actualiser", exact: true }).click()
   await panel.getByRole("alert").waitFor()
   failResults = false
   await panel.getByRole("button", { name: "Réessayer", exact: true }).click()
-  await row("Candidat 22").waitFor()
+  await row("Candidat 2").waitFor()
+  await page.getByRole("tab", { name: "Sessions", exact: true }).click()
+  const sessions = page.getByRole("tabpanel", { name: "Sessions", exact: true })
+  await sessions.getByText("Candidat 1", { exact: true }).waitFor()
+  await sessions.getByRole("button", { name: "Suivant", exact: true }).click()
+  await sessions.getByText("Candidat 21", { exact: true }).waitFor()
+  await sessions.getByRole("searchbox", { name: "Rechercher une session" }).fill("EMILIE DIOP")
+  await sessions.getByText("\u00c9milie Diop", { exact: true }).waitFor()
+  assert.equal(sessionRequests.at(-1).page, 1)
   await page.getByRole("tab", { name: "Tableau de bord", exact: true }).click()
   await page.getByText(/45 résultats disponibles/).waitFor()
+  await page.getByRole("button", { name: "Cr\u00e9er un groupe", exact: true }).click()
+  const createGroup = page.getByRole("dialog")
+  await createGroup.getByLabel("Formation *", { exact: true }).click()
+  await page.getByRole("option", { name: "Dev Web", exact: true }).click()
+  await createGroup.getByText("Disponible 1 Diop", { exact: true }).waitFor()
+  await createGroup.getByRole("button", { name: "Suivant", exact: true }).click()
+  await createGroup.getByText("Disponible 51 Diop", { exact: true }).waitFor()
+  await createGroup.getByRole("searchbox", { name: "Rechercher un candidat pour le groupe" }).fill("EMILIE DIOP")
+  await createGroup.getByText("\u00c9milie Diop", { exact: true }).waitFor()
+  assert.equal(availableRequests.at(-1).page, 1)
+  await createGroup.getByText("\u00c9milie Diop", { exact: true }).click()
+  await createGroup.getByText("1 s\u00e9lectionn\u00e9(s)", { exact: true }).waitFor()
+  await createGroup.getByRole("button", { name: "Annuler", exact: true }).click()
   assert.deepEqual(errors, [])
   console.log("PASS: pagination serveur, filtres, selection par page, export complet, details a la demande, notifications et reprise apres echec")
   await context.close()

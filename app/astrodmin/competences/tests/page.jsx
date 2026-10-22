@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +17,9 @@ import {
 import { useTestsManagement } from "./hooks/useTestsManagement"
 
 // Tabs Components
-import { OverviewTab } from "./overview-tab"
+const OverviewTab = dynamic(() => import("./overview-tab").then((module) => module.OverviewTab), {
+  loading: () => <p role="status" className="text-sm text-muted-foreground">Chargement du tableau de bord...</p>,
+})
 import { TestsTab } from "./tests-tab"
 import { GroupsTab } from "./groups-tab"
 import { ResultsTab } from "./results-tab"
@@ -39,9 +42,9 @@ export default function TestsManagementPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
 
-  const m = useTestsManagement(router)
+  const m = useTestsManagement(router, activeTab)
 
-  if (!m.isAuthenticated || m.loading) {
+  if (!m.isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <RefreshCw className="h-12 w-12 animate-spin text-orange-500" />
@@ -149,6 +152,8 @@ export default function TestsManagementPage() {
         />
 
         <SessionsTab
+          sessionsLoading={m.sessionsLoading}
+          sessionsError={m.sessionsError}
           fetchTestSessions={m.fetchTestSessions}
           handleMarkSessionForReschedule={m.handleMarkSessionForReschedule}
           sessionsItemsPerPage={m.sessionsItemsPerPage}
@@ -167,6 +172,7 @@ export default function TestsManagementPage() {
         />
 
         <ResultsTab
+          resultsSearchTerm={m.resultsSearchTerm} setResultsSearchTerm={m.setResultsSearchTerm}
           testResults={m.testResults}
           resultsTotal={m.resultsTotal}
           resultsLoading={m.resultsLoading}
@@ -218,8 +224,6 @@ export default function TestsManagementPage() {
         testsData={m.testsData}
         availableCandidates={m.availableCandidates}
         availableCandidatesTotal={m.availableCandidatesTotal}
-        assignedCandidateIds={m.assignedCandidateIds}
-        candidateToGroupMap={m.candidateToGroupMap}
         selectedCandidatesForGroup={m.selectedCandidatesForGroup}
         fetchAvailableCandidates={m.fetchAvailableCandidates}
         handleSelectCandidateForGroup={m.handleSelectCandidateForGroup}

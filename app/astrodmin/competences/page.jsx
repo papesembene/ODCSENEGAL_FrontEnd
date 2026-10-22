@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { AlertCircle, ChevronDown, Download, FileSpreadsheet, FileText, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -14,25 +15,19 @@ import { DASHBOARD_COLORS } from "./dashboard-config"
 import { getGenderLabel, getStatusColor, getStatusLabel } from "./dashboard-utils"
 import CompetencesAutoGroupDialog from "./components/competences-auto-group-dialog"
 import CompetencesCandidateDetailsModal from "./components/competences-candidate-details-modal"
-import CompetencesCampaignsTab from "./components/competences-campaigns-tab"
 import CompetencesCandidatesTab from "./components/competences-candidates-tab"
 import CompetencesFormationCandidatesDialog from "./components/competences-formation-candidates-dialog"
 import CompetencesFormationsTab from "./components/competences-formations-tab"
-import CompetencesOverviewTab from "./components/competences-overview-tab"
-import CompetencesStatisticsTab from "./components/competences-statistics-tab"
+import SectionLoading from "./components/section-loading"
 import CompetencesSuccessModal from "./components/competences-success-modal"
 import useCompetencesAdminDashboard from "./hooks/use-competences-admin-dashboard"
 
+const CompetencesOverviewTab = dynamic(() => import("./components/competences-overview-tab"), { loading: SectionLoading })
+const CompetencesStatisticsTab = dynamic(() => import("./components/competences-statistics-tab"), { loading: SectionLoading })
+const CompetencesCampaignsTab = dynamic(() => import("./components/competences-campaigns-tab"), { loading: SectionLoading })
+
 export default function CompetencesAdminDashboard() {
   const dashboard = useCompetencesAdminDashboard()
-
-  if (dashboard.loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -52,7 +47,7 @@ export default function CompetencesAdminDashboard() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm" disabled={dashboard.exportingCandidates || dashboard.candidatesLoading || Boolean(dashboard.error)}>
                   <Download className="mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Exporter</span>
                   <ChevronDown className="ml-2 h-4 w-4" />
@@ -89,7 +84,7 @@ export default function CompetencesAdminDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
-            <CompetencesOverviewTab
+            {dashboard.loading ? <SectionLoading /> : <CompetencesOverviewTab
               error={dashboard.error}
               refreshing={dashboard.refreshing}
               fetchCandidates={dashboard.fetchCandidates}
@@ -101,13 +96,14 @@ export default function CompetencesAdminDashboard() {
               genderData={dashboard.genderData}
               nationalityData={dashboard.nationalityData}
               dashboardColors={DASHBOARD_COLORS}
-            />
+            />}
           </TabsContent>
 
           <TabsContent value="candidates" className="space-y-4">
             <CompetencesCandidatesTab
               filteredCandidates={dashboard.filteredCandidates}
-              candidatesData={dashboard.candidatesData}
+              candidatesTotal={dashboard.candidatesTotal}
+              candidatesLoading={dashboard.candidatesLoading}
               candidatesMainItemsPerPage={dashboard.candidatesMainItemsPerPage}
               setCandidatesMainItemsPerPage={dashboard.setCandidatesMainItemsPerPage}
               candidatesMainPage={dashboard.candidatesMainPage}
@@ -129,7 +125,7 @@ export default function CompetencesAdminDashboard() {
           </TabsContent>
 
           <TabsContent value="formations" className="space-y-4">
-            <CompetencesFormationsTab formationData={dashboard.formationData} handleManageCandidates={dashboard.handleManageCandidates} />
+            {dashboard.loading ? <SectionLoading /> : <CompetencesFormationsTab formationData={dashboard.formationData} handleManageCandidates={dashboard.handleManageCandidates} />}
           </TabsContent>
 
           <TabsContent value="campaigns" className="space-y-4">
@@ -137,13 +133,13 @@ export default function CompetencesAdminDashboard() {
           </TabsContent>
 
           <TabsContent value="statistics" className="space-y-4">
-            <CompetencesStatisticsTab
+            {dashboard.loading ? <SectionLoading /> : <CompetencesStatisticsTab
               genderData={dashboard.genderData}
               statusData={dashboard.statusData}
               formationData={dashboard.formationData}
               dailyApplicationsData={dashboard.dailyApplicationsData}
               dashboardColors={DASHBOARD_COLORS}
-            />
+            />}
           </TabsContent>
         </Tabs>
       </div>

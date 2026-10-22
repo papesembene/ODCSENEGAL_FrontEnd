@@ -6,11 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const PAGE_SIZE_OPTIONS = ["10", "25", "50", "100"]
 
 function getVisiblePages(totalPages, currentPage) {
-  return Array.from({ length: totalPages }, (_, index) => index + 1).filter((page) => {
-    if (totalPages <= 7) return true
-    if (page === 1 || page === totalPages) return true
-    return Math.abs(page - currentPage) <= 1
-  })
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
+  return [...new Set([1, currentPage - 1, currentPage, currentPage + 1, totalPages])]
+    .filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b)
 }
 
 export function PageSizeSelector({ value, onChange }) {

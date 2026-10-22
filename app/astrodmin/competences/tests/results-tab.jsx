@@ -2,13 +2,14 @@ import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { FORMATIONS } from "./constants"
 import { PageSizeSelector, PaginationControls, ResultStatusBadge } from "./test-components"
-import { Upload, Download, RefreshCw, List, LayoutGrid, FileText, Eye, AlertCircle, GraduationCap, UsersIcon, CheckCircle, XCircle, Clock } from "lucide-react"
+import { Upload, Download, RefreshCw, Search, List, LayoutGrid, FileText, Eye, AlertCircle, GraduationCap, UsersIcon, CheckCircle, XCircle, Clock } from "lucide-react"
 
 function hasViolations(violationEntry) {
   const totalViolations = Number(
@@ -23,6 +24,8 @@ function hasViolations(violationEntry) {
 export function ResultsTab({
   testResults,
   resultsTotal,
+  resultsSearchTerm,
+  setResultsSearchTerm,
   resultsLoading,
   resultsError,
   exportingResults,
@@ -69,7 +72,7 @@ export function ResultsTab({
                 <Upload className="h-4 w-4 mr-2" />
                 Importer
               </Button>
-              <Button variant="outline" size="sm" onClick={() => handleExportResults("csv")} disabled={exportingResults}>
+              <Button variant="outline" size="sm" onClick={() => handleExportResults("csv")} disabled={exportingResults || resultsLoading || Boolean(resultsError)}>
                 <Download className="h-4 w-4 mr-2" />
                 Exporter
               </Button>
@@ -80,8 +83,14 @@ export function ResultsTab({
             </div>
           </div>
 
-          <div className="flex flex-row justify-between items-center gap-2">
-            <div className="flex flex-row gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input type="search" aria-label="Rechercher un résultat" maxLength={200}
+              placeholder="Nom, email, téléphone ou titre du test" className="pl-9"
+              value={resultsSearchTerm} onChange={(event) => setResultsSearchTerm(event.target.value)} />
+          </div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div className="flex flex-wrap gap-2">
               <Select value={resultsReferentielFilter} onValueChange={setResultsReferentielFilter}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Formation" />
@@ -159,12 +168,14 @@ export function ResultsTab({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredResults.length === 0 ? (
+                    {resultsLoading ? (
+                      <TableRow><TableCell colSpan={10} className="text-center py-8">Chargement des résultats...</TableCell></TableRow>
+                    ) : filteredResults.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={10} className="text-center py-8">
                           <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                           <p className="text-muted-foreground">
-                            {testResults.length === 0 ? "Aucun résultat disponible" : "Aucun résultat ne correspond aux filtres"}
+                            Aucun résultat ne correspond à la recherche ou aux filtres
                           </p>
                           <p className="text-xs text-muted-foreground mt-2">
                             {testResults.length === 0

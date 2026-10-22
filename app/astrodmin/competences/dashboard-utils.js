@@ -7,6 +7,7 @@ export function getStatusColor(status) {
     case "pending":
       return "bg-yellow-500"
     case "interview":
+    case "interviewed":
       return "bg-blue-500"
     default:
       return "bg-gray-500"
@@ -22,6 +23,7 @@ export function getStatusLabel(status) {
     case "pending":
       return "En attente"
     case "interview":
+    case "interviewed":
       return "Entretien"
     default:
       return status

@@ -3,44 +3,26 @@ import { toast } from "sonner"
 import { getAdminAuthHeaders } from "@/app/utils/admin-auth"
 import { handleExpiredAdminSession } from "@/app/utils/fetchWithTimeout"
 import { API_BASE_URL } from "../constants"
+import { useAdminPage } from "@/app/hooks/use-admin-page"
+import { useDebouncedValue } from "@/app/hooks/use-debounced-value"
 
 export function useTestResults(enabled) {
-  const [query, setQuery] = useState({ page: 1, per_page: 20, referentiel: "all", status: "all" })
-  const [response, setResponse] = useState({ data: [], total: 0 })
-  const [resultsLoading, setResultsLoading] = useState(false)
-  const [resultsError, setResultsError] = useState("")
+  const [query, setQuery] = useState({ page: 1, per_page: 20, referentiel: "all", status: "all", search: "" })
+  const [resultsSearchTerm, setResultsSearchTerm] = useState("")
+  const search = useDebouncedValue(resultsSearchTerm.trim())
   const [selectedResults, setSelectedResults] = useState([])
   const [revision, setRevision] = useState(0)
   const [exportingResults, setExportingResults] = useState(false)
   const reloadResults = useCallback(() => setRevision((value) => value + 1), [])
+  const { response, loading, error: resultsError } = useAdminPage(`${API_BASE_URL}/api/admin/tests/results`, query, enabled, revision)
+  const resultsLoading = loading || resultsSearchTerm.trim() !== query.search
 
   useEffect(() => {
-    if (!enabled) return
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
-    let active = true
-    setResultsLoading(true)
-    setResultsError("")
+    setQuery((previous) => previous.search === search ? previous : { ...previous, search, page: 1 })
+  }, [search])
+
+  useEffect(() => {
     setSelectedResults([])
-    setResponse({ data: [], total: 0 })
-    async function load() {
-      try {
-        const request = await fetch(`${API_BASE_URL}/api/admin/tests/results?${new URLSearchParams(query)}`, {
-          headers: getAdminAuthHeaders(), signal: controller.signal,
-        })
-        const result = await request.json()
-        if (request.status === 401) handleExpiredAdminSession(request.url)
-        if (!request.ok || !result.success || !result.pagination) throw new Error(result.error || "Réponse invalide du serveur")
-        if (active) setResponse(result)
-      } catch (error) {
-        if (active) setResultsError(error.name === "AbortError" ? "Le chargement a expiré. Réessayez." : "Impossible de charger les résultats. Réessayez.")
-      } finally {
-        clearTimeout(timeout)
-        if (active) setResultsLoading(false)
-      }
-    }
-    void load()
-    return () => { active = false; controller.abort(); clearTimeout(timeout) }
   }, [enabled, query, revision])
 
   const changeQuery = (key, value) => setQuery((previous) => ({
@@ -49,12 +31,13 @@ export function useTestResults(enabled) {
 
   const handleExportResults = async (format) => {
     if (format !== "csv") { toast.info("Utilisez l'export CSV, compatible avec Excel"); return }
-    if (exportingResults) return
+    if (exportingResults || resultsLoading || resultsError) return
     setExportingResults(true)
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 120000)
     try {
-      const filters = new URLSearchParams({ referentiel: query.referentiel, status: query.status })
+      const { page, per_page, ...criteria } = query
+      const filters = new URLSearchParams(criteria)
       const request = await fetch(`${API_BASE_URL}/api/admin/tests/results/export?${filters}`, {
         headers: getAdminAuthHeaders(), signal: controller.signal,
       })
@@ -75,7 +58,8 @@ export function useTestResults(enabled) {
   }
 
   return {
-    testResults: response.data, resultsTotal: response.total,
+    testResults: resultsLoading ? [] : response.data, resultsTotal: response.total,
+    resultsSearchTerm, setResultsSearchTerm,
     resultsPage: response.pagination?.page ?? query.page,
     resultsItemsPerPage: query.per_page, resultsReferentielFilter: query.referentiel, resultsStatusFilter: query.status,
     setResultsPage: (value) => changeQuery("page", value),

@@ -17,8 +17,16 @@ function getApiErrorMessage(errorData, status) {
   return message || `Erreur HTTP ${status}`
 }
 
+function queryString(filters = {}) {
+  const params = new URLSearchParams()
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "" && value !== "all") params.set(key, String(value))
+  })
+  return params.size ? `?${params}` : ""
+}
+
 export const useAdminApi = () => {
-  const makeRequest = useCallback(async (endpoint, options = {}) => {
+  const makeRequest = useCallback(async (endpoint, options = {}, responseType = "json") => {
     const token = localStorage.getItem('admin_token')
 
     if (!token) {
@@ -43,6 +51,7 @@ export const useAdminApi = () => {
         credentials: 'include',
       })
     } catch (error) {
+      if (error.name === "AbortError") throw error
       const baseUrl = requestUrl.split("/api/")[0] || API_BASE_URL || "le backend"
       throw new Error(`Impossible de joindre le backend sur ${baseUrl}`)
     }
@@ -66,11 +75,14 @@ export const useAdminApi = () => {
       throw new Error(errorMessage)
     }
 
-    return response.json()
+    return responseType === "blob" ? response.blob() : response.json()
   }, [])
 
   const candidatures = useMemo(() => ({
-    getAll: async () => makeRequest("/api/admin/candidatures"),
+    getAll: async (filters = {}, options = {}) => makeRequest(`/api/admin/candidatures${queryString(filters)}`, options),
+    get: async (id) => makeRequest(`/api/admin/candidatures/${id}`),
+    dashboard: async (days, options = {}) => makeRequest(`/api/admin/candidatures/dashboard${queryString({ days })}`, options),
+    export: async (filters, options = {}) => makeRequest(`/api/admin/candidatures/export${queryString(filters)}`, options, "blob"),
     update: async (id, payload) =>
       makeRequest(`/api/admin/candidatures/${id}`, {
         method: "PATCH",

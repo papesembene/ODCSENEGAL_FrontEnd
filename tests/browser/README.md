@@ -10,6 +10,8 @@ npm run test:styles
 npm run build
 ODC_BROWSER_START_SERVER=1 npm run test:online
 ODC_BROWSER_START_SERVER=1 npm run test:portal
+ODC_BROWSER_START_SERVER=1 npm run test:candidates
+ODC_BROWSER_START_SERVER=1 npm run test:admin
 ```
 
 Dans PowerShell, definir `$env:ODC_BROWSER_START_SERVER="1"` avant les commandes.
@@ -26,6 +28,12 @@ Sans cette variable, les parcours utilisent un serveur deja lance sur
 - `portal`: accueil, connexion admin, trois candidatures, tableau jury et
   dialogue coach en mobile et desktop. `ODC_SCREENSHOT_DIR` permet de conserver
   les captures hors du depot pour une comparaison visuelle.
+- `candidates`: pages serveur, recherche avec remise a la premiere page,
+  navigation pendant le chargement des statistiques, details a la demande,
+  exports CSV/XLSX complets et reprise apres erreur.
+- `admin`: chargement par onglet, recherche serveur dans les resultats et
+  sessions, export filtre, selection paginee des candidats d'un groupe,
+  notifications et reprise apres erreur.
 
 Le theme conserve la palette sRGB et les espacements historiques. Pour les
 nouveaux composants, preferer `flex`/`grid` avec `gap` aux marges `space-*`.

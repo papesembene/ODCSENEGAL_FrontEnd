@@ -4,7 +4,6 @@ import { API_BASE_URL } from "../constants"
 import { createInitialGroup, createInitialInvitationDetails } from "../helpers"
 
 export function createGroupHandlers({
-  assignedCandidateIds,
   fetchTestGroups,
   invitationDetails,
   newGroup,
@@ -208,12 +207,12 @@ export function createGroupHandlers({
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/candidatures`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/test-groups/${group.id}`, {
         headers: getAdminAuthHeaders(),
       })
       const result = await response.json()
       if (result.success) {
-        setGroupCandidatesDetails(result.data.filter((candidate) => candidateIds.includes(candidate.id)))
+        setGroupCandidatesDetails(result.data?.candidates || [])
       }
     } catch {
       toast.error("Erreur chargement candidats")
@@ -223,11 +222,6 @@ export function createGroupHandlers({
   }
 
   const handleSelectCandidateForGroup = (candidateId) => {
-    if (assignedCandidateIds.includes(candidateId)) {
-      toast.error("Déjà assigné")
-      return
-    }
-
     setSelectedCandidatesForGroup((previous) =>
       previous.includes(candidateId) ? previous.filter((id) => id !== candidateId) : [...previous, candidateId],
     )

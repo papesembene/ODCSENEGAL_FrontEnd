@@ -29,52 +29,6 @@ export async function fetchTestsData({ setLoading, setRefreshing, setTestsData }
   }
 }
 
-export async function fetchTestSessionsData({
-  filters = {},
-  setTestSessions,
-  setTestSessionsTotal,
-}) {
-  try {
-    const params = new URLSearchParams({
-      page: String(filters.page || 1),
-      per_page: String(filters.perPage || 20),
-    })
-
-    if (filters.status && filters.status !== "all") {
-      params.set("status", filters.status)
-    }
-
-    if (filters.testId && filters.testId !== "all") {
-      params.set("testId", filters.testId)
-    }
-
-    if (filters.search?.trim()) {
-      params.set("search", filters.search.trim())
-    }
-
-    const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/sessions?${params.toString()}`, {
-      timeout: 30000,
-      retries: 1,
-      retryDelay: 1000,
-    })
-
-    if (result.success) {
-      setTestSessions(result.data || [])
-      setTestSessionsTotal(result.total || 0)
-      return
-    }
-
-    toast.error(result.error || "Erreur lors du chargement des sessions")
-    setTestSessions([])
-    setTestSessionsTotal(0)
-  } catch (error) {
-    console.warn("Erreur lors du chargement des sessions:", error)
-    toast.error("Impossible de charger les sessions de test.")
-    setTestSessions([])
-    setTestSessionsTotal(0)
-  }
-}
-
 export async function fetchStatisticsData({ setStatistics }) {
   try {
     const result = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/tests/statistics`, {
@@ -98,8 +52,6 @@ export async function fetchStatisticsData({ setStatistics }) {
 
 export async function fetchTestGroupsData({
   groupFormationFilter,
-  setAssignedCandidateIds,
-  setCandidateToGroupMap,
   setTestGroups,
 }) {
   try {
@@ -119,23 +71,7 @@ export async function fetchTestGroupsData({
     }
 
     const groups = result.data || []
-    const assignedIds = new Set()
-    const candidateGroupMap = {}
-
-    groups.forEach((group) => {
-      if (!Array.isArray(group.candidate_ids)) {
-        return
-      }
-
-      group.candidate_ids.forEach((id) => {
-        assignedIds.add(id)
-        candidateGroupMap[id] = group.name
-      })
-    })
-
     setTestGroups(groups)
-    setAssignedCandidateIds(Array.from(assignedIds))
-    setCandidateToGroupMap(candidateGroupMap)
   } catch (error) {
     console.error("Erreur:", error)
     toast.error("Impossible de récupérer les groupes")
@@ -147,6 +83,7 @@ export async function fetchAvailableCandidatesData({
   page = 1,
   perPage = 100,
   search = "",
+  signal,
   setAvailableCandidates,
   setAvailableCandidatesTotal,
 }) {
@@ -168,13 +105,15 @@ export async function fetchAvailableCandidatesData({
 
     const response = await fetch(`${API_BASE_URL}/api/admin/test-groups/available-candidates?${params.toString()}`, {
       headers: getAdminAuthHeaders(),
+      signal,
     })
     const result = await response.json()
 
-    if (!result.success) {
+    if (signal?.aborted) return false
+    if (!response.ok || !result.success) {
       setAvailableCandidates([])
       setAvailableCandidatesTotal?.(0)
-      return
+      return false
     }
 
     const normalizedCandidates = (result.data || []).map((candidate) => ({
@@ -184,9 +123,11 @@ export async function fetchAvailableCandidatesData({
 
     setAvailableCandidates(normalizedCandidates)
     setAvailableCandidatesTotal?.(result.total || 0)
+    return true
   } catch (error) {
-    console.error("Erreur:", error)
+    if (signal?.aborted) return false
     setAvailableCandidates([])
     setAvailableCandidatesTotal?.(0)
+    return false
   }
 }
