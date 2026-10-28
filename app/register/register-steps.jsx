@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { AlertCircle, ArrowLeft, ArrowRight, Check, Loader2, Upload } from "lucide-react"
 import { GoogleIcon, LinkedInIcon } from "./register-icons"
 import {

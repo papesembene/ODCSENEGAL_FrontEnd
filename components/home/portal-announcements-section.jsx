@@ -1,55 +1,29 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Megaphone } from "lucide-react"
-import { getPublishedPortalContent } from "@/lib/public-api"
+import Link from "@/components/ui/interactive-link"
+import { ArrowRight, Megaphone } from "lucide-react"
+import useHomeContent from "./use-home-content"
+import styles from "./home-sections.module.css"
+import CandidatureButton from "@/components/candidatures/candidature-button"
+import { isFormationApplicationLink } from "@/lib/candidature-availability"
 
 export default function PortalAnnouncementsSection() {
-  const [announcements, setAnnouncements] = useState([])
-
-  useEffect(() => {
-    let isActive = true
-
-    getPublishedPortalContent({ type: "info", placement: "home" })
-      .then((contents) => {
-        if (isActive) {
-          setAnnouncements(contents)
-        }
-      })
-      .catch(() => {
-        if (isActive) {
-          setAnnouncements([])
-        }
-      })
-
-    return () => {
-      isActive = false
-    }
-  }, [])
-
-  if (announcements.length === 0) {
-    return null
-  }
-
+  const announcements = useHomeContent("info")
   const announcement = announcements[0]
+  if (!announcement) return null
 
   return (
-    <section className="border-b border-orange-200 bg-orange-50 px-4 py-3 text-orange-950">
-      <div className="container mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <Megaphone className="mt-0.5 h-5 w-5 shrink-0 text-orange-600" />
-          <div>
-            <p className="font-semibold">{announcement.title}</p>
-            {announcement.summary && (
-              <p className="text-sm text-orange-900/80">{announcement.summary}</p>
-            )}
-          </div>
+    <section className={styles.announcement} aria-label="Information du centre">
+      <div className={`${styles.container} ${styles.announcementInner}`}>
+        <Megaphone size={22} aria-hidden="true" />
+        <div>
+          <p className={styles.announcementTitle}>{announcement.title}</p>
+          {announcement.summary && <p className={styles.announcementSummary}>{announcement.summary}</p>}
         </div>
         {announcement.linkUrl && announcement.linkLabel && (
-          <Link href={announcement.linkUrl} className="text-sm font-semibold text-orange-700 hover:underline">
-            {announcement.linkLabel}
-          </Link>
+          isFormationApplicationLink(announcement.linkUrl)
+            ? <CandidatureButton label={announcement.linkLabel} className={styles.textLink} />
+            : <Link href={announcement.linkUrl} className={styles.textLink}>{announcement.linkLabel}<ArrowRight size={17} aria-hidden="true" /></Link>
         )}
       </div>
     </section>

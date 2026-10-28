@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
+import PublicPageHero from "@/components/public-page-hero"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -179,25 +180,15 @@ export default function RessourcesPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="relative bg-linear-to-r/srgb from-[#ff7900] to-[#ff9d4d] py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center mb-8">
+      <PublicPageHero eyebrow="Apprendre à son rythme" title="Ressources Pédagogiques"
+        description="Accédez à notre bibliothèque de ressources pour approfondir vos connaissances et compléter votre formation.">
             <Button asChild variant="ghost" className="text-white hover:bg-white/10">
               <Link href="/competences">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Retour
               </Link>
             </Button>
-          </div>
-          <div className="mx-auto max-w-3xl text-center text-white">
-            <h1 className="text-4xl font-bold sm:text-5xl">Ressources Pédagogiques</h1>
-            <p className="mt-4 text-xl">
-              Accédez à notre bibliothèque de ressources pour approfondir vos connaissances et compléter votre
-              formation.
-            </p>
-          </div>
-        </div>
-      </section>
+      </PublicPageHero>
 
       {/* Search Section */}
       <section className="bg-white py-8 shadow-md dark:bg-gray-800">
@@ -207,7 +198,7 @@ export default function RessourcesPage() {
             <input
               type="text"
               placeholder="Rechercher une ressource..."
-              className="w-full border-0 bg-transparent px-4 py-2 focus:outline-hidden dark:text-white"
+              className="min-w-0 w-full border-0 bg-transparent px-4 py-2 focus:outline-hidden dark:text-white"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -236,7 +227,7 @@ export default function RessourcesPage() {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <Tabs defaultValue="cours" className="mx-auto max-w-6xl">
-            <TabsList className="mb-8 grid w-full grid-cols-4">
+            <TabsList className="mb-8 grid h-auto w-full grid-cols-2 gap-1 md:grid-cols-4 [&>button]:min-h-11 [&>button]:whitespace-normal [&_svg]:shrink-0">
               <TabsTrigger value="cours" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 <span>Supports de cours</span>

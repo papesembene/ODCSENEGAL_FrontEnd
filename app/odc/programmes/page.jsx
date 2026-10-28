@@ -1,33 +1,24 @@
 
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Users, PenTool as Tool, Lightbulb, MapPin, Calendar, ArrowRight, BookOpen } from "lucide-react"
 import AnimatedSection from "@/components/AnimatedSection"
+import PublicPageHero from "@/components/public-page-hero"
 import Image from "next/image"
 
 export default function ProgrammesPage() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="bg-linear-to-r/srgb from-[#ff7900] to-[#ff9d4d] py-8 md:py-10">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center mb-6 md:mb-8">
+      <PublicPageHero eyebrow="Formation et accompagnement" title="Notre chaîne de valeur"
+        description="Découvrez nos différents programmes d'accompagnement et de formation pour développer les compétences numériques au Sénégal.">
             <Button asChild variant="secondary" className="bg-white">
               <Link href="/competences">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Retour
               </Link>
             </Button>
-          </div>
-          <div className="mx-auto max-w-3xl text-center text-white">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold"> Notre chaîne de valeur </h1>
-            <p className="mt-4 text-lg md:text-xl">
-              Découvrez nos différents programmes d'accompagnement et de formation pour développer les compétences
-              numériques au Sénégal.
-            </p>
-          </div>
-        </div>
-      </section>
+      </PublicPageHero>
 
       {/* ODC Clubs Section */}
       <section className="py-8 md:py-10 bg-white dark:bg-gray-800">

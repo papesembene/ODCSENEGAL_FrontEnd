@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @import "../styles/spacing.css";
+@import "../styles/interactions.css";
 @config "../tailwind.config.js";
 
 /* Keep the existing page widths instead of adopting the v4 container defaults. */
@@ -132,6 +133,10 @@ body {
  
 .orange-gradient {
   background: linear-gradient(135deg, #ff7f00 0%, #ff9e00 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 /* Scrollbar personnalisée responsive */

@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import Image from "next/image"
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react"
 import {
@@ -81,14 +81,14 @@ const Footer = () => {
                 const itemClassName = contact.icon === "mapPin" ? "items-start" : "items-center"
 
                 return (
-                  <li key={contact.label} className={`flex ${itemClassName} space-x-3`}>
-                    <Icon className="h-5 w-5 text-orange-500" />
+                  <li key={contact.label} className={`flex min-w-0 gap-3 ${itemClassName}`}>
+                    <Icon className="h-5 w-5 shrink-0 text-orange-500" />
                     {contact.href ? (
-                      <a href={contact.href} className="text-gray-400 transition-colors hover:text-orange-500">
+                      <a href={contact.href} className="min-w-0 break-words text-gray-400 transition-colors hover:text-orange-500">
                         {contact.label}
                       </a>
                     ) : (
-                      <span className="text-gray-400">{contact.label}</span>
+                      <span className="min-w-0 break-words text-gray-400">{contact.label}</span>
                     )}
                   </li>
                 )

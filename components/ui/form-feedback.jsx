@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"

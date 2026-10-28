@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from "next/link"
+import React, { useState } from 'react';
+import Link from "@/components/ui/interactive-link"
+import PublicPageHero from "@/components/public-page-hero"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowRight, CheckCircle, Calendar, Clock, Users, Target, Code, Paintbrush, Building2, Users2, MessageSquare, CreditCard, Store, Handshake, Star } from "lucide-react"
 
@@ -82,49 +82,18 @@ const sonatelAdvantages = [
 
 export default function StartupLabPage() {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    setIsVisible(true);
-    const interval = setInterval(() => {
-      setCurrentStoryIndex((prevIndex) => 
-        prevIndex === successStories.length - 1 ? 0 : prevIndex + 1
-      );
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative h-[500px] overflow-hidden">
-        <Image 
-          src="/images/startupLabhome.jpeg" 
-          alt="Startup Lab" 
-          fill 
-          className="object-cover transform scale-105 transition-transform duration-10000 hover:scale-110"
-          priority
-        />
-        <div className="absolute inset-0 bg-linear-to-r/srgb from-black/70 to-black/50" />
-        <div className="container relative z-10 mx-auto flex h-full items-center px-4">
-          <div className={`max-w-2xl text-white transition-all duration-1000 transform ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-20 opacity-0'}`}>
-            <h1 className="text-5xl font-bold leading-tight sm:text-6xl">
-              Startup Lab
-            </h1>
-            <p className="mt-6 text-xl leading-relaxed">
-              Diriger une startup peut être l'une des expériences les plus enrichissantes de votre carrière personnelle et professionnelle. Ce n'est bien sûr pas facile, mais nous vous fournissons les outils, les ressources, les connaissances et le réseau de soutien nécessaires pour vous aider à bâtir une startup réussie.
-            </p>
-            <div className="mt-8">
+      <PublicPageHero eyebrow="De l'idée au projet" title="Startup Lab" image="/images/startupLabhome.jpeg"
+        description="Diriger une startup peut être l'une des expériences les plus enrichissantes de votre carrière personnelle et professionnelle. Ce n'est bien sûr pas facile, mais nous vous fournissons les outils, les ressources, les connaissances et le réseau de soutien nécessaires pour vous aider à bâtir une startup réussie.">
               <Button asChild size="lg" className="bg-orange-1 hover:bg-orange-600 transition-colors duration-300">
                 <Link href="/candidatures/fermees">
-                   Rejoignez-nous <ArrowRight className="ml-2 h-5 w-5 animate-pulse" />
+                   Rejoignez-nous <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      </PublicPageHero>
 
       {/* About Section */}
       <section className="bg-white py-20 dark:bg-gray-900">
@@ -262,11 +231,11 @@ export default function StartupLabPage() {
             </h2>
           </div>
 
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto" role="region" aria-label="Startups accompagnées" aria-roledescription="carrousel">
             <div className="overflow-hidden rounded-xl shadow-lg">
-              <div className="flex transition-transform duration-500 ease-out" style={{ transform: `translateX(-${currentStoryIndex * 100}%)` }}>
+              <div className="flex transition-transform duration-500 ease-out motion-reduce:transition-none" style={{ transform: `translateX(-${currentStoryIndex * 100}%)` }}>
                 {successStories.map((story, index) => (
-                  <div key={index} className="min-w-full">
+                  <div key={index} className="min-w-full" aria-hidden={currentStoryIndex !== index}>
                     <div className="grid md:grid-cols-2">
                       <div className="relative h-60">
                         <Image
@@ -293,12 +262,16 @@ export default function StartupLabPage() {
                 <button
                   key={index}
                   onClick={() => setCurrentStoryIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  aria-label={`Afficher ${successStories[index].name}`}
+                  aria-current={currentStoryIndex === index ? "true" : undefined}
+                  className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-orange-500"
+                >
+                  <span aria-hidden="true" className={`h-2 rounded-full transition-all duration-300 motion-reduce:transition-none ${
                     currentStoryIndex === index 
                       ? 'bg-orange-1 w-4' 
-                      : 'bg-gray-300 hover:bg-orange-300'
-                  }`}
-                />
+                      : 'bg-gray-300 w-2'
+                  }`} />
+                </button>
               ))}
             </div>
           </div>
@@ -313,16 +286,13 @@ export default function StartupLabPage() {
             <p className="text-xl mb-8">
               Rejoignez le Startup Lab et bénéficiez de tous les avantages pour faire décoller votre projet
             </p>
-            <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-            >
+            <div>
               <Button asChild size="lg" variant="secondary" className="bg-[#0F172A] text-[#F1F5F9] hover:bg-[#0F172A] hover:text-[#F1F5F9] transition-colors duration-300">
                 <Link href="/candidatures/fermees">
-                  Postuler maintenant <ArrowRight className="ml-2 h-5 w-5 animate-pulse" />
+                  Postuler maintenant <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

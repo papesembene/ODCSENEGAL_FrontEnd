@@ -1,0 +1,33 @@
+.link {
+  position: relative;
+  transition: transform 150ms ease, color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.link:active { transform: translateY(1px) scale(.99); }
+.link:has(.pending) { cursor: progress; }
+
+.pending {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, #ff790040, #ff7900 50%, #ffb16d);
+  transform-origin: left;
+  animation: navigationPending 950ms ease-in-out 120ms infinite both;
+}
+
+@keyframes navigationPending {
+  0% { opacity: .6; transform: scaleX(.18); }
+  55% { opacity: 1; transform: scaleX(.78); }
+  100% { opacity: .6; transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link { transition: none; }
+  .link:active { transform: none; }
+  .pending { animation: none; transform: none; background: #ff7900; }
+}

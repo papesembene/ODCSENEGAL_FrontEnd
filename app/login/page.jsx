@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { useAuth } from "@/app/contexts/AuthContext"
 import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
 

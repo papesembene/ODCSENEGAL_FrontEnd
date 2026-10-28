@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import Image from "next/image"
 import { Calendar, ExternalLink, MessageSquare } from "lucide-react"
 import {

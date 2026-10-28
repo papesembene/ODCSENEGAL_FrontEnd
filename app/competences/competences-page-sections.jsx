@@ -1,8 +1,8 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import Image from "next/image"
-import { motion } from "framer-motion"
+import PublicPageHero from "@/components/public-page-hero"
 import {
   ArrowRight,
   Award,
@@ -24,7 +24,9 @@ import {
   Clock,
   PenToolIcon as Tool,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import CandidatureButton from "@/components/candidatures/candidature-button"
+import { useCandidatureStatus } from "@/components/candidatures/candidature-status-provider"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 const ICONS = {
@@ -49,31 +51,11 @@ const ICONS = {
 
 export function CompetencesHeroSection() {
   return (
-    <section className="relative h-[500px] overflow-hidden">
-      <Image
-        src="/hero.jpg?height=400&width=1200"
-        alt="Développement des Compétences Numériques"
-        fill
-        className="object-cover"
-      />
-      <div className="absolute inset-0 bg-black/50" />
-      <div className="container relative z-10 mx-auto flex h-full items-center px-4">
-        <div className="max-w-2xl text-white">
-          <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Développement des Compétences Numériques</h1>
-          <p className="mt-4 text-lg sm:text-xl">
-            Des formations gratuites et de qualité dans les métiers du numérique pour favoriser l'employabilité des
-            jeunes Sénégalais et Etrangers.
-          </p>
-          <div className="mt-8">
-            <Button className="bg-[#ff7900] text-white hover:bg-[#e56d00]" asChild size="lg">
-              <Link href="/odc/candidatures">
-                Postuler maintenant <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
+    <PublicPageHero eyebrow="Apprendre et se révéler" title="Développement des Compétences Numériques"
+      image="/hero.jpg?height=400&width=1200"
+      description="Des formations gratuites et de qualité dans les métiers du numérique pour favoriser l'employabilité des jeunes Sénégalais et Etrangers.">
+            <CandidatureButton label="Postuler maintenant" className={buttonVariants({ size: "lg", className: "bg-[#ff7900] text-white hover:bg-[#e56d00]" })} />
+    </PublicPageHero>
   )
 }
 
@@ -176,13 +158,13 @@ export function CompetencesValueChainSection({ programs }) {
         </div>
 
         <div className="mt-12 text-center">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <div>
             <Button asChild size="lg" className="bg-orange-1 text-white hover:bg-orange-1 hover:text-white">
               <Link href="/odc/programmes">
                 Découvrir nos programmes <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
@@ -190,22 +172,21 @@ export function CompetencesValueChainSection({ programs }) {
 }
 
 export function CompetencesCtaSection() {
+  const availability = useCandidatureStatus()
   return (
     <section className="bg-[#ff7900] py-16 text-white">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-3xl font-bold sm:text-4xl">Prêt à développer vos compétences ?</h2>
           <p className="mt-4 text-lg">
-            Postulez dès maintenant à nos formations gratuites et lancez votre carrière dans le numérique.
+            {availability.canApply
+              ? "Postulez dès maintenant à nos formations gratuites et lancez votre carrière dans le numérique."
+              : availability.message}
           </p>
           <div className="mt-8">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button asChild size="lg" className="bg-[#000000] text-white hover:bg-[#000000] hover:text-white">
-                <Link href="/odc/candidatures">
-                  Déposer ma candidature <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            </motion.div>
+            <div>
+              <CandidatureButton label="Déposer ma candidature" className={buttonVariants({ size: "lg", className: "bg-black text-white hover:bg-black hover:text-white" })} />
+            </div>
           </div>
         </div>
       </div>

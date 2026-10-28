@@ -1,5 +1,5 @@
 // app/actualites/page.tsx
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { Button } from "@/components/ui/button"
 
 const actualites = [

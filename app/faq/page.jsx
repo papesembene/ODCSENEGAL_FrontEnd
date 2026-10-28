@@ -1,7 +1,7 @@
 // app/faq/page.tsx
 import { ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 
 const faqs = [
   {

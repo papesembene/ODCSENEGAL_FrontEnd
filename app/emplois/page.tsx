@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import Image from "next/image"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"

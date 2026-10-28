@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import useRegisterForm from "./hooks/use-register-form"
 import {
   AccountStep,

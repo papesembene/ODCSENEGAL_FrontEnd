@@ -1,121 +1,107 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { mainNavigationLinks } from "@/lib/site-config"
+import { mainNavigationLinks, siteMetadata } from "@/lib/site-config"
 import { cn } from "@/lib/utils"
+import useCompactHeader from "@/components/navigation/use-compact-header"
+import styles from "./header.module.css"
+
+function NavigationLinks({ pathname, dropdown = false }) {
+  return mainNavigationLinks.map((link) => {
+    const isActive = pathname === link.href
+    return (
+      <Link key={link.href} href={link.href} aria-current={isActive ? "page" : undefined}
+        className={cn(
+          dropdown
+            ? "block rounded-lg px-3 py-3 text-base font-medium transition-colors"
+            : "inline-flex min-h-11 items-center whitespace-nowrap text-sm font-medium transition-colors",
+          isActive
+            ? "text-orange-500 underline underline-offset-4"
+            : "text-white hover:text-orange-500",
+          dropdown && (isActive ? "bg-orange-500/10" : "hover:bg-gray-800")
+        )}>
+        {link.title}
+      </Link>
+    )
+  })
+}
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+  const isCompact = useCompactHeader()
+  const menuButtonRef = useRef(null)
+  const headerRef = useRef(null)
   const pathname = usePathname()
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10)
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    setIsOpen(false)
+  }, [pathname, isCompact])
 
   useEffect(() => {
-    setIsOpen(false)
-  }, [pathname])
+    if (!isOpen) return
+    const dismiss = (event) => {
+      if (!headerRef.current?.contains(event.target)) setIsOpen(false)
+    }
+    document.addEventListener("pointerdown", dismiss)
+    return () => document.removeEventListener("pointerdown", dismiss)
+  }, [isOpen])
 
   const toggleMenu = () => setIsOpen(!isOpen)
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
-        isScrolled ? "bg-black backdrop-blur-md shadow-lg" : "bg-black"
-      )}
-    >
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo - Gauche */}
-          <Link href="/" className="flex items-center shrink-0 z-60">
-            <Image
-              src="/logoffodc.png"
-              alt="Logo"
-              width={120}
-              height={40}
-              className="rounded object-contain"
-              priority
-            />
-          </Link>
+    <div className={styles.dock} data-navigation-shell="">
+      <header ref={headerRef} data-compact={isCompact} className={styles.header}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false)
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && isOpen) {
+            setIsOpen(false)
+            menuButtonRef.current?.focus()
+          }
+        }}>
+        <div className={styles.container}>
+          <div className={styles.bar}>
+            <Link href="/" className={styles.logo} aria-label={`${siteMetadata.title} - Accueil`}>
+              <Image src="/logoffodc.png" alt={siteMetadata.title} width={120} height={40}
+                className="rounded object-contain" priority />
+              <span className={styles.brandName} data-navigation-name="" aria-hidden="true">
+                Orange Digital Center<small>Sénégal</small>
+              </span>
+            </Link>
 
-          {/* Desktop Menu - Complètement à droite */}
-          <nav className="hidden lg:flex items-center space-x-8 xl:space-x-12 ml-auto mr-8">
-            {mainNavigationLinks.map((link) => {
-              const isActive = pathname === link.href
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors whitespace-nowrap hover:text-orange-500",
-                    isActive
-                      ? "text-orange-500 underline underline-offset-4"
-                      : "text-white"
-                  )}
-                >
-                  {link.title}
-                </Link>
-              )
-            })}
-          </nav>
+            <nav aria-label="Navigation principale" className={styles.desktopNav}>
+              <NavigationLinks pathname={pathname} />
+            </nav>
 
-          {/* Actions - Tout à droite */}
-          <div className="flex items-center space-x-3 shrink-0">
-            {/* Mobile Toggle Button */}
             <Button
+              ref={menuButtonRef}
+              type="button"
               variant="ghost"
               size="icon"
-              className="lg:hidden text-white hover:bg-gray-800"
+              className={cn(styles.menuButton, "h-11 w-11 shrink-0 text-white hover:bg-gray-800 hover:text-white")}
               onClick={toggleMenu}
+              aria-expanded={isOpen}
+              aria-controls="portal-navigation"
             >
-              {isOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               <span className="sr-only">Menu</span>
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      <div className={cn(
-        "lg:hidden bg-black border-t border-gray-800 transition-all duration-300 ease-in-out",
-        isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"
-      )}>
-        <div className="px-6 py-6 space-y-5">
-          <div className="flex flex-col space-y-4">
-            {mainNavigationLinks.map((link) => {
-              const isActive = pathname === link.href
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "block text-lg font-medium transition-all duration-200 py-2 px-3 rounded-lg",
-                    isActive
-                      ? "text-orange-500 bg-orange-500/10 underline underline-offset-4"
-                      : "text-white hover:text-orange-500 hover:bg-gray-800"
-                  )}
-                >
-                  {link.title}
-                </Link>
-              )
-            })}
+        <nav id="portal-navigation" aria-label="Navigation du portail" hidden={!isOpen} className={styles.dropdown}>
+          <div className="flex flex-col gap-2 p-4">
+            <NavigationLinks pathname={pathname} dropdown />
           </div>
-        </div>
-      </div>
-    </header>
+        </nav>
+      </header>
+    </div>
   )
 }
 

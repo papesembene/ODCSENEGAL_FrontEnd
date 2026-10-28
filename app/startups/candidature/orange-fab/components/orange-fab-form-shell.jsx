@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"

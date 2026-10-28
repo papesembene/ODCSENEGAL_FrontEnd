@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
+import PublicPageHero from "@/components/public-page-hero"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { requestCoworkingAccess } from "@/lib/public-api"
@@ -187,28 +188,8 @@ export default function CoworkingPage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative h-[400px] overflow-hidden">
-        <Image
-          src="/images/even5.jpg"
-          alt="Espace Coworking"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="container relative z-10 mx-auto flex h-full items-center px-4">
-          <div className="max-w-2xl text-white">
-            <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Espaces et Ressources</h1>
-            <p className="mt-4 text-lg sm:text-xl">
-              Accédez à nos espaces de travail et ressources pour développer votre startup dans les meilleures
-              conditions.
-            </p>
-            <div className="mt-8">
-              
-            </div>
-          </div>
-        </div>
-      </section>
+      <PublicPageHero eyebrow="Un cadre pour innover" title="Espaces et Ressources" image="/images/even5.jpg"
+        description="Accédez à nos espaces de travail et ressources pour développer votre startup dans les meilleures conditions." />
 
       {/* Spaces Section */}
       <section className="bg-white py-16 dark:bg-gray-900">

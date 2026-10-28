@@ -1,12 +1,13 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { ArrowRight, Briefcase, Lightbulb, Network, Rocket, TrendingUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import PublicPageHero from "@/components/public-page-hero"
 
 const ICONS = {
   briefcase: Briefcase,
@@ -18,27 +19,15 @@ const ICONS = {
 
 export function StartupsHeroSection() {
   return (
-    <section className="relative h-[500px] overflow-hidden">
-      <Image src="/heross.jpeg" alt="Orange Startup Studio" fill priority className="object-cover object-[center_30%]" />
-      <div className="absolute inset-0 bg-linear-to-r/srgb from-black/70 to-black/40" />
-      <div className="container relative z-10 mx-auto flex h-full items-center px-4">
-        <div className="max-w-2xl text-white">
-          <h1 className="text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">Accompagnements des startups</h1>
-          <p className="mt-6 text-lg sm:text-xl">
-            Orange Startup Studio est l&apos;initiative du Groupe Sonatel dédiée à l&apos;accompagnement des startups
-            sénégalaises, quel que soit leur stade de développement. Notre mission est de faire émerger des champions
-            nationaux et régionaux de l&apos;innovation.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-4">
+    <PublicPageHero eyebrow="Entreprendre et accélérer" title="Accompagnements des startups"
+      image="/heross.jpeg" imageClassName="object-[center_30%]"
+      description="Orange Startup Studio est l'initiative du Groupe Sonatel dédiée à l'accompagnement des startups sénégalaises, quel que soit leur stade de développement. Notre mission est de faire émerger des champions nationaux et régionaux de l'innovation.">
             <Button asChild size="lg" className="bg-orange-1 hover:bg-orange-500">
               <Link href="#programmes">
                 Découvrir les programmes <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-          </div>
-        </div>
-      </div>
-    </section>
+    </PublicPageHero>
   )
 }
 
@@ -111,10 +100,10 @@ export function StartupsTeamSection({ teamMembers }) {
         </div>
 
         <div className="mt-12">
-          <div className="relative overflow-hidden">
-            <div className="flex animate-scroll">
-              {[...teamMembers, ...teamMembers].map((member, index) => (
-                <div key={`${member.name}-${index}`} className="w-[300px] flex-none px-4">
+          <div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {teamMembers.map((member) => (
+                <div key={member.name} className="min-w-0">
                   <Card className="h-full overflow-hidden">
                     <CardContent className="p-6">
                       <div className="flex flex-col items-center text-center">

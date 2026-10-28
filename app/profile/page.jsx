@@ -7,7 +7,7 @@ import { FiEdit, FiUpload, FiCheck, FiUser, FiBriefcase, FiBook, FiAward } from 
 import { motion } from 'framer-motion'
 import ProfileHeader from '@/components/ProfileHeader'
 import FileUploadModal from '@/components/FileUploadModal'
-import Link from 'next/link'
+import Link from '@/components/ui/interactive-link'
 
 const ProfilePage = () => {
   const { user, isAuthenticated, updateProfile, fetchFullProfile, API_URL } = useAuth()

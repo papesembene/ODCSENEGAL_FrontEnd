@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { ArrowRight, Settings, ShieldCheck, UserCog, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, Users, Rocket, Lightbulb, Globe, Award, BookOpen } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import AnimatedSection from "@/components/AnimatedSection"
+import PublicPageHero from "@/components/public-page-hero"
 
 const stats = [
   { value: "10,000+", label: "Jeunes formés" },
@@ -39,23 +40,8 @@ export default function AboutPage() {
   return (
     <div className="bg-white dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="relative py-20">
-        <div className="absolute inset-0 bg-linear-to-r/srgb from-orange-500 to-orange-600 opacity-10 dark:opacity-20"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <AnimatedSection>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-                Transformer le numérique au Sénégal
-              </h1>
-            </AnimatedSection>
-            <AnimatedSection delay={0.2}>
-              <p className="mt-6 text-xl text-gray-600 dark:text-gray-300">
-                Orange Digital Center est le hub d'innovation qui forme aux métiers du numérique, accompagne les startups et connecte les talents.
-              </p>
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
+      <PublicPageHero eyebrow="Orange Digital Center Sénégal" title="Transformer le numérique au Sénégal"
+        description="Orange Digital Center est le hub d'innovation qui forme aux métiers du numérique, accompagne les startups et connecte les talents." />
 
       {/* Mission Section */}
       <section className="py-16 bg-gray-50 dark:bg-gray-800">

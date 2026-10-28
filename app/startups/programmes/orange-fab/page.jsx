@@ -1,9 +1,9 @@
 "use client"
 
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
+import PublicPageHero from "@/components/public-page-hero"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowRight, Building2, Users2, Target, Globe, Network, Laptop, Clock, Briefcase, Rocket, Map, Award } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
@@ -134,26 +134,14 @@ export default function OrangeFabPage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative h-[500px] overflow-hidden">
-        <Image src="/images/orangefab.webp" alt="Orange Fab" fill className="object-cover" />
-        <div className="absolute inset-0 bg-linear-to-r/srgb from-black/70 to-black/50" />
-        <div className="container relative z-10 mx-auto flex h-full items-center px-4">
-          <div className="max-w-2xl text-white">
-            <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Orange Fab</h1>
-            <p className="mt-6 text-lg sm:text-xl">
-              L'un des premiers réseaux d'accélérateurs corporate au monde. Notre objectif est de permettre la cross acceleration 
-              et l'internationalisation des start-up que nous accompagnons, présents dans 21 pays sur 3 continents.
-            </p>
-            <div className="mt-8">
+      <PublicPageHero eyebrow="Accélération et croissance" title="Orange Fab" image="/images/orangefab.webp"
+        description="L'un des premiers réseaux d'accélérateurs corporate au monde. Notre objectif est de permettre la cross acceleration et l'internationalisation des start-up que nous accompagnons, présents dans 21 pays sur 3 continents.">
               <Button asChild size="lg" className="bg-orange-1 hover:bg-orange-600">
                 <Link href="/candidatures/fermees">
                   Rejoignez-nous <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      </PublicPageHero>
 
       {/* Program Details Section */}
     <section className="py-16 bg-white dark:bg-gray-900">
@@ -186,7 +174,7 @@ export default function OrangeFabPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-8">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-8">
                 <div className="flex items-center space-x-2">
                   <Clock className="h-5 w-5 text-orange-1" />
                   <span>6 mois d'accompagnement</span>
@@ -239,13 +227,13 @@ export default function OrangeFabPage() {
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {benefits.map((benefit, index) => (
-              <Card key={index} className="transform transition-all hover:scale-105">
+              <Card key={index}>
                 <CardHeader>
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl w-fit group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30 transition-colors duration-300">
+                    <div className="shrink-0 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl w-fit">
                       {benefit.icon}
                     </div>
-                    <CardTitle>{benefit.title}</CardTitle>
+                    <CardTitle className="min-w-0">{benefit.title}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -268,16 +256,13 @@ export default function OrangeFabPage() {
               Bénéficiez de notre réseau international et accédez à de nouvelles opportunités business.
             </p>
             <div className="mt-8">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
+              <div>
                 <Button asChild size="lg" variant="secondary" className="bg-[#0F172A] text-[#F1F5F9] hover:bg-[#0F172A] hover:text-[#F1F5F9] transition-colors duration-300">
                   <Link href="/candidatures/fermees">
-                    Postuler maintenant <ArrowRight className="ml-2 h-5 w-5 animate-pulse" />
+                    Postuler maintenant <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { useDropzone } from "react-dropzone"
 import { ArrowRight, Calendar, Check, ChevronLeft, ChevronRight, Clock, Filter, Loader2, MapPin, Upload, Users, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"

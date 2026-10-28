@@ -3,7 +3,7 @@
  
 import React from "react"
 import Marquee from "react-fast-marquee"
-import Link from "next/link"
+import Link from "@/components/ui/interactive-link"
 import { ArrowRight, Zap } from "lucide-react"
  
 interface NewsItem {
