@@ -56,8 +56,8 @@ export function getActivityStyles(type) {
 export function buildGlobalStatCards(globalStats, moduleStats) {
   return [
     {
-      title: "Total Candidatures",
-      value: globalStats.totalCandidatures,
+      title: `Candidatures ${globalStats.campaignYear || new Date().getFullYear()}`,
+      value: globalStats.candidaturesCompetences,
       icon: Users,
       iconClassName: "text-muted-foreground",
       footer: {
@@ -67,8 +67,8 @@ export function buildGlobalStatCards(globalStats, moduleStats) {
       },
     },
     {
-      title: "Compétences",
-      value: globalStats.candidaturesCompetences,
+      title: "Startups",
+      value: globalStats.candidaturesStartups,
       icon: Users,
       iconClassName: "text-orange-500",
       progress: 64,
