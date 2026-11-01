@@ -10,8 +10,10 @@ function OAuthCallbackContent() {
 
   useEffect(() => {
     // Récupérer le token de l'URL
-    const token = searchParams.get('token')
+    const fragment = new URLSearchParams(window.location.hash.slice(1))
+    const token = fragment.get('token') || searchParams.get('token')
     const error = searchParams.get('error')
+    window.history.replaceState(null, '', window.location.pathname)
 
     if (token) {
       console.log("Token OAuth reçu, authentification réussie")
@@ -35,7 +37,7 @@ function OAuthCallbackContent() {
         window.opener.postMessage({ type: 'oauth-error', error }, window.location.origin)
         window.close()
       } else {
-        router.push(`/login?error=${error}`)
+        router.push(`/login?error=${encodeURIComponent(error)}`)
       }
     }
   }, [router, searchParams])

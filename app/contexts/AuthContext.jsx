@@ -129,7 +129,7 @@ const fetchFullProfile = async (token) => {
 useEffect(() => {
   const handleMessage = (event) => {
     // Vérification cruciale de l'origine
-    if (event.origin !== window.location.origin) {
+    if (event.origin !== window.location.origin || event.source !== popup || !event.data || typeof event.data !== 'object') {
       console.warn('Message reçu depuis une origine non autorisée:', event.origin)
       return
     }

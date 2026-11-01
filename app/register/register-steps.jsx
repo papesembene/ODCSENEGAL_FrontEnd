@@ -439,7 +439,7 @@ export function ProfileStep({ formData, formErrors, onFieldChange, onFileChange 
         <FileUploadField
           label="Logo"
           file={formData.logo}
-          accept=".png,.jpg,.jpeg,.svg"
+          accept=".png,.jpg,.jpeg,.gif"
           acceptText="Formats acceptés: PNG, JPG, SVG. Max 2MB."
           onFileChange={(file) => onFileChange("logo", file)}
         />

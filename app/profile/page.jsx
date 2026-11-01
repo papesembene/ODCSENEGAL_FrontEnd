@@ -7,6 +7,7 @@ import { FiEdit, FiUpload, FiCheck, FiUser, FiBriefcase, FiBook, FiAward } from 
 import { motion } from 'framer-motion'
 import ProfileHeader from '@/components/ProfileHeader'
 import FileUploadModal from '@/components/FileUploadModal'
+import { downloadPrivateDocument } from '@/lib/private-documents'
 import Link from '@/components/ui/interactive-link'
 
 const ProfilePage = () => {
@@ -457,9 +458,16 @@ const TabButton = ({ children, active, onClick, icon }) => (
 )
 
 const DocumentCard = ({ title, fileData, onUpload, apiUrl }) => {
-  const fileUrl = fileData?.path 
-    ? `${apiUrl}/${fileData.path.startsWith('uploads/') ? fileData.path : 'uploads/' + fileData.path}`
-    : null
+  const { token } = useAuth()
+  const [downloadError, setDownloadError] = useState('')
+  const download = async () => {
+    setDownloadError('')
+    try {
+      await downloadPrivateDocument({ apiUrl, path: fileData.path, filename: fileData.filename, token })
+    } catch (error) {
+      setDownloadError(error.message)
+    }
+  }
 
   return (
     <div className="border border-gray-200 rounded-lg p-4">
@@ -467,17 +475,17 @@ const DocumentCard = ({ title, fileData, onUpload, apiUrl }) => {
         <div>
           <h4 className="font-medium">{title}</h4>
           {fileData ? (
-            <a 
-              href={fileUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={download}
               className="text-orange-600 hover:underline text-sm"
             >
               {fileData.filename} ({Math.round(fileData.size / 1024)} KB)
-            </a>
+            </button>
           ) : (
             <p className="text-sm text-gray-500">Aucun document</p>
           )}
+          {downloadError && <p role="alert" className="text-red-600 text-sm">{downloadError}</p>}
         </div>
         <button
           onClick={onUpload}
