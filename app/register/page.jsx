@@ -58,7 +58,6 @@ export default function RegisterPage() {
                   formData={registerForm.formData}
                   errors={registerForm.errors}
                   onFieldChange={registerForm.updateField}
-                  onOAuthRegister={registerForm.handleOAuthRegister}
                   isDisabled={registerForm.isLoading || registerForm.success || registerForm.authLoading}
                 />
               ) : null}

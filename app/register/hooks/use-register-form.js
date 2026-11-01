@@ -20,7 +20,7 @@ function buildApiUrl(path) {
 
 export default function useRegisterForm() {
   const router = useRouter()
-  const { loginWithGoogle, loginWithLinkedIn, isLoading: authLoading, error: authError } = useAuth()
+  const { isLoading: authLoading, error: authError } = useAuth()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -82,24 +82,6 @@ export default function useRegisterForm() {
     window.scrollTo(0, 0)
   }, [])
 
-  const handleOAuthRegister = useCallback(
-    async (provider) => {
-      try {
-        if (provider === "google") {
-          await loginWithGoogle()
-          return
-        }
-
-        if (provider === "linkedin") {
-          await loginWithLinkedIn()
-        }
-      } catch (oauthError) {
-        setError(oauthError?.message || `Erreur d'inscription avec ${provider}`)
-      }
-    },
-    [loginWithGoogle, loginWithLinkedIn],
-  )
-
   const handleSubmit = useCallback(
     async (event) => {
       event.preventDefault()
@@ -156,6 +138,5 @@ export default function useRegisterForm() {
     goNext,
     goPrevious,
     handleSubmit,
-    handleOAuthRegister,
   }
 }

@@ -22,7 +22,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import type * as z from "zod"
+import { jobApplicationSchema as formSchema } from "@/lib/job-offer-validation"
 import {
   ArrowLeft,
   Briefcase,
@@ -84,15 +85,6 @@ const offreEmploi = {
 }
 
 // Schéma de validation pour le formulaire de candidature
-const formSchema = z.object({
-  nom: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères" }),
-  prenom: z.string().min(2, { message: "Le prénom doit contenir au moins 2 caractères" }),
-  email: z.string().email({ message: "Veuillez entrer une adresse email valide" }),
-  telephone: z.string().min(8, { message: "Veuillez entrer un numéro de téléphone valide" }),
-  message: z.string().min(10, { message: "Votre message doit contenir au moins 10 caractères" }),
-  cv: z.string().min(1, { message: "Veuillez joindre votre CV" }),
-})
-
 type OffreEmploiDetailPageProps = {
   params: Promise<{
     id: string

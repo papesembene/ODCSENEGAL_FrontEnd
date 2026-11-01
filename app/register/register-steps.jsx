@@ -2,7 +2,6 @@
 
 import Link from "@/components/ui/interactive-link"
 import { AlertCircle, ArrowLeft, ArrowRight, Check, Loader2, Upload } from "lucide-react"
-import { GoogleIcon, LinkedInIcon } from "./register-icons"
 import {
   EDUCATION_LEVEL_OPTIONS,
   MATURITY_STAGE_OPTIONS,
@@ -193,7 +192,7 @@ export function RegisterFeedback({ error, success }) {
   )
 }
 
-export function AccountStep({ formData, errors, onFieldChange, onOAuthRegister, isDisabled }) {
+export function AccountStep({ formData, errors, onFieldChange, isDisabled }) {
   return (
     <div className="space-y-5">
       <TextField
@@ -262,35 +261,6 @@ export function AccountStep({ formData, errors, onFieldChange, onOAuthRegister, 
       </div>
       {errors.acceptTerms ? <p className="text-sm text-red-500">{errors.acceptTerms}</p> : null}
 
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-gray-500">Ou s&apos;inscrire avec</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <button
-          type="button"
-          onClick={() => onOAuthRegister("google")}
-          disabled={isDisabled}
-          className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-800 transition-colors hover:bg-gray-50 disabled:opacity-50"
-        >
-          <GoogleIcon />
-          Google
-        </button>
-        <button
-          type="button"
-          onClick={() => onOAuthRegister("linkedin")}
-          disabled={isDisabled}
-          className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-800 transition-colors hover:bg-gray-50 disabled:opacity-50"
-        >
-          <LinkedInIcon />
-          LinkedIn
-        </button>
-      </div>
     </div>
   )
 }

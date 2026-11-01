@@ -13,27 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import type * as z from "zod"
+import { jobOfferSchema as formSchema } from "@/lib/job-offer-validation"
 import { ArrowLeft, Check, Plus, Trash2 } from "lucide-react"
 
 // Schéma de validation pour le formulaire
-const formSchema = z.object({
-  titre: z.string().min(5, { message: "Le titre doit contenir au moins 5 caractères" }),
-  entreprise: z.string().min(2, { message: "Le nom de l'entreprise est requis" }),
-  categorie: z.string().min(1, { message: "Veuillez sélectionner une catégorie" }),
-  type: z.string().min(1, { message: "Veuillez sélectionner un type de contrat" }),
-  lieu: z.string().min(2, { message: "Le lieu est requis" }),
-  description: z.string().min(20, { message: "La description doit contenir au moins 20 caractères" }),
-  competences: z.array(z.string()).min(1, { message: "Ajoutez au moins une compétence requise" }),
-  responsabilites: z.array(z.string()).min(1, { message: "Ajoutez au moins une responsabilité" }),
-  profil: z.array(z.string()).min(1, { message: "Ajoutez au moins un critère de profil" }),
-  avantages: z.array(z.string()),
-  salaire: z.string().optional(),
-  dateLimite: z.date({ required_error: "La date limite est requise" }),
-  processRecrutement: z.array(z.string()).min(1, { message: "Ajoutez au moins une étape du processus" }),
-  conditions: z.boolean().refine((val) => val === true, { message: "Vous devez accepter les conditions" }),
-})
-
+// Validation shared with the resolver regression tests.
 // Types de contrat disponibles
 const typesContrat = ["CDI", "CDD", "Stage", "Freelance", "Alternance", "Temps partiel"]
 

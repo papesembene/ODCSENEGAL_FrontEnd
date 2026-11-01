@@ -124,27 +124,6 @@ const fetchFullProfile = async (token) => {
       throw error
     }
   }
-// Dans votre AuthContext
-// Dans votre AuthContext, ajoutez ce useEffect
-useEffect(() => {
-  const handleMessage = (event) => {
-    // Vérification cruciale de l'origine
-    if (event.origin !== window.location.origin || event.source !== popup || !event.data || typeof event.data !== 'object') {
-      console.warn('Message reçu depuis une origine non autorisée:', event.origin)
-      return
-    }
-
-    if (event.data.type === 'oauth-success') {
-      console.log('Connexion OAuth réussie', event.data)
-      localStorage.setItem('auth_token', event.data.token)
-      // Forcez un rechargement si nécessaire
-      window.location.href = '/connect'
-    }
-  }
-
-  window.addEventListener('message', handleMessage)
-  return () => window.removeEventListener('message', handleMessage)
-}, [])
   const register = async (formData) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
 
@@ -220,72 +199,6 @@ useEffect(() => {
       throw error
     }
   }
-  // Modification de la fonction handleOAuth dans AuthContext.jsx
-// Ajoutez cette fonction à votre AuthContext.jsx
-const handleOAuth = (provider) => {
-  const width = 600, height = 600;
-  const left = (window.innerWidth - width) / 2;
-  const top = (window.innerHeight - height) / 2;
-
-  setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-
-  // Ouvrir la fenêtre popup
-  const popup = window.open(
-    `${API_URL}/api/auth/${provider}/authorize`,
-    'oauthPopup',
-    `width=${width},height=${height},top=${top},left=${left}`
-  );
-
-  // Fonction pour vérifier si la popup est fermée
-  const checkPopup = setInterval(() => {
-    if (!popup || popup.closed) {
-      clearInterval(checkPopup);
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-    }
-  }, 1000);
-
-  // Écouter les messages du popup
-  const messageHandler = (event) => {
-    // Vérification cruciale de l'origine
-    if (event.origin !== window.location.origin) {
-      console.warn('Message reçu depuis une origine non autorisée:', event.origin);
-      return;
-    }
-
-    if (event.data.type === 'oauth-success') {
-      clearInterval(checkPopup);
-
-      const { token } = event.data;
-      localStorage.setItem("auth_token", token);
-
-      fetchFullProfile(token).then(user => {
-        setAuthState({
-          user,
-          token,
-          isLoading: false,
-          error: null
-        });
-
-        // Rediriger vers le dashboard après connexion réussie
-        window.location.href = '/connect';
-      });
-    } else if (event.data.type === 'oauth-error') {
-      clearInterval(checkPopup);
-
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: event.data.error || "Échec de l'authentification"
-      }));
-    }
-  };
-
-  window.addEventListener('message', messageHandler);
-  return () => {
-    clearInterval(checkPopup);
-    window.removeEventListener('message', messageHandler);
-  };
-};
   const logout = () => {
     localStorage.removeItem("auth_token")
     setAuthState({
@@ -304,8 +217,6 @@ const handleOAuth = (provider) => {
     fetchFullProfile,
     register,
     updateProfile,
-    loginWithGoogle: () => handleOAuth("google"),
-    loginWithLinkedIn: () => handleOAuth("linkedin"),
     logout
   }
 
