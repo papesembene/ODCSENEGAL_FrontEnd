@@ -44,7 +44,7 @@ export default function OdcCandidatureForm() {
   const [idType, setIdType] = useState("") // "cni" ou "passport"
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submissionReceipt, setSubmissionReceipt] = useState(null)
   const [submitError, setSubmitError] = useState("")
   const [emailExists, setEmailExists] = useState(false)
   const [idNumberExists, setIdNumberExists] = useState(false)
@@ -393,9 +393,13 @@ export default function OdcCandidatureForm() {
 
       //console.log("Tentative de connexion à:", "/api/candidatures/apply")
 
-      await submitOdcCandidature(candidatureData)
+      const result = await submitOdcCandidature(candidatureData)
 
-      setIsSubmitted(true)
+      setSubmissionReceipt({
+        number: typeof result?.candidature_id === "string" ? result.candidature_id : "",
+        formation: formations.find((formation) => formation.id === formData.formation)?.name || formData.formation,
+      })
+      window.scrollTo({ top: 0, behavior: "smooth" })
 
       // Réinitialiser le formulaire
       setFormData({
@@ -427,13 +431,18 @@ export default function OdcCandidatureForm() {
     }
   }
 
-  if (isSubmitted) {
+  if (submissionReceipt) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <PublicFormSuccessState
           className=""
+          title="Votre candidature a bien été enregistrée !"
           descriptions={[
-            "Merci pour votre candidature. Nous l'examinerons dans les plus brefs délais et vous contacterons pour la suite du processus.",
+            `Formation : ${submissionReceipt.formation}`,
+            ...(submissionReceipt.number ? [`Numéro de candidature : ${submissionReceipt.number}`] : []),
+            "Votre inscription est confirmée, même si vous ne recevez pas l’email de confirmation.",
+            "Conservez cette confirmation en faisant une capture d’écran avant de quitter cette page.",
+            "L’enregistrement de votre candidature ne signifie pas encore votre admission à la formation.",
           ]}
           actionHref="/competences"
           actionLabel="Retour à la page des compétences"
