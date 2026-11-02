@@ -1,8 +1,7 @@
+import { findTraining } from "../../../lib/training-catalog.js"
+
 export function getMonthsForFormation(formation) {
-  if (formation === "cyber-security") return 3
-  if (formation === "intelligence-artificielle") return 4
-  if (["hackeuses", "aws-cloud"].includes(formation)) return 4
-  return 10
+  return findTraining(formation)?.durationMonths || 10
 }
 
 export function validateName(value) {

@@ -1,4 +1,4 @@
-import { FORMATION_OPTIONS } from "./constants.js"
+import { findTraining, trainingToken } from "../../../../lib/training-catalog.js"
 
 export const createInitialGroup = () => ({
   name: "",
@@ -340,31 +340,7 @@ export const getTestUrl = (testId) => {
 }
 
 export const normalizeFormationName = (name) => {
-  if (!name) return ""
-
-  const normalizedName = normalizeFormationToken(name)
-  const formation = FORMATION_OPTIONS.find((option) => {
-    const values = [option.value, option.label, ...(option.aliases || [])]
-    return values.some((value) => normalizeFormationToken(value) === normalizedName)
-  })
-
-  if (formation) return formation.value
-  if (normalizedName.includes("dev") && (normalizedName.includes("web") || normalizedName.includes("mobile"))) return "Dev Web"
-  if (normalizedName.includes("data")) return "Data"
-  if (normalizedName.includes("hack")) return "Hackeuse"
-  if (normalizedName.includes("aws") || normalizedName.includes("cloud")) return "AWS"
-  if (normalizedName.includes("referent") || normalizedName.includes("digital")) return "Référent Digital"
-  if (normalizedName.includes("cyber")) return "Cyber security"
-  if (normalizedName.includes("intel") || normalizedName === "ia") return "Intelligence Artificielle"
-
-  return name
+  return findTraining(name)?.value || name || ""
 }
 
-export const normalizeFormationToken = (name) =>
-  String(name || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase()
+export const normalizeFormationToken = trainingToken

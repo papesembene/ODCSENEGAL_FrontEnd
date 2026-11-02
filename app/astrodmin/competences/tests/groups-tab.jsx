@@ -1,3 +1,4 @@
+import TrainingName from "@/components/trainings/training-name"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -6,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Users, Eye, Mail, Trash } from "lucide-react"
 import { GroupStatusBadge, PageSizeSelector, PaginationControls } from "./test-components"
-import { FORMATION_OPTIONS } from "./constants"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import { trainingOptions } from "@/lib/training-catalog"
 import { normalizeFormationName } from "./helpers"
 
 export function GroupsTab({
@@ -22,6 +24,8 @@ export function GroupsTab({
   handleOpenInvitationDialog,
   handleDeleteGroupClick,
 }) {
+  const catalog = useTrainingCatalog()
+  const formationOptions = trainingOptions(catalog.items, "value", true)
   const filteredGroups = testGroups.filter((group) => 
     groupFormationFilter === "all" || normalizeFormationName(group.formation) === groupFormationFilter
   )
@@ -49,7 +53,7 @@ export function GroupsTab({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les formations</SelectItem>
-                {FORMATION_OPTIONS.map((formation) => (
+                {formationOptions.map((formation) => (
                   <SelectItem key={formation.value} value={formation.value}>
                     {formation.label}
                   </SelectItem>
@@ -95,7 +99,7 @@ export function GroupsTab({
                     <TableRow key={group.id}>
                       <TableCell className="font-medium">{group.name}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{group.formation}</Badge>
+                        <Badge variant="outline"><TrainingName value={group.formation} /></Badge>
                       </TableCell>
                       <TableCell>
                         {new Date(group.test_date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}

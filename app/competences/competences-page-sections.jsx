@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import CandidatureButton from "@/components/candidatures/candidature-button"
+import PublicTrainingCatalog from "@/components/trainings/public-training-catalog"
 import { useCandidatureStatus } from "@/components/candidatures/candidature-status-provider"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -122,19 +123,15 @@ export function CodeSchoolSection({ benefits }) {
 
 export function CompetencesFormationsSection({ formations, onFormationClick }) {
   return (
-    <section className="bg-white py-16 dark:bg-gray-900">
+    <section id="formations" aria-labelledby="formations-title" className="bg-white py-16 dark:bg-gray-900">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-black dark:text-white sm:text-4xl">Nos Formations</h2>
+          <h2 id="formations-title" className="text-3xl font-bold tracking-tight text-black dark:text-white sm:text-4xl">Nos Formations</h2>
           <p className="mt-4 text-lg text-gray-800 dark:text-gray-300">
             Découvrez notre catalogue de formations dans les métiers du numérique.
           </p>
         </div>
-        <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {formations.map((formation) => (
-            <FormationCard key={formation.id} formation={formation} onClick={() => onFormationClick(formation)} />
-          ))}
-        </div>
+        <PublicTrainingCatalog items={formations} onSelect={onFormationClick} />
       </div>
     </section>
   )
@@ -239,48 +236,6 @@ function CheckListItem({ children }) {
   )
 }
 
-function FormationCard({ formation, onClick }) {
-  const FormationIcon = getFormationIcon(formation.id, "lg")
-  const CareerIcon = getCareerIcon(formation.id)
-
-  return (
-    <Card className="flex h-full flex-col overflow-hidden border-t-4 border-[#ff7900] transition-all hover:shadow-lg">
-      <CardHeader className="pb-2">
-        <div className="mb-2 flex items-center gap-4">
-          <div className="flex h-14 w-14 min-h-14 min-w-14 items-center justify-center rounded-full bg-[#ff7900] text-white shadow-md">
-            <FormationIcon className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <CardTitle className="text-2xl font-bold leading-snug text-gray-900">{formation.title}</CardTitle>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="grow">
-        <CardDescription className="mb-4 text-base">{formation.description}</CardDescription>
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center text-sm text-gray-800 dark:text-gray-400">
-            <Clock size={16} className="mr-2 text-[#ff7900]" />
-            <span>{formation.duration}</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-800 dark:text-gray-400">
-            <UserCheck size={16} className="mr-2 text-[#ff7900]" />
-            <span>{formation.level}</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-800 dark:text-gray-400">
-            <CareerIcon size={16} className="mr-2 text-[#ff7900]" />
-            <span className="line-clamp-1">{formation.careers.split(",")[0]}</span>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="pb-4 pt-2">
-        <Button className="w-full bg-[#ff7900] text-white hover:bg-[#e56d00]" onClick={onClick}>
-          En savoir plus <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </CardFooter>
-    </Card>
-  )
-}
-
 function ValueChainCard({ program }) {
   const Icon = ICONS[program.icon]
 
@@ -313,28 +268,4 @@ function ValueChainCard({ program }) {
       </CardContent>
     </Card>
   )
-}
-
-function getFormationIcon(id, size = "sm") {
-  const iconMap = {
-    1: Laptop,
-    2: Globe,
-    3: Database,
-    4: Users,
-    5: Cloud,
-  }
-
-  return iconMap[id] || Laptop
-}
-
-function getCareerIcon(id) {
-  const iconMap = {
-    1: Code,
-    2: Globe,
-    3: LineChart,
-    4: Users,
-    5: ShieldCheck,
-  }
-
-  return iconMap[id] || Code
 }

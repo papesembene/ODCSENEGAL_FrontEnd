@@ -1,4 +1,5 @@
 export default function OdcAvailabilitySection({
+  durationMonths,
   formData,
   errors,
   touchedFields,
@@ -113,7 +114,7 @@ export default function OdcAvailabilitySection({
 
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:col-span-2">
           <label className="mb-2 block text-sm font-medium text-gray-700" ref={(el) => (fieldRefs.current.isAvailable = el)}>
-            Es-tu disponible pour te concentrer exclusivement à la formation pendant quelques mois ?{" "}
+            Es-tu disponible pour te concentrer exclusivement à la formation {durationMonths ? `pendant ${durationMonths} mois` : "sur toute sa durée"} ?{" "}
             <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-wrap items-center gap-4">

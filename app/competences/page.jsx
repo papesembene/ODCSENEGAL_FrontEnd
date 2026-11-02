@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import odcFormations from "@/data/odcFormations"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
 import FormationDetails from "@/components/odc/FormationDetails"
 import {
   CODE_SCHOOL_BENEFITS,
@@ -21,6 +21,8 @@ import {
 
 export default function CompetencesPage() {
   const [selectedFormation, setSelectedFormation] = useState(null)
+  const catalog = useTrainingCatalog()
+  const selected = catalog.items.find((item) => item.code === selectedFormation?.code)
 
   return (
     <div className="flex flex-col">
@@ -28,12 +30,12 @@ export default function CompetencesPage() {
       <CompetencesMissionSection missionCards={MISSION_CARDS} />
       <CompetencesImpactSection impactStats={IMPACT_STATS} />
       <CodeSchoolSection benefits={CODE_SCHOOL_BENEFITS} />
-      <CompetencesFormationsSection formations={odcFormations} onFormationClick={setSelectedFormation} />
+      <CompetencesFormationsSection formations={catalog.items} onFormationClick={setSelectedFormation} />
       <CompetencesValueChainSection programs={VALUE_CHAIN_PROGRAMS} />
       <CompetencesCtaSection />
 
-      {selectedFormation ? (
-        <FormationDetails formation={selectedFormation} onClose={() => setSelectedFormation(null)} />
+      {selected ? (
+        <FormationDetails formation={selected} onClose={() => setSelectedFormation(null)} />
       ) : null}
     </div>
   )

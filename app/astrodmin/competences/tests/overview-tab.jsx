@@ -1,3 +1,4 @@
+import TrainingName from "@/components/trainings/training-name"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -186,7 +187,7 @@ export function OverviewTab({
                 <div key={test.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{test.title}</p>
-                    <p className="text-xs text-muted-foreground">{test.referentiel}</p>
+                    <p className="text-xs text-muted-foreground"><TrainingName value={test.referentiel} /></p>
                   </div>
                   <div className="flex space-x-1 ml-2">
                     <Button variant="ghost" size="sm" onClick={() => handleCopyTestLink(test.id)} title="Copier le lien">

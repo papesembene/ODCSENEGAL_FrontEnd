@@ -1,3 +1,4 @@
+import TrainingName from "@/components/trainings/training-name"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -64,7 +65,7 @@ export function ResultDetailsDialog({
                 </div>
                 <div>
                   <span className="text-muted-foreground">Référentiel :</span>
-                  <Badge variant="outline">{selectedResult.referentiel}</Badge>
+                  <Badge variant="outline"><TrainingName value={selectedResult.referentiel} /></Badge>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Score actuel :</span>

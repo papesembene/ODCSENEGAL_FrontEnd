@@ -2,6 +2,7 @@
 import assert from "node:assert/strict"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
+import trainingDefaults from "../../data/training-defaults.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const admin = { id: "admin", email: "admin@example.org", admin_type: "super_admin", first_name: "Local", last_name: "Admin" }
@@ -44,6 +45,7 @@ try {
       "Access-Control-Allow-Credentials": "true", "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "content-type, authorization" }
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers })
+    if (url.pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults } })
     let status = 200
     let data = { success: true, data: [] }
     const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
@@ -156,7 +158,7 @@ try {
   assert.equal(resultRequests.at(-1).page, 3)
   await panel.getByRole("button", { name: "Liste", exact: true }).click()
   await panel.getByRole("combobox").first().click()
-  await page.getByRole("option", { name: "Data", exact: true }).click()
+  await page.getByRole("option", { name: trainingDefaults.find((item) => item.value === "Data").title, exact: true }).click()
   await row("Candidat 2").waitFor()
   assert.deepEqual(resultRequests.at(-1), { page: 1, per_page: 20, referentiel: "Data", search: "" })
   await panel.getByRole("combobox").last().click()
@@ -206,7 +208,7 @@ try {
   await page.getByRole("button", { name: "Cr\u00e9er un groupe", exact: true }).click()
   const createGroup = page.getByRole("dialog")
   await createGroup.getByLabel("Formation *", { exact: true }).click()
-  await page.getByRole("option", { name: "Dev Web", exact: true }).click()
+  await page.getByRole("option", { name: trainingDefaults.find((item) => item.value === "Dev Web").title, exact: true }).click()
   await createGroup.getByText("Disponible 1 Diop", { exact: true }).waitFor()
   await createGroup.getByRole("button", { name: "Suivant", exact: true }).click()
   await createGroup.getByText("Disponible 51 Diop", { exact: true }).waitFor()

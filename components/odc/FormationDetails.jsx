@@ -1,11 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { Clock, Calendar, X, Laptop, Globe, Database, Users, Cloud } from "lucide-react"
 
 const FormationDetails = ({ formation, onClose }) => {
   const {
-    id,
+    legacyId: id,
     title,
     description,
     skills,
@@ -16,29 +15,6 @@ const FormationDetails = ({ formation, onClose }) => {
     level,
     location = "Orange Digital Center, Dakar",
   } = formation
-
-  const [email, setEmail] = useState("")
-  const [emailSent, setEmailSent] = useState(false)
-
-  // Descriptions complètes reformulées pour chaque formation
-  const fullDescriptions = {
-    1: "Formation complète orientée vers la conception, le développement et la mise en ligne d'applications web et mobiles modernes. Elle couvre les langages et frameworks essentiels pour créer des produits numériques performants et responsives.",
-    2: "Former des spécialistes capables de collecter, traiter et exploiter pour l'aide à la décision.",
-    3: "Former des professionnelles capables d'accompagner les entreprises dans leur transformation numérique.",
-    4: "Former des femmes aux métiers du numérique afin qu'elles puissent au moins être assistantes pour une transformation digitale des entreprises.",
-    5: "Former et préparer les apprenants à la certification Cloud Practhioner et aux métiers de Développeur Front End et DevOps",
-    6: "Permettre à des débutants d'acquérir les compétences nécessaires pour comprendre, concevoir et déployer des solutions basées sur l'intelligence artificielle et la machine learning, de la collecte de données jusqu'à la mise en production de modèles.",
-    7: "Former des professionnelles capables de comprendre et de sécuriser des infrastructures informatiques incluant les serveurs, les réseaux et les environnements cloud. Capables de détecter et de répondre efficacement aux incidents de sécurités, de réaliser des tests d'intrusion, d'identifier et d'analyser les vulnérabilités.",
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (email) {
-      setEmailSent(true)
-      setTimeout(() => setEmailSent(false), 5000)
-      setEmail("")
-    }
-  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -89,7 +65,7 @@ const FormationDetails = ({ formation, onClose }) => {
           <div className="space-y-6">
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Description</h4>
-              <p className="text-gray-700">{fullDescriptions[id] || description}</p>
+              <p className="text-gray-700">{description}</p>
             </div>
 
             <div>

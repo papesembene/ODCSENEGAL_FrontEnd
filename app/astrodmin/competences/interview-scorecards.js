@@ -1,3 +1,5 @@
+import { DEFAULT_TRAININGS, findTraining } from "../../../lib/training-catalog.js"
+
 const DWM_FILTER_CRITERIA = [
   { key: "interviewer", label: "Nom du filtreur", type: "text", placeholder: "Ex: Awa Dione" },
   { key: "comment", label: "Commentaire filtreur", type: "textarea", placeholder: "Synthèse du premier échange..." },
@@ -68,67 +70,18 @@ const EMPTY_SCORECARD = {
   motivation: { title: "Motivation", criteria: [] },
 }
 
-export const FORMATION_LABELS = {
-  "dev-web-mobile": "Développement Web Mobile",
-  "dev-data": "Développement Data",
-  hackeuses: "Hackeuses",
-  "aws-cloud": "AWS Cloud",
-  "referent-digital": "Référent Digital",
-  "cyber-security": "Cybersécurité",
-  "intelligence-artificielle": "Intelligence Artificielle",
-}
+export const FORMATION_LABELS = Object.fromEntries(DEFAULT_TRAININGS.map((item) => [item.code, item.title]))
 
-export const INTERVIEW_SCORECARD_CONFIGS = {
-  "dev-web-mobile": {
-    formation: "dev-web-mobile",
-    formationLabel: FORMATION_LABELS["dev-web-mobile"],
-    source: "excel",
-    sourceLabel: "Grille alignée sur le fichier Excel de ce référentiel",
-    scorecard: DWM_EXCEL_SCORECARD,
-  },
-  "dev-data": {
-    formation: "dev-data",
-    formationLabel: FORMATION_LABELS["dev-data"],
-    source: "unconfigured",
-    sourceLabel: "Aucune grille configurée pour ce référentiel",
-    scorecard: EMPTY_SCORECARD,
-  },
-  hackeuses: {
-    formation: "hackeuses",
-    formationLabel: FORMATION_LABELS.hackeuses,
-    source: "unconfigured",
-    sourceLabel: "Aucune grille configurée pour ce référentiel",
-    scorecard: EMPTY_SCORECARD,
-  },
-  "aws-cloud": {
-    formation: "aws-cloud",
-    formationLabel: FORMATION_LABELS["aws-cloud"],
-    source: "unconfigured",
-    sourceLabel: "Aucune grille configurée pour ce référentiel",
-    scorecard: EMPTY_SCORECARD,
-  },
-  "referent-digital": {
-    formation: "referent-digital",
-    formationLabel: FORMATION_LABELS["referent-digital"],
-    source: "unconfigured",
-    sourceLabel: "Aucune grille configurée pour ce référentiel",
-    scorecard: EMPTY_SCORECARD,
-  },
-  "cyber-security": {
-    formation: "cyber-security",
-    formationLabel: FORMATION_LABELS["cyber-security"],
-    source: "unconfigured",
-    sourceLabel: "Aucune grille configurée pour ce référentiel",
-    scorecard: EMPTY_SCORECARD,
-  },
-  "intelligence-artificielle": {
-    formation: "intelligence-artificielle",
-    formationLabel: FORMATION_LABELS["intelligence-artificielle"],
-    source: "unconfigured",
-    sourceLabel: "Aucune grille configurée pour ce référentiel",
-    scorecard: EMPTY_SCORECARD,
-  },
-}
+export const INTERVIEW_SCORECARD_CONFIGS = Object.fromEntries(DEFAULT_TRAININGS.map((training) => {
+  const fromExcel = training.code === "dev-web-mobile"
+  return [training.code, {
+    formation: training.code,
+    formationLabel: training.title,
+    source: fromExcel ? "excel" : "unconfigured",
+    sourceLabel: fromExcel ? "Grille alignée sur le fichier Excel de ce référentiel" : "Aucune grille configurée pour ce référentiel",
+    scorecard: fromExcel ? DWM_EXCEL_SCORECARD : EMPTY_SCORECARD,
+  }]
+}))
 
 export const DEFAULT_INTERVIEW_SCORECARD_CONFIG = {
   formation: "",
@@ -145,7 +98,7 @@ function normalizeCampaignScorecard(formation, campaignScorecard) {
 
   return {
     formation,
-    formationLabel: FORMATION_LABELS[formation] || formation || "Référentiel inconnu",
+    formationLabel: findTraining(formation)?.title || formation || "Référentiel inconnu",
     source: campaignScorecard.source || "custom",
     sourceLabel: campaignScorecard.source_label || "Grille personnalisée",
     scorecard: campaignScorecard.sections,
@@ -153,11 +106,9 @@ function normalizeCampaignScorecard(formation, campaignScorecard) {
 }
 
 export function getInterviewScorecardConfig(formation, campaignScorecard) {
-  return (
-    normalizeCampaignScorecard(formation, campaignScorecard)
-    || INTERVIEW_SCORECARD_CONFIGS[formation]
-    || DEFAULT_INTERVIEW_SCORECARD_CONFIG
-  )
+  const config = normalizeCampaignScorecard(formation, campaignScorecard)
+    || INTERVIEW_SCORECARD_CONFIGS[formation] || DEFAULT_INTERVIEW_SCORECARD_CONFIG
+  return { ...config, formation, formationLabel: findTraining(formation)?.title || config.formationLabel }
 }
 
 export function getInterviewScorecard(formation, campaignScorecard) {

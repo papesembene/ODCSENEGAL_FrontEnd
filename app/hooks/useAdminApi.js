@@ -252,6 +252,17 @@ export const useAdminApi = () => {
       }),
   }), [makeRequest])
 
+  const trainings = useMemo(() => ({
+    create: (payload) => makeRequest("/api/admin/trainings", { method: "POST", body: JSON.stringify(payload) }),
+    update: (code, payload) => makeRequest(`/api/admin/trainings/${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    archive: (code, version) => makeRequest(`/api/admin/trainings/${encodeURIComponent(code)}`, { method: "DELETE", body: JSON.stringify({ version }) }),
+    uploadImage: (file) => {
+      const body = new FormData()
+      body.append("image", file)
+      return makeRequest("/api/admin/trainings/media", { method: "POST", body })
+    },
+  }), [makeRequest])
+
   return {
     makeRequest,
     candidatures,
@@ -260,5 +271,6 @@ export const useAdminApi = () => {
     juryMembers,
     portalContent,
     adminProfiles,
+    trainings,
   }
 }

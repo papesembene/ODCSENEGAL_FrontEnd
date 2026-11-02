@@ -2,6 +2,7 @@
 import assert from "node:assert/strict"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
+import trainingDefaults from "../../data/training-defaults.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const admin = { id: "admin", email: "admin@example.org", admin_type: "super_admin" }
@@ -39,6 +40,7 @@ try {
     const headers = { "Access-Control-Allow-Origin": new URL(baseUrl).origin, "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Headers": "content-type, authorization", "Access-Control-Allow-Methods": "GET, PATCH, OPTIONS" }
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers })
+    if (url.pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults } })
     let data = { success: true, data: [] }
     const search = normalize(url.searchParams.get("search") || "").trim()
     const filtered = candidates.filter((candidate) => search.split(/\s+/).every((term) =>

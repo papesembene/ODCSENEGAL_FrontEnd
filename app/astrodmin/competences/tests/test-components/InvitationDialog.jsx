@@ -1,3 +1,4 @@
+import TrainingName from "@/components/trainings/training-name"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -62,7 +63,7 @@ export function InvitationDialog({
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Formation :</span>
-                <span className="ml-2 font-medium">{selectedGroupForInvitation?.formation}</span>
+                <span className="ml-2 font-medium"><TrainingName value={selectedGroupForInvitation?.formation} /></span>
               </div>
               <div>
                 <span className="text-muted-foreground">Candidats :</span>
@@ -87,7 +88,7 @@ export function InvitationDialog({
                 ) : (
                   testsData.map((test) => (
                     <SelectItem key={test.id} value={test.id}>
-                      {test.title} ({test.referentiel}) - {test.scheduledDate ? `📅 ${test.scheduledDate}` : ""}{" "}
+                      {test.title} (<TrainingName value={test.referentiel} />) - {test.scheduledDate ? `📅 ${test.scheduledDate}` : ""}{" "}
                       {test.scheduledTime ? `🕐 ${test.scheduledTime}` : ""} - {test.duration} min
                     </SelectItem>
                   ))

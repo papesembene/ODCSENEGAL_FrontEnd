@@ -1,5 +1,7 @@
 "use client"
 
+import TrainingName from "@/components/trainings/training-name"
+
 import { Download, FileText, Mail, Phone, UserCheck, UserX, X } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -43,7 +45,7 @@ export default function CompetencesCandidateDetailsModal({
                   <h3 className="text-xl font-semibold">
                     {candidate.first_name} {candidate.last_name}
                   </h3>
-                  <p className="text-sm text-muted-foreground">{candidate.desired_training}</p>
+                  <p className="text-sm text-muted-foreground"><TrainingName value={candidate.desired_training} /></p>
                   <Badge variant="outline" className={`${getStatusColor(candidate.status)} mt-2 text-white`}>
                     {getStatusLabel(candidate.status)}
                   </Badge>
@@ -154,7 +156,7 @@ export default function CompetencesCandidateDetailsModal({
                       <CardContent className="space-y-4 p-4">
                         <div>
                           <Label className="text-xs text-muted-foreground">Formation souhaitée</Label>
-                          <p className="text-sm font-medium">{candidate.desired_training}</p>
+                          <p className="text-sm font-medium"><TrainingName value={candidate.desired_training} /></p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>

@@ -3,12 +3,12 @@
 import { useCallback, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useAdminApi } from "@/app/hooks/useAdminApi"
-import odcFormations from "@/data/odcFormations"
-import { FORMATION_MAPPING } from "../dashboard-config"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
 import { calculateAge } from "../dashboard-utils"
 import useCandidateDirectory from "./use-candidate-directory"
 
 export default function useCompetencesAdminDashboard() {
+  const { items: trainings } = useTrainingCatalog()
   const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [activeTab, setActiveTab] = useState("overview")
   const [showFormationCandidatesDialog, setShowFormationCandidatesDialog] = useState(false)
@@ -78,10 +78,9 @@ export default function useCompetencesAdminDashboard() {
 
   const formationData = useMemo(
     () =>
-      odcFormations
+      trainings
         .map((formation) => {
-          const desiredTrainingValue = FORMATION_MAPPING[formation.title]
-          if (!desiredTrainingValue) return null
+          const desiredTrainingValue = formation.code
 
           return {
             id: formation.id,
@@ -95,7 +94,7 @@ export default function useCompetencesAdminDashboard() {
           }
         })
         .filter(Boolean),
-    [formationStats],
+    [formationStats, trainings],
   )
 
   const viewCandidateDetails = useCallback(async (candidate) => {

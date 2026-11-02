@@ -1,5 +1,7 @@
 "use client"
 
+import TrainingName from "@/components/trainings/training-name"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
@@ -298,7 +300,7 @@ export default function TestsManagementPage() {
           <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md">
             <h4 className="font-medium mb-2">{m.testToDelete.title}</h4>
             <div className="text-sm space-y-1">
-              <p><strong>Référentiel :</strong> {m.testToDelete.referentiel}</p>
+              <p><strong>Référentiel :</strong> <TrainingName value={m.testToDelete.referentiel} /></p>
               <p><strong>Durée :</strong> {m.testToDelete.duration} minutes</p>
             </div>
           </div>

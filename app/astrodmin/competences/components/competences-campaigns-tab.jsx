@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import TrainingName from "@/components/trainings/training-name"
+
+import { useEffect, useState } from "react"
 import { CalendarClock, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -12,8 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import odcFormations from "@/data/odcFormations"
-import { FORMATION_MAPPING } from "../dashboard-config"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
 
 const EMPTY_CAMPAIGN_FORM = {
   title: "",
@@ -56,6 +57,7 @@ function formatDateTime(value) {
 }
 
 export default function CompetencesCampaignsTab() {
+  const catalog = useTrainingCatalog()
   const { candidatures } = useAdminApi()
   const [campaigns, setCampaigns] = useState([])
   const [formData, setFormData] = useState(EMPTY_CAMPAIGN_FORM)
@@ -63,18 +65,11 @@ export default function CompetencesCampaignsTab() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const formationOptions = useMemo(
-    () => [
-      { value: "all", label: "Toutes les formations" },
-      ...odcFormations
-        .map((formation) => ({
-          value: FORMATION_MAPPING[formation.title],
-          label: formation.title,
-        }))
-        .filter((formation) => formation.value),
-    ],
-    [],
-  )
+  const formationOptions = [
+    { value: "all", label: "Toutes les formations" },
+    ...catalog.allOptions.filter((option) => option.value === formData.formation
+      || catalog.options.some((active) => active.value === option.value)),
+  ]
 
   const fetchCampaigns = async () => {
     try {
@@ -236,7 +231,7 @@ export default function CompetencesCampaignsTab() {
                     <Badge variant="outline">{STATUS_LABELS[campaign.status] || campaign.status}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {campaign.promotion || "Promotion non renseignée"} · {campaign.formation === "all" ? "Toutes les formations" : campaign.formation}
+                    {campaign.promotion || "Promotion non renseignée"} · {campaign.formation === "all" ? "Toutes les formations" : <TrainingName value={campaign.formation} />}
                   </p>
                   <p className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CalendarClock className="h-4 w-4" />

@@ -6,9 +6,11 @@ import { Textarea } from "@/components/ui/textarea"
 import CompetencesInterviewScorecardEditor from "../competences-interview-scorecard-editor"
 import InterviewFormDialog from "./interview-form-dialog"
 import { InterviewSelect } from "./interview-workspace-ui"
-import { FORMATION_OPTIONS } from "./interview-presentation"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import CatalogFeedback from "@/components/trainings/catalog-feedback"
 
 export function InterviewCampaignDialog({ interviews, open, onOpenChange, onCreated }) {
+  const catalog = useTrainingCatalog()
   const update = (field, value) => interviews.setCampaignForm((previous) => ({ ...previous, [field]: value }))
   return (
     <InterviewFormDialog open={open} onOpenChange={onOpenChange} title="Nouvelle campagne d'entretien"
@@ -23,8 +25,9 @@ export function InterviewCampaignDialog({ interviews, open, onOpenChange, onCrea
         <Input id="campaign-name" required maxLength={200} value={interviews.campaignForm.name}
           onChange={(event) => update("name", event.target.value)} placeholder="Ex. Entretiens Dev Web Mobile - Promotion 2026" />
       </div>
+      <CatalogFeedback />
       <InterviewSelect id="campaign-formation" label="Référentiel" value={interviews.campaignForm.formation}
-        onChange={(value) => update("formation", value)} options={FORMATION_OPTIONS} />
+        onChange={(value) => update("formation", value)} options={catalog.options} />
       <div className="space-y-1.5">
         <Label htmlFor="campaign-description">Description <span className="font-normal text-muted-foreground">(facultative)</span></Label>
         <Textarea id="campaign-description" value={interviews.campaignForm.description} rows={3}

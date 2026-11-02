@@ -1,3 +1,4 @@
+import TrainingName from "@/components/trainings/training-name"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -7,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { FORMATIONS } from "./constants"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import { trainingOptions } from "@/lib/training-catalog"
 import { PageSizeSelector, PaginationControls, ResultStatusBadge } from "./test-components"
 import { Upload, Download, RefreshCw, Search, List, LayoutGrid, FileText, Eye, AlertCircle, GraduationCap, UsersIcon, CheckCircle, XCircle, Clock } from "lucide-react"
 
@@ -55,6 +57,8 @@ export function ResultsTab({
   handleViewViolations,
   groupedResults,
 }) {
+  const catalog = useTrainingCatalog()
+  const formationOptions = trainingOptions(catalog.items, "value", true)
   return (
     <TabsContent value="results" className="space-y-6">
       <Card>
@@ -97,9 +101,9 @@ export function ResultsTab({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toutes les formations</SelectItem>
-                  {FORMATIONS.map((formation) => (
-                    <SelectItem key={formation} value={formation}>
-                      {formation}
+                  {formationOptions.map((formation) => (
+                    <SelectItem key={formation.value} value={formation.value}>
+                      {formation.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -266,7 +270,7 @@ export function ResultsTab({
                             <GraduationCap className="h-6 w-6 text-white" />
                           </div>
                           <div>
-                            <CardTitle className="text-xl">{formationGroup.formation}</CardTitle>
+                            <CardTitle className="text-xl"><TrainingName value={formationGroup.formation} /></CardTitle>
                             <CardDescription className="text-sm mt-1">
                               {formationGroup.totalResults} résultat{formationGroup.totalResults > 1 ? "s" : ""} •{" "}
                               {Object.keys(formationGroup.groups).length} groupe

@@ -18,6 +18,7 @@ ODC_BROWSER_START_SERVER=1 npm run test:site-motion
 ODC_BROWSER_START_SERVER=1 npm run test:candidature-access
 ODC_BROWSER_START_SERVER=1 npm run test:candidates
 ODC_BROWSER_START_SERVER=1 npm run test:admin
+ODC_BROWSER_START_SERVER=1 npm run test:trainings
 ```
 
 Dans PowerShell, definir `$env:ODC_BROWSER_START_SERVER="1"` avant les commandes.
@@ -40,6 +41,10 @@ Sans cette variable, les parcours utilisent un serveur deja lance sur
 - `admin`: chargement par onglet, recherche serveur dans les resultats et
   sessions, export filtre, selection paginee des candidats d'un groupe,
   notifications et reprise apres erreur.
+- `trainings`: ajout, modification, conflit de version, catalogue public,
+  six formations par page, recherche par nom sans accents ni casse,
+  duree du formulaire, listes tests/groupes/entretiens, archivage,
+  recherche et pagination mobile, restrictions jury, sans donnees reelles.
 - `home`: accueil responsive de 320 a 1440 pixels, premier ecran adaptable,
   campagne dynamique, carrousel manuel au clavier, menu mobile, temoignages,
   logos partenaires, bannieres du CM, texte agrandi a 200 %, theme sombre et

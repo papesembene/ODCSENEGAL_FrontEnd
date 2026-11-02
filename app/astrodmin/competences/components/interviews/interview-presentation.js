@@ -1,14 +1,5 @@
 import { AlertTriangle, Heart, Sparkles, Users } from "lucide-react"
-
-export const FORMATION_OPTIONS = [
-  { value: "dev-web-mobile", label: "Développement Web Mobile" },
-  { value: "dev-data", label: "Développement Data" },
-  { value: "hackeuses", label: "Hackeuses" },
-  { value: "aws-cloud", label: "AWS Cloud" },
-  { value: "referent-digital", label: "Référent Digital" },
-  { value: "cyber-security", label: "Cybersécurité" },
-  { value: "intelligence-artificielle", label: "Intelligence Artificielle" },
-]
+import { findTraining } from "../../../../../lib/training-catalog.js"
 
 export const FINAL_STATUS_LABELS = {
   en_attente: "En attente",
@@ -22,8 +13,7 @@ export const INTERVIEW_PROGRESS_LABELS = {
 }
 
 export function getFormationLabel(value) {
-  const aliases = { data: "dev-data", "Dev Web": "dev-web-mobile" }
-  return FORMATION_OPTIONS.find((item) => item.value === (aliases[value] || value))?.label || value || "-"
+  return findTraining(value)?.title || value || "-"
 }
 
 export function formatTestScore(score) {

@@ -3,9 +3,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import Link from "@/components/ui/interactive-link"
 
 export default function CompetencesFormationsTab({ formationData, handleManageCandidates }) {
   return (
+    <div className="space-y-4">
+      <div className="flex justify-end"><Button asChild><Link href="/astrodmin/competences/referentiels">Gérer les référentiels</Link></Button></div>
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {formationData.map((formation, index) => (
         <Card key={formation.id}>
@@ -72,6 +75,7 @@ export default function CompetencesFormationsTab({ formationData, handleManageCa
           </CardContent>
         </Card>
       ))}
+    </div>
     </div>
   )
 }

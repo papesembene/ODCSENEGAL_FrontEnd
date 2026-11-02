@@ -4,6 +4,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { toast } from "sonner"
 
 import { useAdminApi } from "@/app/hooks/useAdminApi"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
 
 function buildOptionLabel(admin) {
   const fullName = [admin.first_name, admin.last_name].filter(Boolean).join(" ").trim()
@@ -19,6 +20,7 @@ const EMPTY_EVALUATION_SUMMARY = {
 }
 
 export default function useCompetencesInterviews({ filterBySelectedCampaign = true } = {}) {
+  useTrainingCatalog()
   const { interviews } = useAdminApi()
   const [loading, setLoading] = useState(true)
   const [initialLoading, setInitialLoading] = useState(true)
@@ -55,7 +57,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   const [evaluationSummary, setEvaluationSummary] = useState(EMPTY_EVALUATION_SUMMARY)
   const [campaignForm, setCampaignForm] = useState({
     name: "",
-    formation: "dev-web-mobile",
+    formation: "",
     description: "",
     status: "draft",
   })

@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Users } from "lucide-react"
-import { FORMATION_OPTIONS } from "../constants"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import CatalogFeedback from "@/components/trainings/catalog-feedback"
 import { normalizeFormationName } from "../helpers"
 import { PaginationControls } from "./CommonComponents"
 
@@ -47,6 +48,7 @@ export function CreateGroupDialog({
   setSelectedCandidatesForGroup,
   handleCancelCreateGroup,
 }) {
+  const catalog = useTrainingCatalog()
   const [candidateSearch, setCandidateSearch] = useState("")
   const [candidatePage, setCandidatePage] = useState(1)
   const [candidatesLoading, setCandidatesLoading] = useState(false)
@@ -105,6 +107,7 @@ export function CreateGroupDialog({
           <DialogTitle>Créer un groupe de test</DialogTitle>
           <DialogDescription>Sélectionnez les candidats et définissez la date du test</DialogDescription>
         </DialogHeader>
+        <CatalogFeedback />
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -130,7 +133,7 @@ export function CreateGroupDialog({
                   <SelectValue placeholder="Sélectionner une formation" />
                 </SelectTrigger>
                 <SelectContent>
-                  {FORMATION_OPTIONS.map((formation) => (
+                  {catalog.testOptions.map((formation) => (
                     <SelectItem key={formation.value} value={formation.value}>
                       {formation.label}
                     </SelectItem>

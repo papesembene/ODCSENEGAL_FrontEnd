@@ -25,7 +25,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FORMATION_OPTIONS } from "../constants"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import { findTraining, trainingOptions } from "@/lib/training-catalog"
+import CatalogFeedback from "@/components/trainings/catalog-feedback"
 import { 
   Plus, 
   Trash, 
@@ -66,6 +68,16 @@ export function CreateTestDialog({
   handleCreateTest,
   setShowImportQuestionsDialog,
 }) {
+  const catalog = useTrainingCatalog()
+  const historicalTraining = findTraining(editingTest?.referentiel, catalog.items)
+  const selectedTraining = findTraining(newTest.referentiel, catalog.items)
+  const formationOptions = trainingOptions(catalog.items.filter((item) =>
+    item.status !== "archived" || item.code === historicalTraining?.code), "value", true)
+    .map((option) => editingTest && option.value === selectedTraining?.value
+      ? { ...option, value: newTest.referentiel } : option)
+  if (editingTest && newTest.referentiel && !selectedTraining) {
+    formationOptions.push({ value: newTest.referentiel, label: newTest.referentiel })
+  }
   const questionValidationRequirements = getQuestionValidationRequirements(currentQuestion)
   const questionValidationError = questionValidationRequirements.find((requirement) => !requirement.valid)?.message ?? null
 
@@ -77,6 +89,7 @@ export function CreateTestDialog({
           <DialogDescription>Remplissez les informations et ajoutez des questions à votre test.</DialogDescription>
         </DialogHeader>
 
+        <CatalogFeedback />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-4">
           {/* Section Informations de base */}
           <div className="space-y-6">
@@ -110,7 +123,7 @@ export function CreateTestDialog({
                         <SelectValue placeholder="Sélectionner" />
                       </SelectTrigger>
                       <SelectContent>
-                        {FORMATION_OPTIONS.map((formation) => (
+                        {formationOptions.map((formation) => (
                           <SelectItem key={formation.value} value={formation.value}>
                             {formation.label}
                           </SelectItem>

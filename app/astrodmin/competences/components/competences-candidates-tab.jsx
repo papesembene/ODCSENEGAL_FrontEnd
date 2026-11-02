@@ -1,3 +1,4 @@
+import TrainingName from "@/components/trainings/training-name"
 import { MoreHorizontal, Search } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -83,8 +84,8 @@ export default function CompetencesCandidatesTab({
               <SelectContent>
                 <SelectItem value="all">Toutes les formations</SelectItem>
                 {formationData.map((formation) => (
-                  <SelectItem key={formation.id} value={formation.shortName}>
-                    {formation.shortName}
+                  <SelectItem key={formation.id} value={formation.name}>
+                    {formation.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -156,7 +157,7 @@ export default function CompetencesCandidatesTab({
                     </TableCell>
                     <TableCell>{candidate.email}</TableCell>
                     <TableCell>{getGenderLabel(candidate.gender)}</TableCell>
-                    <TableCell>{candidate.desired_training}</TableCell>
+                    <TableCell><TrainingName value={candidate.desired_training} /></TableCell>
                     <TableCell>{candidate.application_date ? new Date(candidate.application_date).toLocaleDateString("fr-FR") : "N/A"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`${getStatusColor(candidate.status)} text-white`}>

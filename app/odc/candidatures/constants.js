@@ -1,3 +1,5 @@
+import { DEFAULT_TRAININGS } from "../../../lib/training-catalog.js"
+
 export const countryCodes = [
   { country: "Sénégal", abbr: "SN", code: "+221", format: "XX XXX XX XX", digits: 9, pattern: /^[7-9]\d{8}$/ },
   { country: "Maroc", abbr: "MA", code: "+212", format: "XX XXX XXXX", digits: 9, pattern: /^[5-9]\d{8}$/ },
@@ -50,15 +52,7 @@ export const countryCodes = [
   { country: "Nouvelle-Zélande", abbr: "NZ", code: "+64", format: "XX XXX XXXX", digits: 9, pattern: /^[2]\d{8}$/ },
 ]
 
-export const formations = [
-  { id: "dev-web-mobile", name: "Développement Web & Mobile" },
-  { id: "referent-digital", name: "Référent Digital" },
-  { id: "dev-data", name: "Développeur Data" },
-  { id: "hackeuses", name: "Hackeuses (100% femmes)", femaleOnly: true },
-  { id: "aws-cloud", name: "AWS (Cloud Computing)" },
-  { id: "cyber-security", name: "Cyber security" },
-  { id: "intelligence-artificielle", name: "Intelligence Artificielle" },
-]
+export const formations = DEFAULT_TRAININGS.map((item) => ({ id: item.code, name: item.title, femaleOnly: item.femaleOnly }))
 
 export const regions = [
   "Dakar",

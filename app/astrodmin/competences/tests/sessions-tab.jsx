@@ -1,3 +1,4 @@
+import TrainingName from "@/components/trainings/training-name"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -218,7 +219,7 @@ export function SessionsTab({
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">{session.testTitle}</div>
-                        <div className="text-xs text-muted-foreground">{session.referentiel || "-"}</div>
+                        <div className="text-xs text-muted-foreground"><TrainingName value={session.referentiel} /></div>
                       </TableCell>
                       <TableCell>
                         <SessionStatusBadge status={session.status} />

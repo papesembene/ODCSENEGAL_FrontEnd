@@ -32,6 +32,7 @@ async function candidatePage({ offlineSubmission = false } = {}) {
   await page.route("**/api/**", async (route) => {
     const request = route.request()
     const path = new URL(request.url()).pathname
+    assert.ok(!path.endsWith("/trainings"), "Timed test sessions must not fetch the training catalogue")
     const headers = { "Access-Control-Allow-Origin": new URL(baseUrl).origin,
       "Access-Control-Allow-Headers": "content-type, authorization", "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS" }
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers })

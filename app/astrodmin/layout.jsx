@@ -10,6 +10,7 @@ import {
   LogOut, 
   LayoutDashboard, 
   Users, 
+  GraduationCap,
   Calendar, 
   FileText, 
   Settings,
@@ -162,6 +163,13 @@ export default function AdminLayout({ children }) {
       href: "/astrodmin/competences",
       color: "text-orange-500",
       show: !isInterviewMember && (adminType === "competences" || adminType === "super_admin" || !adminType)
+    },
+    {
+      label: "Référentiels",
+      icon: GraduationCap,
+      href: "/astrodmin/competences/referentiels",
+      color: "text-orange-500",
+      show: !isInterviewMember && ["competences", "super_admin"].includes(adminType),
     },
     {
       label: "Entretiens",

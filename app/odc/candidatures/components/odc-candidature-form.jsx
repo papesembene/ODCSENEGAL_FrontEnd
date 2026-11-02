@@ -4,18 +4,23 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { checkUniqueCandidatureField, submitOdcCandidature } from "@/lib/public-api"
 import { FORM_FEEDBACK_MESSAGES, formatSubmissionErrorMessage } from "@/lib/form-feedback"
 import { PublicFormSuccessState } from "@/components/ui/form-feedback"
-import { countryCodes, formations, regions, getNationalitiesByLetter } from "../constants"
-import { getMonthsForFormation, validateField, validateIdNumber } from "../validation"
+import { countryCodes, regions, getNationalitiesByLetter } from "../constants"
+import { validateField, validateIdNumber } from "../validation"
 import { buildNextFormData, clearFieldError, resetPhoneForCountryChange, sanitizeFieldValue } from "../input-helpers"
 import OdcCandidatureFormShell from "./odc-candidature-form-shell"
 import OdcIdentitySection from "./sections/odc-identity-section"
 import OdcAvailabilitySection from "./sections/odc-availability-section"
 import OdcValidationSection from "./sections/odc-validation-section"
 import useCountrySelector from "../hooks/use-country-selector"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import CatalogFeedback from "@/components/trainings/catalog-feedback"
 import { useCandidatureStatus } from "@/components/candidatures/candidature-status-provider"
 
 export default function OdcCandidatureForm() {
   const { canApply, refresh } = useCandidatureStatus()
+  const catalog = useTrainingCatalog()
+  const formations = catalog.items.filter((item) => item.status === "published")
+    .map((item) => ({ id: item.code, name: item.title, femaleOnly: item.femaleOnly }))
   const formRef = useRef(null)
   const fieldRefs = useRef({})
 
@@ -76,26 +81,6 @@ export default function OdcCandidatureForm() {
       })
     }
   }
-
-  // Effet pour valider les champs requis en fonction de la formation sélectionnée
-  useEffect(() => {
-    if (formData.formation) {
-      const newErrors = { ...errors }
-
-      // Vérifier si la formation nécessite la disponibilité de 10 mois
-      const requires10MonthsAvailability = ["dev-web-mobile", "referent-digital", "dev-data"].includes(
-        formData.formation,
-      )
-
-      // Si le champ a été touché et que la formation nécessite la disponibilité
-      if (touchedFields.isAvailable && requires10MonthsAvailability && formData.isAvailable === undefined) {
-        newErrors.isAvailable = "Ce champ est obligatoire"
-      } else {
-        delete newErrors.isAvailable
-      }
-      setErrors(newErrors)
-    }
-  }, [formData.formation, formData.isAvailable, touchedFields.isAvailable])
 
   // Effet pour valider le numéro d'identité en fonction du type sélectionné
   useEffect(() => {
@@ -309,13 +294,9 @@ export default function OdcCandidatureForm() {
     // Validation spécifique pour les champs radio
     if (formData.computer_skills === undefined) newErrors.computer_skills = "Ce champ est obligatoire"
 
-    // Validation de la disponibilité en fonction de la formation
-    const requires10MonthsAvailability = ["dev-web-mobile", "referent-digital", "dev-data"].includes(formData.formation)
-    const isHackeusesOrAws = ["hackeuses", "aws-cloud"].includes(formData.formation)
-
-    if (requires10MonthsAvailability && formData.isAvailable === undefined && !isHackeusesOrAws) {
-      newErrors.isAvailable = "Ce champ est obligatoire"
-    }
+    const training = catalog.items.find((item) => item.code === formData.formation)
+    if (!training || training.status !== "published") newErrors.formation = "Cette formation n’est plus proposée. Veuillez en sélectionner une autre."
+    if (training?.femaleOnly && formData.gender === "male") newErrors.formation = "Cette formation est réservée aux femmes."
 
     // Validation du type de pièce d'identité
     if (!idType) {
@@ -348,7 +329,11 @@ export default function OdcCandidatureForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!canApply) return
+    if (!canApply || isSubmitting) return
+    if (catalog.phase !== "ready") {
+      setSubmitError("Le catalogue doit être chargé avant de soumettre votre candidature.")
+      return
+    }
     setSubmitError("")
 
     const newErrors = validateForm()
@@ -381,9 +366,7 @@ export default function OdcCandidatureForm() {
         current_structure: formData.currentStructure,
         education_level: formData.education,
         computer_skills: formData.computer_skills,
-        available_for_10_months: ["dev-web-mobile", "referent-digital", "dev-data"].includes(formData.formation)
-          ? formData.isAvailable
-          : true, // Pour les formations de 4 mois, on considère que la disponibilité est toujours vraie
+        available_for_10_months: formData.isAvailable,
         desired_training: formData.formation,
         accept_conditions: formData.acceptTerms,
         speciality: formData.speciality,
@@ -453,6 +436,8 @@ export default function OdcCandidatureForm() {
 
   return (
     <OdcCandidatureFormShell formRef={formRef} onSubmit={handleSubmit}>
+      <CatalogFeedback />
+      <fieldset disabled={catalog.phase !== "ready"} className="space-y-8 min-w-0">
       <OdcIdentitySection
         formData={formData}
         errors={errors}
@@ -482,6 +467,7 @@ export default function OdcCandidatureForm() {
       />
 
       <OdcAvailabilitySection
+        durationMonths={catalog.items.find((item) => item.code === formData.formation)?.durationMonths}
         formData={formData}
         errors={errors}
         touchedFields={touchedFields}
@@ -503,6 +489,7 @@ export default function OdcCandidatureForm() {
         handleChange={handleChange}
         setTouchedFields={setTouchedFields}
       />
+      </fieldset>
     </OdcCandidatureFormShell>
   )
 }
