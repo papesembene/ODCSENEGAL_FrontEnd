@@ -1,10 +1,38 @@
 # Frontend Windows : service NSSM
 
+## Perimetre de la recuperation
+
+Ces fichiers ont ete recuperes du serveur dans le commit `d5662178`.
+Leur presence dans Git ne lance aucune installation. La configuration decrite
+ci-dessous provient de cette recuperation et doit etre verifiee sur le serveur:
+les noms de services, ports et essais rapportes ne constituent pas une recette
+effectuee sur le poste de developpement Linux.
+
+Le script `C:\Orange Digital Center\deploy-frontend-production.ps1`, mentionne
+ci-dessous, n'est pas fourni par cet export. Il doit etre recupere et examine
+avant de suivre la procedure de mise a jour. Ne pas recreer ce script a partir
+de suppositions, ni lancer les outils d'administration en production sans
+validation de leur cible, sauvegarde et fenetre d'intervention adaptee.
+
+## Configuration decrite sur le serveur
+
 Le frontend utilise NSSM, comme l'ancien déploiement. Ce service Windows lance directement Node.js et Next.js ; IIS assure le proxy HTTPS.
 
 Le premier service est `ODC-PROD-FRONTEND`, dans la release existante du 28 octobre 2026, sur le port 3005. Les prochaines mises à jour alternent avec `ODC-PROD-FRONTEND-SECONDARY`. La règle IIS indique lequel sert le site. Ces deux emplacements ne constituent pas une bascule automatique entre deux serveurs.
 
 L'ancienne tâche `ODC-TEST-PROD-FRONTEND` est désactivée après migration pour éviter des gestionnaires concurrents. `MonSite` et les tâches API/email restent distincts.
+
+## Flux de travail
+
+Developper et tester sur le poste local, enregistrer les changements dans Git,
+puis les pousser sur GitHub. Recuperer ensuite la version validee dans le depot
+de travail du serveur, pas dans la release active, et utiliser la procedure de
+deploiement verifiee. Conserver les identifiants des commits frontend et backend
+deployes pour comparer les versions et preparer un retour arriere.
+
+Ne pas modifier le code directement dans une release de production. Les fichiers
+`.env`, les cles, les bases MongoDB, les uploads et les journaux restent propres
+a chaque environnement: ils ne sont pas synchronises par un `git pull`.
 
 ## Relance et contrôle
 
@@ -76,6 +104,10 @@ Le contrôle suit automatiquement le service correspondant à IIS. Conserver tou
 
 ## Vérifications et limites
 
-Le test isolé NSSM a confirmé qu'un avertissement sur stderr laisse Node.js fonctionner. Après une sortie volontaire avec le code 7, NSSM a relancé le processus ; HTTP 200 est revenu en environ 2,8 secondes. Aucun changement `AppNoConsole` n'a été nécessaire.
+La documentation recue rapporte un test isole NSSM: un avertissement sur stderr
+aurait laisse Node.js fonctionner, puis une sortie volontaire avec le code 7
+aurait ete suivie d'une relance et d'un HTTP 200 en environ 2,8 secondes, sans
+changement `AppNoConsole`. Ce resultat n'a pas ete reproduit lors de l'import
+local; le valider sur l'environnement Windows autorise avant bascule.
 
 Les journaux antérieurs ne permettent pas d'établir le déclencheur initial de la panne. Cette supervision réduit les interruptions de processus. Une panne complète du serveur nécessite une autre machine et un répartiteur pour maintenir le service. Aucune alerte externe n'est configurée ici.

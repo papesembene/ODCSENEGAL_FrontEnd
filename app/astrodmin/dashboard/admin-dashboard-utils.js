@@ -56,7 +56,7 @@ export function getActivityStyles(type) {
 export function buildGlobalStatCards(globalStats, moduleStats) {
   return [
     {
-      title: `Candidatures ${globalStats.campaignYear || new Date().getFullYear()}`,
+      title: globalStats.campaignYear ? `Candidatures ${globalStats.campaignYear}` : "Candidatures aux formations",
       value: globalStats.candidaturesCompetences,
       icon: Users,
       iconClassName: "text-muted-foreground",
