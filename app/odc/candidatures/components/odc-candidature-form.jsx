@@ -419,13 +419,10 @@ export default function OdcCandidatureForm() {
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <PublicFormSuccessState
           className=""
-          title="Votre candidature a bien été enregistrée !"
+          title="Candidature enregistrée !"
           descriptions={[
             `Formation : ${submissionReceipt.formation}`,
-            ...(submissionReceipt.number ? [`Numéro de candidature : ${submissionReceipt.number}`] : []),
-            "Votre inscription est confirmée, même si vous ne recevez pas l’email de confirmation.",
-            "Conservez cette confirmation en faisant une capture d’écran avant de quitter cette page.",
-            "L’enregistrement de votre candidature ne signifie pas encore votre admission à la formation.",
+            "Aucun email de confirmation ne sera envoyé.",
           ]}
           actionHref="/competences"
           actionLabel="Retour à la page des compétences"
