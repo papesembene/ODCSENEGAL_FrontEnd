@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import defaults from "../data/training-defaults.js"
-import { eligibleTrainings, validateTrainingSites, withSiteAssignments, DEFAULT_TRAINING_SITES as sites, RESIDENCE_LOCATIONS } from "../lib/training-eligibility.js"
+import { eligibleTrainings, eligibleTrainingSites, validateTrainingSites, withSiteAssignments, DEFAULT_TRAINING_SITES as sites, RESIDENCE_LOCATIONS } from "../lib/training-eligibility.js"
 import { trainingForm, trainingPayload } from "../app/astrodmin/competences/referentiels/training-form.js"
 import { candidatureErrors, candidaturePayload, changeCandidature, initialCandidature } from "../app/odc/candidatures/form-model.js"
 
@@ -18,6 +18,30 @@ test("Site offerings are explicit and do not depend on residence", () => {
   assert.equal(eligibleTrainings(defaults, "", "female").length, 0)
   assert.deepEqual(errors(valid), {})
   assert.equal(errors({ ...valid, region: "Thiès" }).formation, undefined)
+})
+
+test("Registration shows only active sites with a published eligible formation and correct counts", () => {
+  const campus = (code, status = "active") => ({ code, name: code, status })
+  const places = [campus("empty"), campus("draft-only"), campus("archive-only"), campus("closed", "archived"), campus("open")]
+  const courses = [
+    { ...defaults[0], siteIds: ["draft-only"], status: "draft" },
+    { ...defaults[0], siteIds: ["archive-only"], status: "archived" },
+    { ...defaults[0], siteIds: ["open", "closed"] },
+    { ...defaults[1], siteIds: ["open"] },
+  ]
+  const before = structuredClone(places)
+  const result = eligibleTrainingSites(places, courses)
+  assert.deepEqual(result.map(({ code, trainingCount }) => ({ code, trainingCount })), [{ code: "open", trainingCount: 2 }])
+  assert.deepEqual(places, before)
+  assert.deepEqual(eligibleTrainingSites(places, []), [])
+})
+
+test("A site with only women-only courses disappears for a male profile, not other profiles", () => {
+  const courses = [{ ...defaults[3], siteIds: ["dakar"] }]
+  assert.equal(eligibleTrainingSites(sites, courses, "male").length, 0)
+  assert.equal(eligibleTrainingSites(sites, courses, "female")[0].code, "dakar")
+  assert.equal(eligibleTrainingSites(sites, courses)[0].trainingCount, 1)
+  assert.ok(errors(valid, []).trainingSite, "A selected site that has lost its last offer is no longer valid")
 })
 
 test("Changing residence never changes formation; changing campus clears only incompatible choices", () => {

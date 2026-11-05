@@ -5,7 +5,7 @@ import { useTrainingCatalog } from "@/components/trainings/training-catalog-prov
 import { useCandidatureStatus } from "@/components/candidatures/candidature-status-provider"
 import { submitOdcCandidature } from "@/lib/public-api"
 import { FORM_FEEDBACK_MESSAGES, formatSubmissionErrorMessage } from "@/lib/form-feedback"
-import { eligibleTrainings, RESIDENCE_LOCATIONS } from "@/lib/training-eligibility"
+import { eligibleTrainings, eligibleTrainingSites, RESIDENCE_LOCATIONS } from "@/lib/training-eligibility"
 import { validateField } from "../validation"
 import { candidatureErrors, candidaturePayload, changeCandidature, initialCandidature, phoneCountry } from "../form-model"
 import { CANDIDATURE_STEPS, candidatureStepErrors, firstInvalidStep } from "../form-steps"
@@ -100,6 +100,7 @@ export default function useOdcCandidature() {
     returnTo: (index) => { if (!sending.current && index < navigation.step) navigation.goTo(index) },
     checking: uniqueness.state, selectedCountry: phoneCountry(values),
     formations: eligibleTrainings(catalog.items, values.trainingSite, values.gender),
+    sitesWithOffers: eligibleTrainingSites(catalog.sites, catalog.items, values.gender),
     selectedSite: catalog.sites.find((site) => site.code === values.trainingSite),
     selectedTraining: catalog.items.find((item) => item.code === values.formation),
     change, blur, submit,

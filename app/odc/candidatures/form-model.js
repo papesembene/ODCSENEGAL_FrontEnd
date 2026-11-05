@@ -41,7 +41,8 @@ export function candidatureErrors(values, trainings, duplicates = {}, residenceL
     if (error) errors[name] = error
   }
   if (!["cni", "passport"].includes(values.idType)) errors.idType = "Choisissez votre type de pièce d'identité."
-  if (!sites.some((site) => site.code === values.trainingSite && site.status === "active")) {
+  if (!sites.some((site) => site.code === values.trainingSite && site.status === "active")
+    || !eligibleTrainings(trainings, values.trainingSite, values.gender).length) {
     errors.trainingSite = "Choisissez un site de formation disponible."
   }
   if (values.formation && !eligibleTrainings(trainings, values.trainingSite, values.gender)

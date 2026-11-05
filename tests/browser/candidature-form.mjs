@@ -8,6 +8,15 @@ import { DEFAULT_TRAINING_SITES, RESIDENCE_LOCATIONS } from "../../lib/training-
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const output = process.env.ODC_SCREENSHOT_DIR
+const unavailableSites = [
+  { code: "empty", name: "Site sans formation", status: "active" },
+  { code: "draft-only", name: "Site avec brouillon", status: "active" },
+  { code: "archive-only", name: "Site avec formation archivée", status: "active" },
+]
+const unpublishedTrainings = [
+  { ...defaults[0], code: "draft-course", siteIds: ["draft-only"], status: "draft" },
+  { ...defaults[0], code: "archived-course", siteIds: ["archive-only"], status: "archived" },
+]
 let browser
 let server
 const radio = (page, name, value) => page.locator(`input[name="${name}"][value="${value}"]`)
@@ -18,7 +27,7 @@ async function fixture(width = 1440, height = 1000) {
   const context = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" })
   const page = await context.newPage()
   page.setDefaultTimeout(15000)
-  const scenario = { posts: [], checks: [], offline: false, catalogFailure: false, removeData: false, archiveSite: false,
+  const scenario = { posts: [], checks: [], offline: false, catalogFailure: false, removeData: false, archiveSite: false, noTrainings: false,
     holdEmail: "", releaseEmail: null, duplicateIdentity: false, errors: [] }
   page.on("pageerror", (error) => scenario.errors.push(error.message))
   page.on("console", (message) => {
@@ -33,8 +42,8 @@ async function fixture(width = 1440, height = 1000) {
     if (request.method() === "OPTIONS") return route.fulfill({ headers, status: 204 })
     if (url.pathname.endsWith("/trainings")) {
       if (scenario.catalogFailure) return respond({ error: "Catalogue momentanément indisponible" }, 503)
-      return respond({ success: true, data: defaults.filter((row) => !scenario.removeData || row.code !== "dev-data"),
-        trainingSites: DEFAULT_TRAINING_SITES.filter((site) => !scenario.archiveSite || site.code !== "thies"), residenceLocations: RESIDENCE_LOCATIONS })
+      return respond({ success: true, data: scenario.noTrainings ? [] : [...defaults.filter((row) => !scenario.removeData || row.code !== "dev-data"), ...unpublishedTrainings],
+        trainingSites: [...DEFAULT_TRAINING_SITES.filter((site) => !scenario.archiveSite || site.code !== "thies"), ...unavailableSites], residenceLocations: RESIDENCE_LOCATIONS })
     }
     if (url.pathname.endsWith("/candidature/status")) return respond({ success: true,
       data: { isOpen: true, lifecycleStatus: "open", campaign: { title: "Recette", endAt: "2030-01-01T00:00:00Z" } } })
@@ -96,6 +105,8 @@ try {
   for (const [width, height] of [[320, 740], [390, 844], [1366, 768], [1440, 900]]) {
     const { context, page, scenario } = await fixture(width, height)
     assert.equal(await page.locator('input[name="trainingSite"]:focus').count(), 1)
+    assert.equal(await page.locator('input[name="trainingSite"]').count(), 4, "Only sites with at least one eligible published course are shown")
+    for (const site of unavailableSites) assert.equal(await radio(page, "trainingSite", site.code).count(), 0)
     assert.equal(await page.locator("#region").count(), 0, "Residence is not a training site")
     assert.equal(await page.locator('input[name="formation"]').count(), 0)
     if (output) await page.screenshot({ path: `${output}/sites-${width}.png`, fullPage: true, animations: "disabled" })
@@ -190,9 +201,9 @@ try {
     await validForm(page)
     scenario[change] = true
     await page.getByRole("button", { name: "Envoyer ma candidature", exact: true }).click()
-    await page.locator(change === "archiveSite" ? "#trainingSite-error" : "#formation-error").waitFor()
+    await page.locator("#trainingSite-error").waitFor()
     assert.equal(scenario.posts.length, 0)
-    if (change === "removeData") await back(page)
+    assert.equal(await radio(page, "trainingSite", "thies").count(), 0, "A site losing its last offer is removed, not disabled")
     await radio(page, "trainingSite", "dakar").check()
     await next(page)
     await radio(page, "formation", "dev-web-mobile").check()
@@ -200,6 +211,18 @@ try {
     assert.equal(await page.locator("#firstName").inputValue(), "Moussa")
     assert.deepEqual(scenario.errors, [])
     console.log(`PASS candidature: final revalidation catches ${change} without losing identity`)
+    await context.close()
+  }
+  {
+    const { context, page, scenario } = await fixture()
+    scenario.noTrainings = true
+    await page.reload({ waitUntil: "networkidle" })
+    await page.getByRole("status").filter({ hasText: "Aucun site ne propose actuellement de formation ouverte à la candidature." }).waitFor()
+    assert.equal(await page.locator('input[name="trainingSite"]').count(), 0)
+    assert.equal(await page.getByRole("button", { name: "Suivant", exact: true }).isDisabled(), true)
+    assert.deepEqual(scenario.errors, [])
+    assert.equal(scenario.posts.length, 0)
+    console.log("PASS candidature: empty sites, unpublished-only sites and all-empty catalogues are not selectable")
     await context.close()
   }
   {

@@ -9,7 +9,8 @@ export default function CandidatureNavigation({ manager }) {
       onClick={manager.previous} className="min-h-12 gap-2 border-gray-300 bg-white px-4 text-gray-700 sm:px-5">
       <ArrowLeft aria-hidden="true" className="h-4 w-4" />Précédent
     </Button>
-    <Button type="submit" disabled={manager.catalog.phase !== "ready" || manager.submitting}
+    <Button type="submit" disabled={manager.catalog.phase !== "ready" || manager.submitting
+      || (manager.step === 0 && !manager.sitesWithOffers.length)}
       aria-label={manager.submitting ? "Envoi en cours…" : last ? "Envoyer ma candidature" : "Suivant"}
       className="min-h-12 gap-2 bg-[#ff7900] px-4 text-white hover:bg-[#e66f00] sm:px-6">
       {manager.submitting ? <><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /><span className="sm:hidden">Envoi…</span><span className="hidden sm:inline">Envoi en cours…</span></>
