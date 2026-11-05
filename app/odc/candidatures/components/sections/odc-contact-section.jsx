@@ -10,6 +10,9 @@ export default function OdcContactSection({ manager }) {
       <CandidatureField manager={manager} name="email" label="Email" type="email" autoComplete="email" maxLength={254}
         placeholder="nom@exemple.com" hint="Une adresse email que vous consultez régulièrement." />
       <CandidaturePhoneField manager={manager} />
+      <CandidatureField manager={manager} name="region" label="Région / localité de résidence"
+        placeholder="Votre lieu de résidence" autoComplete="address-level1"
+        options={manager.catalog.residenceLocations.map((value) => ({ value, label: value }))} />
     </div>
   </CandidatureSection>
 }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
 import trainingDefaults from "../../data/training-defaults.js"
+import { DEFAULT_TRAINING_SITES } from "../../lib/training-eligibility.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 let browser
@@ -28,7 +29,7 @@ async function fixture(key, { managed = false, delayed = false } = {}) {
     const headers = { "Access-Control-Allow-Origin": new URL(baseUrl).origin,
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "content-type" }
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers })
-    if (new URL(route.request().url()).pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults } })
+    if (new URL(route.request().url()).pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults, trainingSites: DEFAULT_TRAINING_SITES } })
     let data = []
     if (url.pathname.endsWith("/candidature/status")) {
       scenario.lookups += 1
@@ -112,8 +113,9 @@ try {
     const { context, page, scenario, errors } = await fixture("open")
     await page.goto(`${baseUrl}/odc/candidatures`, { waitUntil: "networkidle" })
     await page.locator("form").waitFor()
-    await page.locator("#region").selectOption("Dakar")
-    await page.locator("#formation").selectOption("dev-web-mobile")
+    await page.locator('input[name="trainingSite"][value="dakar"]').check()
+    await page.getByRole("button", { name: "Suivant", exact: true }).click()
+    await page.locator('input[name="formation"][value="dev-web-mobile"]').check()
     await page.getByRole("button", { name: "Suivant", exact: true }).click()
     const name = page.locator('input[name="firstName"]')
     await name.fill("Moussa")

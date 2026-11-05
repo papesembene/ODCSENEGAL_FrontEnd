@@ -5,20 +5,21 @@ import CatalogFeedback from "@/components/trainings/catalog-feedback"
 import useOdcCandidature from "../hooks/use-odc-candidature"
 import OdcCandidatureFormShell from "./odc-candidature-form-shell"
 import OdcTrainingChoiceSection from "./sections/odc-training-choice-section"
+import OdcSiteChoiceSection from "./sections/odc-site-choice-section"
 import OdcIdentitySection from "./sections/odc-identity-section"
 import OdcContactSection from "./sections/odc-contact-section"
 import OdcAvailabilitySection from "./sections/odc-availability-section"
 import OdcValidationSection from "./sections/odc-validation-section"
 import CandidatureNavigation from "./candidature-navigation"
 
-const STEP_COMPONENTS = [OdcTrainingChoiceSection, OdcIdentitySection, OdcContactSection, OdcAvailabilitySection, OdcValidationSection]
+const STEP_COMPONENTS = [OdcSiteChoiceSection, OdcTrainingChoiceSection, OdcIdentitySection, OdcContactSection, OdcAvailabilitySection, OdcValidationSection]
 
 export default function OdcCandidatureForm() {
   const manager = useOdcCandidature()
   const ActiveStep = STEP_COMPONENTS[manager.step]
   if (manager.receipt) return <div className="container mx-auto max-w-3xl px-4 py-12">
     <PublicFormSuccessState title="Candidature enregistrée !" descriptions={[
-      `Formation : ${manager.receipt.formation}`, "Aucun email de confirmation ne sera envoyé.",
+      `Site : ${manager.receipt.site}`, `Formation : ${manager.receipt.formation}`, "Aucun email de confirmation ne sera envoyé.",
     ]} actionHref="/competences" actionLabel="Retour à la page des compétences" />
   </div>
 

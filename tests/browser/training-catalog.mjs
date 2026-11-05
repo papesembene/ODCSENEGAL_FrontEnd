@@ -4,6 +4,7 @@ import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
 import defaults from "../../data/training-defaults.js"
 import { RESIDENCE_LOCATIONS } from "../../data/residence-locations.js"
+import { DEFAULT_TRAINING_SITES } from "../../lib/training-eligibility.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 let browser
@@ -16,7 +17,7 @@ const errors = []
 const user = { id: "admin", email: "admin@example.org", admin_type: "super_admin", profile_data: {} }
 const code = "robotique-nationale"
 let catalogReads = 0
-const regionalRules = { regions: RESIDENCE_LOCATIONS, residenceRegions: RESIDENCE_LOCATIONS, defaults: {} }
+let sites = structuredClone(DEFAULT_TRAINING_SITES)
 
 async function fixture(profile = user, width = 1440) {
   const context = await browser.newContext({ viewport: { width, height: 1000 }, reducedMotion: "reduce" })
@@ -39,7 +40,20 @@ async function fixture(profile = user, width = 1440) {
     if (path.endsWith("/trainings") && method === "GET") {
       catalogReads++
       if (unavailable) return respond({ error: "Catalogue indisponible" }, 503)
-      return respond({ success: true, data: path.includes("/admin/") ? items : items.filter((item) => item.status === "published"), regionalRules })
+      return respond({ success: true, data: path.includes("/admin/") ? items : items.filter((item) => item.status === "published"),
+        trainingSites: path.includes("/admin/") ? sites : sites.filter((site) => site.status === "active"), residenceLocations: RESIDENCE_LOCATIONS })
+    }
+    if (path.startsWith("/api/admin/training-sites") && ["POST", "PATCH"].includes(method)) {
+      const body = request.postDataJSON()
+      if (method === "POST") {
+        const site = { ...body, code: "saint-louis", version: 1 }
+        sites = [...sites, site]
+        return respond({ success: true, data: site }, 201)
+      }
+      const site = sites.find((row) => row.code === path.split("/").at(-1))
+      if (site.version !== body.version) return respond({ error: "Actualisez le site" }, 409)
+      Object.assign(site, body, { version: site.version + 1 })
+      return respond({ success: true, data: site })
     }
     if (path.startsWith("/api/admin/trainings") && ["POST", "PATCH", "DELETE"].includes(method)) {
       writes.push({ path, method })
@@ -79,8 +93,6 @@ try {
   await page.getByRole("button", { name: "Ajouter un référentiel", exact: true }).click()
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("Nom du référentiel").fill("Fibre")
-  assert.equal(await dialog.getByRole("radio", { name: "Tous les lieux de résidence", exact: true }).isChecked(), true)
-  await dialog.getByRole("radio", { name: "Uniquement les lieux sélectionnés", exact: true }).check()
   assert.equal(await dialog.getByRole("checkbox", { name: "Tambacounda", exact: true }).isChecked(), false)
   await dialog.getByRole("checkbox", { name: "Tambacounda", exact: true }).check()
   await dialog.getByLabel("Nom du référentiel").fill("Fibre optique")
@@ -88,7 +100,6 @@ try {
   await dialog.getByRole("button", { name: "Annuler", exact: true }).click()
   await page.getByRole("button", { name: "Ajouter un référentiel", exact: true }).click()
   await dialog.getByLabel("Nom du référentiel").fill("Robotique nationale")
-  await dialog.getByRole("radio", { name: "Uniquement les lieux sélectionnés", exact: true }).check()
   await dialog.getByLabel("Durée (mois)").fill("6")
   await dialog.getByLabel("Description", { exact: true }).fill("Concevez et programmez des robots.")
   await dialog.getByLabel(/Objectifs et compétences/).fill("Programmer un robot\nAssembler des capteurs")
@@ -97,7 +108,7 @@ try {
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aC1sAAAAASUVORK5CYII=", "base64") })
   await dialog.getByAltText("Aperçu du référentiel").waitFor()
   await dialog.getByRole("button", { name: "Enregistrer le référentiel" }).click()
-  await dialog.getByRole("alert").getByText(/au moins une région \/ localité/).waitFor()
+  await dialog.getByRole("alert").getByText(/au moins un site/).waitFor()
   assert.equal(writes.filter((request) => request.method === "POST" && request.path === "/api/admin/trainings").length, 0)
   await dialog.getByRole("checkbox", { name: "Thiès", exact: true }).check()
   await dialog.getByRole("checkbox", { name: "Dakar", exact: true }).check()
@@ -106,7 +117,7 @@ try {
   assert.equal(items[0].code, code)
   assert.equal(writes.filter((request) => request.method === "POST" && request.path === "/api/admin/trainings").length, 1)
   assert.equal(items[0].imageUrl, "/static/uploads/trainings/test.png")
-  assert.deepEqual(items[0].applicationRegions, ["Thiès", "Dakar"])
+  assert.deepEqual(items[0].siteIds, ["thies", "dakar"])
   console.log("PASS catalogue: creation and refresh from the shared API")
 
   await page.getByRole("button", { name: "Modifier Robotique nationale", exact: true }).click()
@@ -155,15 +166,11 @@ try {
     assert.equal(await page.getByText("Concevez et programmez des robots.", { exact: true }).count(), 0)
   }
   await page.goto(`${baseUrl}/odc/candidatures`, { waitUntil: "networkidle" })
-  await page.locator('select[name="region"]').selectOption("Thiès")
-  assert.equal(await page.locator(`select[name="formation"] option[value="${code}"]`).count(), 1)
-  await page.locator('select[name="region"]').selectOption("Tambacounda")
-  assert.equal(await page.locator(`select[name="formation"] option[value="${code}"]`).count(), 0)
-  await page.locator('select[name="region"]').selectOption("Dakar")
-  await page.locator('select[name="formation"]').selectOption(code)
-  await page.getByText("6 mois", { exact: true }).waitFor()
-  assert.equal(await page.locator('select[name="formation"] option:checked').textContent(), "Robotique et systèmes")
-  console.log("PASS catalogue: public cards, edited descriptions, objectives, duration and admin-configured regional eligibility")
+  await page.locator('input[name="trainingSite"][value="thies"]').check()
+  await page.getByRole("button", { name: "Suivant", exact: true }).click()
+  assert.equal(await page.locator(`input[name="formation"][value="${code}"]`).count(), 1)
+  await page.locator(`input[name="formation"][value="${code}"]`).check()
+  console.log("PASS catalogue: public cards and admin-configured site assignments")
 
   await page.goto(`${baseUrl}/astrodmin/competences/tests`, { waitUntil: "networkidle" })
   await page.getByRole("button", { name: "Nouveau test", exact: true }).click()
@@ -196,29 +203,38 @@ try {
 
   await page.goto(`${baseUrl}/astrodmin/competences/referentiels`, { waitUntil: "networkidle" })
   await page.getByRole("button", { name: `Modifier ${web.title}`, exact: true }).click()
-  const residences = dialog.getByRole("group", { name: "Région / localité de résidence", exact: true })
-  for (const location of RESIDENCE_LOCATIONS.filter((value) => value !== "Dakar")) {
-    await residences.getByRole("checkbox", { name: location, exact: true }).uncheck()
-  }
-  await residences.getByRole("checkbox", { name: "Dakar", exact: true }).check()
+  await dialog.getByRole("checkbox", { name: "Dakar", exact: true }).uncheck()
+  await dialog.getByRole("checkbox", { name: "Thiès", exact: true }).check()
   await dialog.getByRole("button", { name: "Enregistrer le référentiel" }).click()
   await dialog.waitFor({ state: "hidden" })
-  assert.equal(web.applicationRegionMode, "selected")
-  assert.deepEqual(web.applicationRegions, ["Dakar"])
+  assert.deepEqual(web.siteIds, ["thies"])
   await page.goto(`${baseUrl}/odc/candidatures`, { waitUntil: "networkidle" })
-  await page.locator("#region").selectOption("Diourbel")
-  assert.equal(await page.locator('select[name="formation"] option[value="dev-web-mobile"]').count(), 0)
-  await page.locator("#region").selectOption("Dakar")
-  assert.equal(await page.locator('select[name="formation"] option[value="dev-web-mobile"]').count(), 1)
+  await page.locator('input[name="trainingSite"][value="thies"]').check()
+  await page.getByRole("button", { name: "Suivant", exact: true }).click()
+  assert.equal(await page.locator('input[name="formation"][value="dev-web-mobile"]').count(), 1)
   await page.goto(`${baseUrl}/astrodmin/competences/referentiels`, { waitUntil: "networkidle" })
   await page.getByRole("button", { name: `Modifier ${web.title}`, exact: true }).click()
-  await dialog.getByRole("radio", { name: "Tous les lieux de résidence", exact: true }).check()
+  await dialog.getByRole("checkbox", { name: "Dakar", exact: true }).check()
+  await dialog.getByRole("checkbox", { name: "Thiès", exact: true }).uncheck()
   await dialog.getByRole("button", { name: "Enregistrer le référentiel" }).click()
   await dialog.waitFor({ state: "hidden" })
   await page.goto(`${baseUrl}/odc/candidatures`, { waitUntil: "networkidle" })
-  await page.locator("#region").selectOption("Thiès")
-  assert.equal(await page.locator('select[name="formation"] option[value="dev-web-mobile"]').count(), 1)
-  console.log("PASS catalogue: admin limits Web to Dakar, then reopens all residences without code changes")
+  await page.locator('input[name="trainingSite"][value="thies"]').check()
+  await page.getByRole("button", { name: "Suivant", exact: true }).click()
+  assert.equal(await page.locator('input[name="formation"][value="dev-web-mobile"]').count(), 0)
+  console.log("PASS catalogue: admin moves Web between sites without changing candidate residence rules")
+
+  await page.goto(`${baseUrl}/astrodmin/competences/referentiels/sites`, { waitUntil: "networkidle" })
+  await page.getByRole("button", { name: "Ajouter un site", exact: true }).click()
+  await dialog.getByLabel("Nom du site", { exact: false }).fill("Saint-Louis")
+  await dialog.getByLabel("Description courte").fill("Site de formation test")
+  await dialog.getByRole("button", { name: "Enregistrer le site", exact: true }).click()
+  await page.getByRole("row").filter({ hasText: "Saint-Louis" }).waitFor()
+  await page.getByRole("button", { name: "Modifier Saint-Louis", exact: true }).click()
+  await dialog.getByLabel("Statut", { exact: true }).selectOption("archived")
+  await dialog.getByRole("button", { name: "Enregistrer le site", exact: true }).click()
+  await page.getByRole("row").filter({ hasText: "Saint-Louis" }).getByText("Archivé", { exact: true }).waitFor()
+  console.log("PASS catalogue: managers create and archive training sites")
 
   await page.goto(`${baseUrl}/astrodmin/competences/referentiels`, { waitUntil: "networkidle" })
   await page.getByRole("button", { name: "Archiver Robotique et systèmes", exact: true }).click()
@@ -227,7 +243,9 @@ try {
   await page.goto(`${baseUrl}/competences`, { waitUntil: "networkidle" })
   assert.equal(await page.getByRole("heading", { name: "Robotique et systèmes", exact: true }).count(), 0)
   await page.goto(`${baseUrl}/odc/candidatures`, { waitUntil: "networkidle" })
-  assert.equal(await page.locator(`select[name="formation"] option[value="${code}"]`).count(), 0)
+  await page.locator('input[name="trainingSite"][value="thies"]').check()
+  await page.getByRole("button", { name: "Suivant", exact: true }).click()
+  assert.equal(await page.locator(`input[name="formation"][value="${code}"]`).count(), 0)
   assert.equal(items.filter((item) => item.code === code).length, 1, "Archiving preserves the record")
   console.log("PASS catalogue: archive removed from public/new applications, history retained")
   await context.close()

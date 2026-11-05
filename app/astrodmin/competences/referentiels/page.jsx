@@ -23,7 +23,8 @@ export default function TrainingManagementPage() {
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div><h1 className="text-2xl font-bold tracking-tight">Référentiels</h1>
         <p className="mt-1 text-sm text-muted-foreground">Gérez les formations proposées et leurs informations publiques.</p></div>
-      <Button onClick={() => manager.begin()} disabled={manager.catalog.phase !== "ready"}><Plus className="mr-2 h-4 w-4" />Ajouter un référentiel</Button>
+      <div className="flex flex-wrap gap-2"><Button variant="outline" asChild><Link href="/astrodmin/competences/referentiels/sites">Sites de formation</Link></Button>
+        <Button onClick={() => manager.begin()} disabled={manager.catalog.phase !== "ready"}><Plus className="mr-2 h-4 w-4" />Ajouter un référentiel</Button></div>
     </div>
     <CatalogFeedback />
     <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-card p-4">
@@ -41,7 +42,8 @@ export default function TrainingManagementPage() {
     <div className="overflow-hidden rounded-lg border bg-card"><Table>
       <TableHeader><TableRow><TableHead>Référentiel</TableHead><TableHead>Durée</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
       <TableBody>{manager.items.map((item) => <TableRow key={item.code}>
-        <TableCell><p className="font-medium">{item.title}</p><p className="mt-1 line-clamp-2 max-w-xl text-sm text-muted-foreground">{item.description}</p></TableCell>
+        <TableCell><p className="font-medium">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.siteIds.map((code) => manager.catalog.sites.find((site) => site.code === code)?.name || code).join(" · ")}</p>
+          <p className="mt-1 line-clamp-2 max-w-xl text-sm text-muted-foreground">{item.description}</p></TableCell>
         <TableCell className="whitespace-nowrap">{item.duration}</TableCell>
         <TableCell><Badge variant="outline">{TRAINING_STATUSES[item.status]}</Badge></TableCell>
         <TableCell><div className="flex justify-end gap-2">

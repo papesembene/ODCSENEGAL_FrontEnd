@@ -25,7 +25,7 @@ export default function useOdcCandidature() {
   const navigation = useCandidatureSteps(formRef, errors, !submitting && catalog.phase === "ready" && availability.canApply)
   const sending = useRef(false)
   const uniqueness = useCandidatureUniqueness()
-  const residenceLocations = catalog.regionalRules?.residenceRegions || RESIDENCE_LOCATIONS
+  const residenceLocations = catalog.residenceLocations || RESIDENCE_LOCATIONS
   const duplicateFlags = { email: uniqueness.state.email?.exists, idNumber: uniqueness.state.idNumber?.exists }
   const visibleErrors = { ...errors,
     ...(duplicateFlags.email ? { email: FORM_FEEDBACK_MESSAGES.duplicateEmail } : {}),
@@ -38,7 +38,7 @@ export default function useOdcCandidature() {
     setValues((previous) => changeCandidature(previous, name, value, catalog.items, residenceLocations))
     setErrors((previous) => {
       const next = { ...previous }
-      const dependent = { region: ["formation", "education", "currentStructure"], gender: ["formation"],
+      const dependent = { trainingSite: ["formation", "education", "currentStructure"], gender: ["formation"],
         formation: ["education", "currentStructure"], idType: ["idNumber"], phoneCountry: ["phone"] }
       for (const field of [name, ...(dependent[name] || [])]) delete next[field]
       return next
@@ -62,7 +62,7 @@ export default function useOdcCandidature() {
   }
 
   function advance() {
-    const nextErrors = candidatureStepErrors(candidatureErrors(values, catalog.items, duplicateFlags, residenceLocations), navigation.step, true)
+    const nextErrors = candidatureStepErrors(candidatureErrors(values, catalog.items, duplicateFlags, residenceLocations, catalog.sites), navigation.step, true)
     if (Object.keys(nextErrors).length) { showErrors(nextErrors); return }
     setErrors({})
     navigation.goTo(navigation.step + 1)
@@ -73,19 +73,21 @@ export default function useOdcCandidature() {
     if (sending.current || !availability.canApply) return
     if (catalog.phase !== "ready") { setSubmitError("Veuillez attendre le chargement des formations."); return }
     if (navigation.step < CANDIDATURE_STEPS.length - 1) { advance(); return }
-    const nextErrors = candidatureErrors(values, catalog.items, duplicateFlags, residenceLocations)
+    const nextErrors = candidatureErrors(values, catalog.items, duplicateFlags, residenceLocations, catalog.sites)
     if (Object.keys(nextErrors).length) { showErrors(nextErrors); return }
     sending.current = true
     setSubmitting(true)
     setSubmitError("")
     try {
-      const [campaign, currentItems] = await Promise.all([availability.refresh(), catalog.refresh()])
+      const [campaign, snapshot] = await Promise.all([availability.refresh(), catalog.refreshSnapshot()])
       if (campaign?.isOpen !== true) return
+      const currentItems = snapshot?.items || []
       if (!currentItems.length) throw new Error("Impossible de vérifier les formations. Vos informations sont conservées, veuillez réessayer.")
-      const refreshedErrors = candidatureErrors(values, currentItems, duplicateFlags, residenceLocations)
+      const refreshedErrors = candidatureErrors(values, currentItems, duplicateFlags, snapshot.residenceLocations, snapshot.sites)
       if (Object.keys(refreshedErrors).length) { showErrors(refreshedErrors); return }
       await submitOdcCandidature(candidaturePayload(values))
-      setReceipt({ formation: currentItems.find((item) => item.code === values.formation)?.title || values.formation })
+      setReceipt({ formation: currentItems.find((item) => item.code === values.formation)?.title || values.formation,
+        site: snapshot.sites.find((site) => site.code === values.trainingSite)?.name })
       setValues(initialCandidature())
       window.scrollTo({ top: 0, behavior: "auto" })
     } catch (error) { setSubmitError(formatSubmissionErrorMessage(error)) }
@@ -97,7 +99,8 @@ export default function useOdcCandidature() {
     previous: () => { if (!sending.current) navigation.goTo(navigation.step - 1) },
     returnTo: (index) => { if (!sending.current && index < navigation.step) navigation.goTo(index) },
     checking: uniqueness.state, selectedCountry: phoneCountry(values),
-    formations: eligibleTrainings(catalog.items, values.region, values.gender, residenceLocations),
+    formations: eligibleTrainings(catalog.items, values.trainingSite, values.gender),
+    selectedSite: catalog.sites.find((site) => site.code === values.trainingSite),
     selectedTraining: catalog.items.find((item) => item.code === values.formation),
     change, blur, submit,
     handleChange: (event) => change(event.target.name, event.target.type === "checkbox" ? event.target.checked : event.target.value),

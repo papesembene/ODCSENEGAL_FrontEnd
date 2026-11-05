@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
 import trainingDefaults from "../../data/training-defaults.js"
+import { DEFAULT_TRAINING_SITES } from "../../lib/training-eligibility.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const admin = { id: "admin", email: "admin@example.org", admin_type: "super_admin" }
@@ -10,6 +11,7 @@ const candidates = Array.from({ length: 45 }, (_, index) => ({
   id: String(index + 1).padStart(24, "0"), first_name: index === 0 ? "\u00c9milie" : `Candidat ${index + 1}`, last_name: "Diop",
   email: `candidate${index + 1}@example.org`, phone: `+22177${String(index).padStart(7, "0")}`,
   gender: "female", desired_training: "dev-web-mobile", status: "pending", application_date: "2026-10-22T10:00:00Z",
+  training_site: index === 0 ? "dakar" : "thies", training_site_name: index === 0 ? "Dakar" : "Thiès",
 }))
 const normalize = (value) => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
 const requests = []
@@ -40,16 +42,17 @@ try {
     const headers = { "Access-Control-Allow-Origin": new URL(baseUrl).origin, "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Headers": "content-type, authorization", "Access-Control-Allow-Methods": "GET, PATCH, OPTIONS" }
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers })
-    if (url.pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults } })
+    if (url.pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults, trainingSites: DEFAULT_TRAINING_SITES } })
     let data = { success: true, data: [] }
     const search = normalize(url.searchParams.get("search") || "").trim()
-    const filtered = candidates.filter((candidate) => search.split(/\s+/).every((term) =>
-      normalize(`${candidate.first_name} ${candidate.last_name} ${candidate.email} ${candidate.phone}`).includes(term)))
+    const site = url.searchParams.get("training_site")
+    const filtered = candidates.filter((candidate) => (!site || site === "all" || candidate.training_site === site)
+      && search.split(/\s+/).every((term) => normalize(`${candidate.first_name} ${candidate.last_name} ${candidate.email} ${candidate.phone}`).includes(term)))
     if (url.pathname === "/api/admin/candidatures") {
       const number = Number(url.searchParams.get("page"))
       const size = Number(url.searchParams.get("per_page"))
       assert.ok(number >= 1 && size >= 1 && size <= 100, "No unbounded candidate request on the directory")
-      requests.push({ page: number, per_page: size, search, status: url.searchParams.get("status") })
+      requests.push({ page: number, per_page: size, search, status: url.searchParams.get("status"), site })
       if (fail) return route.fulfill({ status: 503, headers, json: { success: false, error: "Chargement indisponible" } })
       data = { success: true, data: filtered.slice((number - 1) * size, number * size), total: filtered.length,
         pagination: { page: number, per_page: size, total: filtered.length, total_pages: Math.ceil(filtered.length / size) } }
@@ -89,6 +92,14 @@ try {
   await row("\u00c9milie Diop").waitFor()
   assert.equal(requests.at(-1).page, 1)
   await panel.getByText("1 candidat(s) au total", { exact: true }).waitFor()
+  await panel.getByRole("combobox", { name: "Site de formation", exact: true }).click()
+  await page.getByRole("option", { name: "Thiès", exact: true }).click()
+  await panel.getByText("0 candidat(s) au total", { exact: true }).waitFor()
+  assert.equal(requests.at(-1).site, "thies")
+  assert.equal(requests.at(-1).page, 1)
+  await panel.getByRole("combobox", { name: "Site de formation", exact: true }).click()
+  await page.getByRole("option", { name: "Dakar", exact: true }).click()
+  await row("\u00c9milie Diop").waitFor()
   await row("\u00c9milie Diop").getByRole("button", { name: "Menu", exact: true }).click()
   await page.getByRole("menuitem", { name: "Voir les d\u00e9tails", exact: true }).click()
   await page.getByRole("heading", { name: /milie/ }).waitFor()

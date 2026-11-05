@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
 import trainingDefaults from "../../data/training-defaults.js"
+import { DEFAULT_TRAINING_SITES } from "../../lib/training-eligibility.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const output = process.env.ODC_SCREENSHOT_DIR
@@ -57,7 +58,7 @@ try {
           "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, OPTIONS",
           "Access-Control-Allow-Headers": "content-type, authorization" }
         if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers })
-    if (new URL(route.request().url()).pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults } })
+    if (new URL(route.request().url()).pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults, trainingSites: DEFAULT_TRAINING_SITES } })
         let data = { success: true, data: [], events: [] }
         if (pathname.endsWith("/capabilities")) data.data = { can_manage_questions: true }
         if (pathname.endsWith("/bootstrap")) data.data = {

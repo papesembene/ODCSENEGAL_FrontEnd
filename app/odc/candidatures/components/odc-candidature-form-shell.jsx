@@ -1,9 +1,10 @@
 import Link from "@/components/ui/interactive-link"
 import { ArrowLeft } from "lucide-react"
 import CandidatureProgress from "./candidature-progress"
+import styles from "./candidature-choices.module.css"
 
 export default function OdcCandidatureFormShell({ children, manager }) {
-  return <div className="bg-gray-50">
+  return <div className={styles.canvas}>
     <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-8">
       <Link href="/competences" className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-[#e66f00]">
         <ArrowLeft aria-hidden="true" className="h-4 w-4" />Retour aux formations

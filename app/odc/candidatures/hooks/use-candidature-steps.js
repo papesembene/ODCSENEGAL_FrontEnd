@@ -12,8 +12,8 @@ export default function useCandidatureSteps(formRef, errors, enabled) {
     const field = pendingFocus.current
     const controls = [...(formRef.current?.elements || [])].filter((element) =>
       CANDIDATURE_STEPS[step].fields.includes(element.name) && !element.matches(":disabled"))
-    // An unavailable formation is disabled; the region remains editable.
-    const target = field === "first" || field === "initial" ? controls[0]
+    // Prefer the checked radio when revisiting a choice, without changing it on focus.
+    const target = field === "first" || field === "initial" ? controls.find((element) => element.checked) || controls[0]
       : controls.find((element) => element.name === field) || controls[0]
     if (!target) return
     pendingFocus.current = null

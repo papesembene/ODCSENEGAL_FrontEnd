@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
 import trainingDefaults from "../../data/training-defaults.js"
+import { DEFAULT_TRAINING_SITES } from "../../lib/training-eligibility.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const output = process.env.ODC_SCREENSHOT_DIR
@@ -28,7 +29,7 @@ async function fixture(options = {}) {
     const headers = { "Access-Control-Allow-Origin": new URL(baseUrl).origin,
       "Access-Control-Allow-Headers": "content-type, authorization", "Access-Control-Allow-Methods": "GET, OPTIONS" }
     if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers })
-    if (new URL(route.request().url()).pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults } })
+    if (new URL(route.request().url()).pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults, trainingSites: DEFAULT_TRAINING_SITES } })
     const path = new URL(route.request().url()).pathname
     const data = path.endsWith("/candidature/status")
       ? { isOpen: true, campaign: { title: "Campagne de test", endAt: "2030-01-01T00:00:00Z" } } : []

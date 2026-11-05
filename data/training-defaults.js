@@ -1,4 +1,4 @@
-import { withResidenceEligibility } from "../lib/training-eligibility.js"
+import { withSiteAssignments } from "../lib/training-eligibility.js"
 
 const trainingDefaults = [
   {
@@ -36,7 +36,7 @@ const trainingDefaults = [
     "displayOrder": 10,
     "imageUrl": "",
     "version": 0,
-    "applicationRegions": []
+    "siteIds": ["dakar"]
   },
   {
     "id": "dev-data",
@@ -71,9 +71,8 @@ const trainingDefaults = [
     "displayOrder": 20,
     "imageUrl": "",
     "version": 0,
-    "applicationRegions": [
-      "Thiès",
-      "Diamniadio"
+    "siteIds": [
+      "dakar", "thies", "diamniadio-uam"
     ]
   },
   {
@@ -112,8 +111,8 @@ const trainingDefaults = [
     "displayOrder": 30,
     "imageUrl": "",
     "version": 0,
-    "applicationRegions": [
-      "Tambacounda"
+    "siteIds": [
+      "dakar", "tambacounda"
     ]
   },
   {
@@ -147,7 +146,7 @@ const trainingDefaults = [
     "displayOrder": 40,
     "imageUrl": "",
     "version": 0,
-    "applicationRegions": []
+    "siteIds": ["dakar"]
   },
   {
     "id": "aws-cloud",
@@ -181,7 +180,7 @@ const trainingDefaults = [
     "displayOrder": 50,
     "imageUrl": "",
     "version": 0,
-    "applicationRegions": []
+    "siteIds": ["dakar"]
   },
   {
     "id": "intelligence-artificielle",
@@ -215,7 +214,7 @@ const trainingDefaults = [
     "displayOrder": 60,
     "imageUrl": "",
     "version": 0,
-    "applicationRegions": []
+    "siteIds": ["dakar"]
   },
   {
     "id": "cyber-security",
@@ -253,8 +252,8 @@ const trainingDefaults = [
     "displayOrder": 70,
     "imageUrl": "",
     "version": 0,
-    "applicationRegions": []
+    "siteIds": ["dakar"]
   }
 ]
 
-export default trainingDefaults.map(withResidenceEligibility)
+export default trainingDefaults.map(withSiteAssignments)

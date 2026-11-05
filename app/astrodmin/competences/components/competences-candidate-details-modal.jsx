@@ -154,6 +154,8 @@ export default function CompetencesCandidateDetailsModal({
                     <h4 className="mb-2 text-sm font-semibold">Formation et disponibilité</h4>
                     <Card>
                       <CardContent className="space-y-4 p-4">
+                        <div><Label className="text-xs text-muted-foreground">Site de formation choisi</Label>
+                          <p className="text-sm font-medium">{candidate.training_site_name || "Non renseigné (ancien dossier)"}</p></div>
                         <div>
                           <Label className="text-xs text-muted-foreground">Formation souhaitée</Label>
                           <p className="text-sm font-medium"><TrainingName value={candidate.desired_training} /></p>

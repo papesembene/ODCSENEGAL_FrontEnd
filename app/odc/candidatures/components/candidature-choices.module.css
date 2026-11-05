@@ -1,0 +1,32 @@
+.canvas { background: #faf9f6; background-image: radial-gradient(ellipse at 100% 0, #ff79000c, transparent 55%); }
+.intro { position: relative; overflow: hidden; border-radius: 20px; background: #171717; color: white; padding: clamp(24px, 4vw, 42px); }
+.intro::after { content: ""; position: absolute; width: 310px; height: 310px; right: -85px; top: -110px; border: 1px solid #ff79004d; border-radius: 50%; box-shadow: 0 0 0 36px #ff79000a, 0 0 0 73px #ff790009, 0 0 0 110px #ff790006; pointer-events: none; }
+.eyebrow { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #ffad65; }
+.eyebrow::before { content: ""; width: 7px; height: 7px; background: #ff7900; }
+.intro h2 { position: relative; z-index: 1; max-width: 680px; margin-top: 14px; font-size: clamp(28px, 4.5vw, 44px); font-weight: 800; letter-spacing: -.045em; line-height: 1.1; }
+.intro h2 span { color: #ff9c45; }
+.intro p { position: relative; z-index: 1; max-width: 550px; margin-top: 14px; color: #c4c4c4; font-size: 14px; line-height: 1.65; }
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+.courses { grid-template-columns: 1fr; }
+.courses .choiceBody { font-size: 14px; }
+.courses .choiceTitle { font-size: 20px; }
+.choice { position: relative; display: flex; flex-direction: column; min-width: 0; border: 1px solid #deddd9; border-radius: 14px; background: #fff; padding: 22px; cursor: pointer; transition: border-color .2s, box-shadow .2s, transform .2s, background .2s; animation: arrive .45s both; animation-delay: var(--choice-delay); }
+.choiceControl { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.choice:hover:not(.unavailable) { transform: translateY(-3px); border-color: #b7b1aa; box-shadow: 0 10px 24px #17171708; }
+.choice:has(input:focus-visible) { outline: 3px solid #171717; outline-offset: 3px; }
+.choice.selected { border-color: #f07800; background: #fff6ed; box-shadow: inset 0 0 0 1px #f07800; }
+.choiceTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 25px; }
+.choiceIcon { color: #65605a; }
+.selected .choiceIcon { color: #ca5d00; }
+.indicator { display: flex; width: 27px; height: 27px; border-radius: 50%; align-items: center; justify-content: center; color: #6c655d; background: #f3f2ef; }
+.selected .indicator { background: #171717; color: #fff; }
+.choiceTitle { display: block; font-size: 20px; line-height: 1.25; font-weight: 750; letter-spacing: -.025em; color: #171717; overflow-wrap: anywhere; }
+.choiceBody { display: block; margin-top: 9px; font-size: 12px; line-height: 1.6; color: #625e58; }
+.unavailable { background: #f3f2ef; cursor: not-allowed; opacity: .65; }
+.section { animation: arrive .35s both; }
+@keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (min-width: 850px) { .sites { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 640px) { .courses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.courses:has(> :only-child) { grid-template-columns: 1fr; }
+@media (max-width: 420px) { .choice { padding: 16px; } .choiceTitle { font-size: clamp(14px, 4.1vw, 17px); } .choiceTop { margin-bottom: 18px; } }
+@media (prefers-reduced-motion: reduce) { .choice, .section { animation: none; transition: none; } .choice:hover:not(.unavailable) { transform: none; } }

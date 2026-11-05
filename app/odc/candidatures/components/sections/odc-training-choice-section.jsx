@@ -1,31 +1,39 @@
-import { Clock, MapPin } from "lucide-react"
-import { regions } from "../../constants"
+import { useState } from "react"
+import { BookOpen, ChevronLeft, ChevronRight, Clock, MapPin, Search } from "lucide-react"
+import { trainingToken } from "@/lib/training-catalog"
 import CandidatureSection from "../candidature-section"
-import CandidatureField from "../candidature-field"
+import CandidatureChoiceCard from "../candidature-choice-card"
+import styles from "../candidature-choices.module.css"
 
 export default function OdcTrainingChoiceSection({ manager }) {
-  const { values, formations, selectedTraining, catalog } = manager
-  const residenceRegions = catalog.regionalRules?.residenceRegions || regions
-  return <CandidatureSection id="choix-formation" title="Votre résidence et votre formation" icon={MapPin}
-    description="Sélectionnez votre région / localité de résidence, puis une formation.">
-    <div className="grid gap-5 sm:grid-cols-2">
-      <CandidatureField manager={manager} name="region" label="Région / localité de résidence"
-        placeholder="Choisissez votre lieu de résidence" options={residenceRegions.map((region) => ({ value: region,
-          label: region === "Tambacounda" ? "Tambacounda (Tamba)" : region }))} autoComplete="address-level1" />
-      <CandidatureField manager={manager} name="formation" label="Formation souhaitée"
-        options={formations.map((item) => ({ value: item.code, label: item.title }))}
-        placeholder={!values.region ? "Choisissez d'abord votre lieu de résidence" : "Choisissez votre formation"}
-        disabled={!values.region || !formations.length}
-        hint={values.region ? "Seules les formations autorisées pour ce lieu de résidence et votre profil sont proposées." : undefined} />
+  const { formations, selectedSite } = manager
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const filtered = formations.filter((item) => trainingToken(item.title).includes(trainingToken(search)))
+  const pages = Math.max(1, Math.ceil(filtered.length / 4))
+  const current = Math.min(page, pages)
+  return <CandidatureSection id="choix-formation" title="Quelle formation vous inspire ?" icon={BookOpen}
+    description="Choisissez une formation parmi celles proposées sur votre site.">
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm">
+      <span className="flex items-center gap-2 font-semibold"><MapPin aria-hidden="true" size={16} />{selectedSite?.name}</span>
+      <button type="button" onClick={() => manager.returnTo(0)} className="text-sm underline underline-offset-4">Changer de site</button>
     </div>
-    {values.region && !formations.length && catalog.phase === "ready" && <p role="status" className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm text-gray-700">
-      Aucune formation n'est actuellement ouverte pour ce lieu de résidence et ce profil.
-    </p>}
-    {selectedTraining && <div className="mt-5 flex flex-wrap items-start justify-between gap-3 rounded-lg border-l-4 border-[#ff7900] bg-gray-50 px-4 py-3">
-      <div className="min-w-0"><p className="font-semibold text-gray-900">{selectedTraining.title}</p>
-        {selectedTraining.level && <p className="mt-1 text-sm text-gray-600">{selectedTraining.level}</p>}
-      </div>
-      <span className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-gray-700"><Clock aria-hidden="true" className="h-4 w-4 text-[#e66f00]" />{selectedTraining.duration}</span>
-    </div>}
+    {formations.length > 4 && <label className="mt-4 flex items-center gap-2 rounded-lg border px-3"><Search aria-hidden="true" size={17} />
+      <span className="sr-only">Rechercher une formation</span><input type="search" value={search} maxLength={120}
+        onChange={(event) => { setSearch(event.target.value); setPage(1) }} placeholder="Rechercher une formation" className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" />
+    </label>}
+    <fieldset className="min-w-0 border-0 p-0"><legend className="sr-only">Formation souhaitée</legend>
+      <div className={`${styles.choices} ${styles.courses}`}>{filtered.slice((current - 1) * 4, current * 4).map((item, index) =>
+        <CandidatureChoiceCard key={item.code} manager={manager} name="formation" value={item.code} title={item.title} icon={BookOpen} index={index}>
+          <span className="mb-2 flex items-center gap-1.5 font-medium"><Clock aria-hidden="true" size={13} />{item.duration}</span>
+          <span className="line-clamp-2">{item.level || item.description}</span>
+          {item.femaleOnly && <span className="mt-2 block font-medium">Formation réservée aux femmes</span>}
+        </CandidatureChoiceCard>)}</div>
+    </fieldset>
+    {manager.errors.formation && <p id="formation-error" className="mt-3 text-sm text-red-700">{manager.errors.formation}</p>}
+    {!filtered.length && <p role="status" className="mt-4 text-sm text-gray-600">Aucune formation ne correspond à votre sélection.</p>}
+    {pages > 1 && <nav aria-label="Pages de formations" className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm"><span>{filtered.length} formations · {current} / {pages}</span>
+      <div className="flex gap-3"><button type="button" aria-label="Formations précédentes" disabled={current === 1} onClick={() => setPage(current - 1)} className="flex h-11 w-11 items-center justify-center rounded border disabled:opacity-40"><ChevronLeft aria-hidden="true" size={17} /></button>
+        <button type="button" aria-label="Formations suivantes" disabled={current === pages} onClick={() => setPage(current + 1)} className="flex h-11 w-11 items-center justify-center rounded border disabled:opacity-40"><ChevronRight aria-hidden="true" size={17} /></button></div></nav>}
   </CandidatureSection>
 }

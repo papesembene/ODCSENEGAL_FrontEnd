@@ -112,6 +112,8 @@ export default function CompetencesAdminDashboard() {
               setSearchTerm={dashboard.setSearchTerm}
               selectedFormation={dashboard.selectedFormation}
               setSelectedFormation={dashboard.setSelectedFormation}
+              selectedSite={dashboard.selectedSite}
+              setSelectedSite={dashboard.setSelectedSite}
               selectedStatus={dashboard.selectedStatus}
               setSelectedStatus={dashboard.setSelectedStatus}
               selectedGender={dashboard.selectedGender}

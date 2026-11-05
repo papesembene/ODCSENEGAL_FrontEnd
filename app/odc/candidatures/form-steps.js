@@ -1,7 +1,8 @@
 export const CANDIDATURE_STEPS = [
-  { id: "choix-formation", label: "Formation", fields: ["region", "formation"] },
+  { id: "choix-site", label: "Site", fields: ["trainingSite"] },
+  { id: "choix-formation", label: "Formation", fields: ["formation"] },
   { id: "identite-personnelle", label: "Identité", fields: ["firstName", "lastName", "birthDate", "birthPlace", "gender", "nationality", "idType", "idNumber"] },
-  { id: "coordonnees", label: "Contact", fields: ["email", "phone"] },
+  { id: "coordonnees", label: "Contact", fields: ["email", "phone", "region"] },
   { id: "parcours-disponibilites", label: "Parcours", fields: ["education", "currentStructure", "speciality",
     "computer_skills", "isWorking", "contractType", "isAvailable"] },
   { id: "validation-candidature", label: "Envoi", fields: ["acceptTerms"] },

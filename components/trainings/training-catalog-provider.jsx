@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { usePathname } from "next/navigation"
 import { fetchJsonWithTimeout } from "@/app/utils/fetchWithTimeout"
 import { setKnownTrainings, trainingOptions, validateCatalogResponse } from "@/lib/training-catalog"
-import { validateRegionalRules } from "@/lib/training-eligibility"
+import { validateTrainingSites, RESIDENCE_LOCATIONS } from "@/lib/training-eligibility"
 
 const Context = createContext(null)
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
@@ -15,9 +15,10 @@ export default function TrainingCatalogProvider({ children }) {
   const pathname = usePathname()
   const admin = ADMIN_PATHS.some((path) => pathname.startsWith(path))
   const enabled = admin || PUBLIC_PATHS.has(pathname)
-  const [state, setState] = useState({ items: [], phase: "idle", error: "" })
-  const refreshRef = useRef(async () => [])
-  const refresh = useCallback(() => refreshRef.current(true), [])
+  const [state, setState] = useState({ items: [], sites: [], residenceLocations: RESIDENCE_LOCATIONS, phase: "idle", error: "" })
+  const refreshRef = useRef(async () => null)
+  const refreshSnapshot = useCallback(() => refreshRef.current(true), [])
+  const refresh = useCallback(async () => (await refreshRef.current(true))?.items || [], [])
 
   useEffect(() => {
     const role = localStorage.getItem("admin_type")
@@ -33,15 +34,16 @@ export default function TrainingCatalogProvider({ children }) {
       setState((previous) => ({ ...previous, phase: "loading", error: "" }))
       pending = fetchJsonWithTimeout(`${API}/api/${admin ? "admin/" : ""}trainings`, {
         timeout: 10000, retries: 0, cache: "no-store",
-      }).then((payload) => ({ items: validateCatalogResponse(payload), regionalRules: validateRegionalRules(payload.regionalRules) })).then(({ items, regionalRules }) => {
+      }).then((payload) => ({ items: validateCatalogResponse(payload), sites: validateTrainingSites(payload.trainingSites),
+        residenceLocations: payload.residenceLocations || RESIDENCE_LOCATIONS })).then((snapshot) => {
         if (active) {
-          setKnownTrainings(items)
-          setState({ items, regionalRules, phase: "ready", error: "" })
+          setKnownTrainings(snapshot.items)
+          setState({ ...snapshot, phase: "ready", error: "" })
         }
-        return items
+        return snapshot
       }).catch((error) => {
         if (active) setState((previous) => ({ ...previous, phase: "error", error: error.message }))
-        return []
+        return null
       }).finally(() => { pending = null })
       return pending
     }
@@ -56,14 +58,14 @@ export default function TrainingCatalogProvider({ children }) {
     window.addEventListener("storage", changed)
     return () => {
       active = false
-      refreshRef.current = async () => []
+      refreshRef.current = async () => null
       document.removeEventListener("visibilitychange", visible)
       window.removeEventListener("online", visible)
       window.removeEventListener("storage", changed)
     }
   }, [pathname, admin, enabled])
 
-  return <Context.Provider value={{ ...state, refresh,
+  return <Context.Provider value={{ ...state, refresh, refreshSnapshot,
     options: trainingOptions(state.items), allOptions: trainingOptions(state.items, "code", true),
     testOptions: trainingOptions(state.items, "value"),
   }}>{children}</Context.Provider>

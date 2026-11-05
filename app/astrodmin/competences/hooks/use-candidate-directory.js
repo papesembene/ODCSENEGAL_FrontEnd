@@ -10,7 +10,7 @@ const EMPTY_SUMMARY = {
 }
 
 export default function useCandidateDirectory(api, days, listEnabled = true) {
-  const [query, setQuery] = useState({ page: 1, per_page: 20, search: "", desired_training: "all", status: "all", gender: "all" })
+  const [query, setQuery] = useState({ page: 1, per_page: 20, search: "", desired_training: "all", status: "all", gender: "all", training_site: "all" })
   const [searchTerm, setSearchTerm] = useState("")
   const [response, setResponse] = useState({ data: [], total: 0 })
   const [summary, setSummary] = useState(EMPTY_SUMMARY)
@@ -96,6 +96,7 @@ export default function useCandidateDirectory(api, days, listEnabled = true) {
   return {
     searchTerm, setSearchTerm,
     selectedFormation: query.desired_training, setSelectedFormation: (value) => changeQuery("desired_training", value),
+    selectedSite: query.training_site, setSelectedSite: (value) => changeQuery("training_site", value),
     selectedStatus: query.status, setSelectedStatus: (value) => changeQuery("status", value),
     selectedGender: query.gender, setSelectedGender: (value) => changeQuery("gender", value),
     candidatesMainPage: response.pagination?.page ?? query.page,

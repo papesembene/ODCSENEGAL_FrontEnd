@@ -44,14 +44,15 @@ Sans cette variable, les parcours utilisent un serveur deja lance sur
   notifications et reprise apres erreur.
 - `trainings`: ajout, modification, conflit de version, catalogue public,
   six formations par page, recherche par nom sans accents ni casse,
-  duree du formulaire, listes tests/groupes/entretiens, archivage,
+  gestion des sites et affectations, listes tests/groupes/entretiens, archivage,
   recherche et pagination mobile, restrictions jury, sans donnees reelles.
-- `candidature-form`: filtrage par residence, conservation des autres offres,
-  cinq etapes courtes avec suivant/precedent, piece d'identite dans l'identite,
-  contact reserve a l'email et au telephone,
+- `candidature-form`: site de formation puis referentiel, independants de la residence,
+  six etapes courtes avec suivant/precedent, piece d'identite dans l'identite,
+  contact avec email, telephone et lieu de residence,
   focus sur les champs, retour sans perte et progression clavier,
   validation par etape, consentement final, affichage mobile et bureau,
-  erreur reseau et nouvel envoi sans perte, offre retiree avant
+  recherche et pagination des formations, erreur reseau et nouvel envoi sans perte,
+  site archive ou offre retiree avant
   soumission, verification des doublons a la sortie du champ et protection
   contre les reponses de verification devenues obsoletes.
 - `home`: accueil responsive de 320 a 1440 pixels, premier ecran adaptable,

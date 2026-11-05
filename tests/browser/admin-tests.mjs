@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
 import trainingDefaults from "../../data/training-defaults.js"
+import { DEFAULT_TRAINING_SITES } from "../../lib/training-eligibility.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const admin = { id: "admin", email: "admin@example.org", admin_type: "super_admin", first_name: "Local", last_name: "Admin" }
@@ -45,7 +46,7 @@ try {
       "Access-Control-Allow-Credentials": "true", "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "content-type, authorization" }
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers })
-    if (url.pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults } })
+    if (url.pathname.endsWith("/trainings")) return route.fulfill({ headers, json: { success: true, data: trainingDefaults, trainingSites: DEFAULT_TRAINING_SITES } })
     let status = 200
     let data = { success: true, data: [] }
     const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()

@@ -6,6 +6,7 @@ export default function OdcValidationSection({ manager }) {
   return <CandidatureSection id="validation-candidature" title="Vérifiez et envoyez" icon={CheckCircle}
     description="Relisez vos coordonnées et votre choix de formation avant de valider.">
     <dl className="mb-5 grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm sm:grid-cols-2">
+      <div><dt className="text-xs text-gray-500">Site de formation</dt><dd className="mt-1 font-medium text-gray-900">{manager.selectedSite?.name || "À choisir"}</dd></div>
       <div><dt className="text-xs text-gray-500">Région / localité de résidence</dt><dd className="mt-1 font-medium text-gray-900">{manager.values.region || "À renseigner"}</dd></div>
       <div><dt className="text-xs text-gray-500">Formation</dt><dd className="mt-1 font-medium text-gray-900">{manager.selectedTraining?.title || "À choisir"}</dd></div>
       <div className="min-w-0 sm:col-span-2"><dt className="text-xs text-gray-500">Email de contact</dt><dd className="mt-1 break-all font-medium text-gray-900">{manager.values.email || "À renseigner"}</dd></div>

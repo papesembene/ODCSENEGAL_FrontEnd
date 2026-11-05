@@ -17,23 +17,19 @@ export function trainingForm(item) {
     startDate: item?.startDate || "", endDate: item?.endDate || "",
     skills: (item?.skills || []).join("\n"), femaleOnly: item?.femaleOnly || false,
     status: item?.status || "published", displayOrder: String(item?.displayOrder ?? 0), imageUrl: item?.imageUrl || "",
-    applicationRegions: [...(item?.applicationRegions || [])],
-    applicationRegionMode: item?.applicationRegionMode || "all",
+    siteIds: [...(item?.siteIds || [])],
   }
 }
 
 export function trainingPayload(form, version) {
-  if (!["all", "selected"].includes(form.applicationRegionMode)) throw new Error("Choisissez les lieux de résidence autorisés.")
-  if (form.applicationRegionMode === "selected" && !form.applicationRegions.length) {
-    throw new Error("Sélectionnez au moins une région / localité de résidence.")
-  }
+  if (form.status === "published" && !form.siteIds.length) throw new Error("Choisissez au moins un site de formation.")
   for (const [field, min, max] of [["durationMonths", 1, 36], ["displayOrder", 0, 10000]]) {
     if (!/^\d+$/.test(form[field]) || Number(form[field]) < min || Number(form[field]) > max) {
       throw new Error(`${field === "durationMonths" ? "La durée" : "L'ordre"} doit être compris entre ${min} et ${max}.`)
     }
   }
   return { ...form, title: form.title.trim(), durationMonths: Number(form.durationMonths),
-    applicationRegions: form.applicationRegionMode === "all" ? [] : [...form.applicationRegions],
+    siteIds: [...form.siteIds],
     displayOrder: Number(form.displayOrder), skills: form.skills.split("\n").map((line) => line.trim()).filter(Boolean),
     ...(version !== undefined ? { version } : {}),
   }

@@ -263,6 +263,11 @@ export const useAdminApi = () => {
     },
   }), [makeRequest])
 
+  const trainingSites = useMemo(() => ({
+    create: (payload) => makeRequest("/api/admin/training-sites", { method: "POST", body: JSON.stringify(payload) }),
+    update: (code, payload) => makeRequest(`/api/admin/training-sites/${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  }), [makeRequest])
+
   return {
     makeRequest,
     candidatures,
@@ -272,5 +277,6 @@ export const useAdminApi = () => {
     portalContent,
     adminProfiles,
     trainings,
+    trainingSites,
   }
 }

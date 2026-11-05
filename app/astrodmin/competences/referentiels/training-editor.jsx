@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { getPublicMediaUrl } from "@/lib/public-api"
 import { TRAINING_FIELDS, TRAINING_STATUSES } from "./training-form"
-import TrainingResidenceFields from "./training-residence-fields"
+import TrainingSiteFields from "./training-site-fields"
 
 export default function TrainingEditor({ manager }) {
   const { open, setOpen, form, update, busy, error, save, editing, upload } = manager
@@ -61,7 +61,7 @@ export default function TrainingEditor({ manager }) {
               <Label htmlFor="training-female-only">Formation réservée aux femmes</Label>
             </div>
           </div>
-          <TrainingResidenceFields manager={manager} />
+          <TrainingSiteFields manager={manager} />
         </fieldset>
         {error && <Alert variant="destructive" role="alert"><AlertDescription>{error}</AlertDescription></Alert>}
         <DialogFooter>

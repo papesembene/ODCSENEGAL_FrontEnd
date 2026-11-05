@@ -1,4 +1,5 @@
 import TrainingName from "@/components/trainings/training-name"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
 import { MoreHorizontal, Search } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -28,6 +29,8 @@ export default function CompetencesCandidatesTab({
   setSearchTerm,
   selectedFormation,
   setSelectedFormation,
+  selectedSite,
+  setSelectedSite,
   selectedStatus,
   setSelectedStatus,
   selectedGender,
@@ -38,6 +41,7 @@ export default function CompetencesCandidatesTab({
   getStatusLabel,
   viewCandidateDetails,
 }) {
+  const catalog = useTrainingCatalog()
   return (
     <Card className="col-span-3">
       <CardHeader>
@@ -77,6 +81,8 @@ export default function CompetencesCandidatesTab({
             <Input type="search" aria-label="Rechercher un candidat" placeholder="Nom, email, téléphone ou nationalité" maxLength={200} className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Select value={selectedSite} onValueChange={setSelectedSite}><SelectTrigger className="w-full sm:w-[180px]" aria-label="Site de formation"><SelectValue placeholder="Site de formation" /></SelectTrigger>
+              <SelectContent><SelectItem value="all">Tous les sites</SelectItem>{catalog.sites.map((site) => <SelectItem key={site.code} value={site.code}>{site.name}{site.status === "archived" ? " (archivé)" : ""}</SelectItem>)}</SelectContent></Select>
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
               <SelectTrigger className="w-full sm:w-[160px] md:w-[180px]">
                 <SelectValue placeholder="Formation" />
@@ -125,6 +131,7 @@ export default function CompetencesCandidatesTab({
                 <TableHead>Email</TableHead>
                 <TableHead>Genre</TableHead>
                 <TableHead>Formation</TableHead>
+                <TableHead>Site de formation</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -132,10 +139,10 @@ export default function CompetencesCandidatesTab({
             </TableHeader>
             <TableBody>
               {candidatesLoading ? (
-                <TableRow><TableCell colSpan={7} className="py-4 text-center" role="status">Chargement des candidats...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="py-4 text-center" role="status">Chargement des candidats...</TableCell></TableRow>
               ) : filteredCandidates.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-4 text-center">
+                  <TableCell colSpan={8} className="py-4 text-center">
                     Aucun résultat pour les filtres sélectionnés
                   </TableCell>
                 </TableRow>
@@ -158,6 +165,7 @@ export default function CompetencesCandidatesTab({
                     <TableCell>{candidate.email}</TableCell>
                     <TableCell>{getGenderLabel(candidate.gender)}</TableCell>
                     <TableCell><TrainingName value={candidate.desired_training} /></TableCell>
+                    <TableCell>{candidate.training_site_name || "Non renseigné"}</TableCell>
                     <TableCell>{candidate.application_date ? new Date(candidate.application_date).toLocaleDateString("fr-FR") : "N/A"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`${getStatusColor(candidate.status)} text-white`}>

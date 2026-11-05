@@ -9,7 +9,7 @@ export function initialCandidature() {
     firstName: "", lastName: "", email: "", phone: "", phoneCountry: "SN", birthDate: "", birthPlace: "",
     gender: "", idType: "", idNumber: "", nationality: "", region: "", currentStructure: "", education: "",
     speciality: "", computer_skills: undefined, isWorking: undefined, contractType: "", isAvailable: undefined,
-    formation: "", acceptTerms: false,
+    trainingSite: "", formation: "", acceptTerms: false,
   }
 }
 
@@ -24,8 +24,8 @@ export function changeCandidature(values, name, value, trainings, residenceLocat
   if (name === "idType" && value !== values.idType) next.idNumber = ""
   if (name === "phoneCountry" && value !== values.phoneCountry) next.phone = ""
   if (name === "isWorking" && !value) next.contractType = ""
-  if (["region", "gender"].includes(name) && next.formation
-    && !eligibleTrainings(trainings, next.region, next.gender, residenceLocations).some((item) => item.code === next.formation)) {
+  if (["trainingSite", "gender"].includes(name) && next.formation
+    && !eligibleTrainings(trainings, next.trainingSite, next.gender).some((item) => item.code === next.formation)) {
     next.formation = ""
     next.education = ""
     next.currentStructure = ""
@@ -33,7 +33,7 @@ export function changeCandidature(values, name, value, trainings, residenceLocat
   return next
 }
 
-export function candidatureErrors(values, trainings, duplicates = {}, residenceLocations = RESIDENCE_LOCATIONS) {
+export function candidatureErrors(values, trainings, duplicates = {}, residenceLocations = RESIDENCE_LOCATIONS, sites = []) {
   const errors = {}
   for (const name of ["firstName", "lastName", "email", "phone", "birthDate", "birthPlace", "gender",
     "idNumber", "nationality", "region", "education", "formation", "isWorking"]) {
@@ -41,9 +41,12 @@ export function candidatureErrors(values, trainings, duplicates = {}, residenceL
     if (error) errors[name] = error
   }
   if (!["cni", "passport"].includes(values.idType)) errors.idType = "Choisissez votre type de pièce d'identité."
-  if (values.formation && !eligibleTrainings(trainings, values.region, values.gender, residenceLocations)
+  if (!sites.some((site) => site.code === values.trainingSite && site.status === "active")) {
+    errors.trainingSite = "Choisissez un site de formation disponible."
+  }
+  if (values.formation && !eligibleTrainings(trainings, values.trainingSite, values.gender)
     .some((item) => item.code === values.formation)) {
-    errors.formation = "Choisissez une formation autorisée pour votre région / localité de résidence et votre profil."
+    errors.formation = "Choisissez une formation proposée sur ce site et adaptée à votre profil."
   }
   for (const name of ["computer_skills", "isWorking", "isAvailable"]) {
     if (typeof values[name] !== "boolean") errors[name] = "Choisissez Oui ou Non."
@@ -62,7 +65,7 @@ export function candidaturePayload(values) {
     cni_or_passport_number: values.idNumber.trim(), nationality: values.nationality,
     region_of_residence: values.region, current_structure: values.currentStructure, education_level: values.education,
     computer_skills: values.computer_skills, available_for_10_months: values.isAvailable,
-    desired_training: values.formation, accept_conditions: values.acceptTerms, speciality: values.speciality,
+    training_site: values.trainingSite, desired_training: values.formation, accept_conditions: values.acceptTerms, speciality: values.speciality,
     is_working: values.isWorking, contract_type: values.isWorking ? values.contractType : "",
   }
 }
