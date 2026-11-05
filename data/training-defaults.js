@@ -1,3 +1,5 @@
+import { withResidenceEligibility } from "../lib/training-eligibility.js"
+
 const trainingDefaults = [
   {
     "id": "dev-web-mobile",
@@ -33,7 +35,8 @@ const trainingDefaults = [
     "status": "published",
     "displayOrder": 10,
     "imageUrl": "",
-    "version": 0
+    "version": 0,
+    "applicationRegions": []
   },
   {
     "id": "dev-data",
@@ -67,7 +70,11 @@ const trainingDefaults = [
     "status": "published",
     "displayOrder": 20,
     "imageUrl": "",
-    "version": 0
+    "version": 0,
+    "applicationRegions": [
+      "Thiès",
+      "Diamniadio"
+    ]
   },
   {
     "id": "referent-digital",
@@ -104,7 +111,10 @@ const trainingDefaults = [
     "status": "published",
     "displayOrder": 30,
     "imageUrl": "",
-    "version": 0
+    "version": 0,
+    "applicationRegions": [
+      "Tambacounda"
+    ]
   },
   {
     "id": "hackeuses",
@@ -136,7 +146,8 @@ const trainingDefaults = [
     "status": "published",
     "displayOrder": 40,
     "imageUrl": "",
-    "version": 0
+    "version": 0,
+    "applicationRegions": []
   },
   {
     "id": "aws-cloud",
@@ -169,7 +180,8 @@ const trainingDefaults = [
     "status": "published",
     "displayOrder": 50,
     "imageUrl": "",
-    "version": 0
+    "version": 0,
+    "applicationRegions": []
   },
   {
     "id": "intelligence-artificielle",
@@ -202,7 +214,8 @@ const trainingDefaults = [
     "status": "published",
     "displayOrder": 60,
     "imageUrl": "",
-    "version": 0
+    "version": 0,
+    "applicationRegions": []
   },
   {
     "id": "cyber-security",
@@ -239,8 +252,9 @@ const trainingDefaults = [
     "status": "published",
     "displayOrder": 70,
     "imageUrl": "",
-    "version": 0
+    "version": 0,
+    "applicationRegions": []
   }
 ]
 
-export default trainingDefaults
+export default trainingDefaults.map(withResidenceEligibility)

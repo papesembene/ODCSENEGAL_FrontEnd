@@ -112,6 +112,9 @@ try {
     const { context, page, scenario, errors } = await fixture("open")
     await page.goto(`${baseUrl}/odc/candidatures`, { waitUntil: "networkidle" })
     await page.locator("form").waitFor()
+    await page.locator("#region").selectOption("Dakar")
+    await page.locator("#formation").selectOption("dev-web-mobile")
+    await page.getByRole("button", { name: "Suivant", exact: true }).click()
     const name = page.locator('input[name="firstName"]')
     await name.fill("Moussa")
     scenario.key = "closed"
@@ -119,7 +122,7 @@ try {
     await page.getByRole("alert").filter({ hasText: "Les candidatures sont fermées" }).waitFor()
     assert.equal(await name.inputValue(), "Moussa", "Closing a campaign must preserve in-page values")
     assert.equal(await name.isDisabled(), true)
-    assert.equal(await page.getByRole("button", { name: "Envoyer ma candidature", exact: true }).isDisabled(), true)
+    assert.equal(await page.getByRole("button", { name: "Suivant", exact: true }).isDisabled(), true)
     assert.equal(scenario.submissions, 0)
     scenario.key = "open"
     await page.getByRole("button", { name: "Vérifier à nouveau", exact: true }).click()

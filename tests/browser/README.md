@@ -19,6 +19,7 @@ ODC_BROWSER_START_SERVER=1 npm run test:candidature-access
 ODC_BROWSER_START_SERVER=1 npm run test:candidates
 ODC_BROWSER_START_SERVER=1 npm run test:admin
 ODC_BROWSER_START_SERVER=1 npm run test:trainings
+ODC_BROWSER_START_SERVER=1 npm run test:candidature-form
 ```
 
 Dans PowerShell, definir `$env:ODC_BROWSER_START_SERVER="1"` avant les commandes.
@@ -45,6 +46,14 @@ Sans cette variable, les parcours utilisent un serveur deja lance sur
   six formations par page, recherche par nom sans accents ni casse,
   duree du formulaire, listes tests/groupes/entretiens, archivage,
   recherche et pagination mobile, restrictions jury, sans donnees reelles.
+- `candidature-form`: filtrage par residence, conservation des autres offres,
+  cinq etapes courtes avec suivant/precedent, piece d'identite dans l'identite,
+  contact reserve a l'email et au telephone,
+  focus sur les champs, retour sans perte et progression clavier,
+  validation par etape, consentement final, affichage mobile et bureau,
+  erreur reseau et nouvel envoi sans perte, offre retiree avant
+  soumission, verification des doublons a la sortie du champ et protection
+  contre les reponses de verification devenues obsoletes.
 - `home`: accueil responsive de 320 a 1440 pixels, premier ecran adaptable,
   campagne dynamique, carrousel manuel au clavier, menu mobile, temoignages,
   logos partenaires, bannieres du CM, texte agrandi a 200 %, theme sombre et

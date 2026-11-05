@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { usePathname } from "next/navigation"
 import { fetchJsonWithTimeout } from "@/app/utils/fetchWithTimeout"
 import { setKnownTrainings, trainingOptions, validateCatalogResponse } from "@/lib/training-catalog"
+import { validateRegionalRules } from "@/lib/training-eligibility"
 
 const Context = createContext(null)
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
@@ -32,10 +33,10 @@ export default function TrainingCatalogProvider({ children }) {
       setState((previous) => ({ ...previous, phase: "loading", error: "" }))
       pending = fetchJsonWithTimeout(`${API}/api/${admin ? "admin/" : ""}trainings`, {
         timeout: 10000, retries: 0, cache: "no-store",
-      }).then(validateCatalogResponse).then((items) => {
+      }).then((payload) => ({ items: validateCatalogResponse(payload), regionalRules: validateRegionalRules(payload.regionalRules) })).then(({ items, regionalRules }) => {
         if (active) {
           setKnownTrainings(items)
-          setState({ items, phase: "ready", error: "" })
+          setState({ items, regionalRules, phase: "ready", error: "" })
         }
         return items
       }).catch((error) => {

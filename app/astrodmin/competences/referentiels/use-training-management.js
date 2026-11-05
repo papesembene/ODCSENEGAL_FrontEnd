@@ -81,13 +81,16 @@ export default function useTrainingManagement() {
     && trainingToken(`${item.title} ${item.description}`).includes(trainingToken(searchText)))
   const pages = Math.max(1, Math.ceil(filtered.length / 10))
   const currentPage = Math.min(page, pages)
+  function update(field, value) {
+    setForm((previous) => ({ ...previous, [field]: value }))
+  }
   return {
     allowed, catalog, search, status, page: currentPage, pages, total: filtered.length,
     items: filtered.slice((currentPage - 1) * 10, currentPage * 10), setPage,
     changeSearch: (value) => { setSearch(value); setPage(1) },
     changeStatus: (value) => { setStatus(value); setPage(1) },
     editing, open, setOpen, form, busy, error, begin, save, upload,
-    update: (field, value) => setForm((previous) => ({ ...previous, [field]: value })),
+    update,
     archiveTarget, setArchiveTarget,
     archive: () => archiveTarget && mutate(() => api.archive(archiveTarget.code, archiveTarget.version), "Référentiel archivé : l'historique est conservé"),
   }

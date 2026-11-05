@@ -1,62 +1,24 @@
-import { Send } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { CheckCircle } from "lucide-react"
 import { FormSubmissionError } from "@/components/ui/form-feedback"
+import CandidatureSection from "../candidature-section"
 
-export default function OdcValidationSection({
-  errors,
-  fieldRefs,
-  formData,
-  touchedFields,
-  submitError,
-  isSubmitting,
-  handleChange,
-  setTouchedFields,
-}) {
-  return (
-    <section className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 md:p-6">
-      <div className="mb-5">
-        <h2 className="text-xl font-semibold text-gray-900">3. Validation</h2>
-        <p className="mt-1 text-sm text-gray-600">Vérifiez les informations saisies avant d&apos;envoyer votre candidature.</p>
-      </div>
-
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4">
-        <label className="flex items-start" ref={(el) => (fieldRefs.current.acceptTerms = el)}>
-          <input
-            type="checkbox"
-            name="acceptTerms"
-            checked={formData.acceptTerms}
-            onChange={handleChange}
-            onBlur={() => setTouchedFields((prev) => ({ ...prev, acceptTerms: true }))}
-            className={`mr-2 mt-1 ${errors.acceptTerms ? "border-red-500" : ""}`}
-          />
-          <span className="text-sm text-gray-700">
-            <span className="text-red-500">*</span>J'accepte que mes données personnelles soient traitées conformément à la politique
-            de confidentialité.
-          </span>
-        </label>
-        {errors.acceptTerms && <p className="mt-1 text-xs text-red-500">{errors.acceptTerms}</p>}
-      </div>
-
-      <FormSubmissionError message={submitError} />
-
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          className="flex w-full items-center justify-center bg-[#ff7900] hover:bg-[#e66f00] md:w-auto"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-              Envoi en cours...
-            </>
-          ) : (
-            <>
-              Envoyer ma candidature <Send className="ml-2 h-4 w-4" />
-            </>
-          )}
-        </Button>
-      </div>
-    </section>
-  )
+export default function OdcValidationSection({ manager }) {
+  return <CandidatureSection id="validation-candidature" title="Vérifiez et envoyez" icon={CheckCircle}
+    description="Relisez vos coordonnées et votre choix de formation avant de valider.">
+    <dl className="mb-5 grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm sm:grid-cols-2">
+      <div><dt className="text-xs text-gray-500">Région / localité de résidence</dt><dd className="mt-1 font-medium text-gray-900">{manager.values.region || "À renseigner"}</dd></div>
+      <div><dt className="text-xs text-gray-500">Formation</dt><dd className="mt-1 font-medium text-gray-900">{manager.selectedTraining?.title || "À choisir"}</dd></div>
+      <div className="min-w-0 sm:col-span-2"><dt className="text-xs text-gray-500">Email de contact</dt><dd className="mt-1 break-all font-medium text-gray-900">{manager.values.email || "À renseigner"}</dd></div>
+    </dl>
+    <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-gray-700">
+      <input id="acceptTerms" name="acceptTerms" type="checkbox" checked={manager.values.acceptTerms}
+        onChange={manager.handleChange} required className="mt-1 h-4 w-4 shrink-0 accent-[#ff7900]"
+        ref={(element) => { manager.fieldRefs.current.acceptTerms = element }}
+        aria-invalid={Boolean(manager.errors.acceptTerms)} aria-describedby={manager.errors.acceptTerms ? "acceptTerms-error" : undefined} />
+      <span>J'accepte que mes données personnelles soient traitées conformément à la politique de confidentialité.</span>
+    </label>
+    {manager.errors.acceptTerms && <p id="acceptTerms-error" className="mt-2 text-sm text-red-600">{manager.errors.acceptTerms}</p>}
+    <div className="mt-5"><FormSubmissionError message={manager.submitError} /></div>
+    <p className="mt-5 text-xs leading-5 text-gray-500">Une seule candidature par personne.</p>
+  </CandidatureSection>
 }

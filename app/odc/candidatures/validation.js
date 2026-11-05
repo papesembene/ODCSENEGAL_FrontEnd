@@ -77,7 +77,7 @@ export function validateField(name, value, { idType, selectedCountry }) {
     case "nationality":
       return !value ? "La nationalité est requise" : null
     case "region":
-      return !value ? "La région de résidence est requise" : null
+      return !value ? "La région / localité de résidence est requise" : null
     case "currentStructure":
       return null
     case "education":

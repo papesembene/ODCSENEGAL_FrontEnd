@@ -1,4 +1,5 @@
 import { DEFAULT_TRAININGS } from "../../../lib/training-catalog.js"
+import { RESIDENCE_LOCATIONS } from "../../../data/residence-locations.js"
 
 export const countryCodes = [
   { country: "Sénégal", abbr: "SN", code: "+221", format: "XX XXX XX XX", digits: 9, pattern: /^[7-9]\d{8}$/ },
@@ -54,22 +55,7 @@ export const countryCodes = [
 
 export const formations = DEFAULT_TRAININGS.map((item) => ({ id: item.code, name: item.title, femaleOnly: item.femaleOnly }))
 
-export const regions = [
-  "Dakar",
-  "Diourbel",
-  "Fatick",
-  "Kaffrine",
-  "Kaolack",
-  "Kédougou",
-  "Kolda",
-  "Louga",
-  "Matam",
-  "Saint-Louis",
-  "Sédhiou",
-  "Tambacounda",
-  "Thiès",
-  "Ziguinchor",
-]
+export const regions = RESIDENCE_LOCATIONS
 
 export const nationalities = [
   "Afghane",
