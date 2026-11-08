@@ -54,6 +54,7 @@ export function getActivityStyles(type) {
 }
 
 export function buildGlobalStatCards(globalStats, moduleStats) {
+  const applicationVariation = Number(globalStats.variationCandidatures) || 0
   return [
     {
       title: globalStats.campaignYear ? `Candidatures ${globalStats.campaignYear}` : "Candidatures aux formations",
@@ -61,9 +62,9 @@ export function buildGlobalStatCards(globalStats, moduleStats) {
       icon: Users,
       iconClassName: "text-muted-foreground",
       footer: {
-        text: "vs mois dernier",
-        value: `${globalStats.croissance >= 0 ? "+" : ""}${globalStats.croissance}%`,
-        valueClassName: globalStats.croissance >= 0 ? "text-green-600" : "text-red-600",
+        text: "candidatures vs même période le mois dernier",
+        value: `${applicationVariation >= 0 ? "+" : ""}${applicationVariation}`,
+        valueClassName: applicationVariation >= 0 ? "text-green-600" : "text-red-600",
       },
     },
     {
