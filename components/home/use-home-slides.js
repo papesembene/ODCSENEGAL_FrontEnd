@@ -14,6 +14,7 @@ function mapSlide(content) {
     title: content.title,
     description: content.summary || content.body || "",
     category: content.category || "À la une",
+    campaign: content.slotKey === "candidature",
     image: getPublicMediaUrl(content.imageUrl) || "/odc1Accueil.jpg",
     application: !pendingCampaign && (content.slotKey === "candidature" || content.category === "Candidature" || isFormationApplicationLink(content.linkUrl)),
     cta: {

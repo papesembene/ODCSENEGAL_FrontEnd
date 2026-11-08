@@ -42,6 +42,7 @@
 .category { display: flex; align-items: center; gap: .65rem; margin-bottom: 1.2rem; font-size: .75rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
 .category > span { width: 1.8rem; height: 2px; background: var(--home-orange, #ff7900); }
 .slideContent h1 { max-width: 16ch; margin: 0; font-size: clamp(2.65rem, 5.4vw, 5.6rem); font-weight: 800; line-height: 1.03; letter-spacing: -.055em; text-wrap: balance; overflow-wrap: anywhere; }
+.slideContent[data-campaign-slide="true"] h1 { font-size: clamp(2.2rem, 3.4vw, 3.4rem); }
 .description { max-width: 55ch; margin-top: 1.6rem; font-size: clamp(1rem, 1.35vw, 1.15rem); line-height: 1.75; color: #f1f1f1; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.8rem; margin-top: 2rem; }
 .primaryAction, .secondaryAction { display: inline-flex; justify-content: center; align-items: center; gap: 1.1rem; min-height: 3.4rem; font-size: .94rem; font-weight: 700; }
@@ -97,6 +98,7 @@
   .signature { display: none; }
   .slideContent { max-width: 740px; }
   .slideContent h1 { font-size: clamp(2.8rem, 6.7vw, 4.8rem); }
+  .slideContent[data-campaign-slide="true"] h1 { font-size: clamp(2rem, 4.4vw, 3.4rem); }
 }
 @media (max-width: 639px) {
   .visual { scale: calc(1 - var(--hero-frame-progress, 0) * .08); }
@@ -105,6 +107,7 @@
   .identity { font-size: .66rem; letter-spacing: .04em; }
   .content { padding-block: 2.8rem 1.8rem; }
   .slideContent h1 { font-size: clamp(2.3rem, 9.3vw, 3.5rem); }
+  .slideContent[data-campaign-slide="true"] h1 { font-size: clamp(1.75rem, 7vw, 2.75rem); }
   .category { margin-bottom: 1rem; font-size: .68rem; }
   .description { margin-top: 1.3rem; font-size: 1rem; line-height: 1.65; }
   .actions { align-items: stretch; gap: .7rem; margin-top: 1.5rem; }

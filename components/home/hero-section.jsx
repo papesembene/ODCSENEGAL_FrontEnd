@@ -49,6 +49,7 @@ export default function HeroSection() {
         </div>
         <div className={styles.content} aria-live="polite" aria-atomic="true" aria-busy={leaving}>
           <div key={slide.id} className={styles.slideContent} data-slide-phase={leaving ? "leaving" : "entering"}
+            data-campaign-slide={slide.campaign ? "true" : undefined}
             onClickCapture={(event) => {
               if (leaving) { event.preventDefault(); event.stopPropagation() }
             }}>
