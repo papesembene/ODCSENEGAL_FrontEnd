@@ -23,6 +23,9 @@ export default function CompetencesPage() {
   const [selectedFormation, setSelectedFormation] = useState(null)
   const catalog = useTrainingCatalog()
   const selected = catalog.items.find((item) => item.code === selectedFormation?.code)
+  const selectedSiteNames = selected?.siteIds
+    ?.map((code) => catalog.sites.find((site) => site.code === code && site.status === "active")?.name)
+    .filter(Boolean) || []
 
   return (
     <div className="flex flex-col">
@@ -35,7 +38,7 @@ export default function CompetencesPage() {
       <CompetencesCtaSection />
 
       {selected ? (
-        <FormationDetails formation={selected} onClose={() => setSelectedFormation(null)} />
+        <FormationDetails formation={selected} sites={selectedSiteNames} onClose={() => setSelectedFormation(null)} />
       ) : null}
     </div>
   )

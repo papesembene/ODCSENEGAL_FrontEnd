@@ -2,7 +2,7 @@
 
 import { Clock, Calendar, X, Laptop, Globe, Database, Users, Cloud } from "lucide-react"
 
-const FormationDetails = ({ formation, onClose }) => {
+const FormationDetails = ({ formation, sites = [], onClose }) => {
   const {
     legacyId: id,
     title,
@@ -13,7 +13,6 @@ const FormationDetails = ({ formation, onClose }) => {
     startDate = "Prochainement",
     endDate = "À déterminer",
     level,
-    location = "Orange Digital Center, Dakar",
   } = formation
 
   return (
@@ -102,8 +101,8 @@ const FormationDetails = ({ formation, onClose }) => {
                   <span>{level}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-500">
-                  <span className="mr-2 font-medium text-gray-700">Lieu :</span>
-                  <span>{location}</span>
+                  <span className="mr-2 font-medium text-gray-700">Sites de formation :</span>
+                  <span>{sites.length ? sites.join(", ") : "Aucun site renseigné"}</span>
                 </div>
               </div>
             </div>
