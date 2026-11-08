@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { mkdir } from "node:fs/promises"
 import { chromium } from "playwright"
 import { startBrowserServer } from "./server.mjs"
+import { DEFAULT_HOME_SLIDES } from "../../lib/home-content-defaults.js"
 
 const baseUrl = process.env.ODC_BROWSER_BASE_URL || "http://127.0.0.1:3101"
 const output = process.env.ODC_SCREENSHOT_DIR
@@ -148,18 +149,19 @@ try {
     await page.getByRole("heading", { level: 1, name: new RegExp(campaignTitle) }).waitFor()
     await page.getByRole("button", { name: "Slide suivant", exact: true }).click()
     await page.getByRole("heading", { level: 1, name: "Une formation publiée par le CM" }).waitFor()
-    assert.ok(await page.locator('section[aria-roledescription="carrousel"] img').evaluateAll((images) =>
-      images.some((image) => image.src.includes("p7graduation.jpeg"))), "Managed images remain editable from the portal")
+    const configuredImage = DEFAULT_HOME_SLIDES.find((slide) => slide.slotKey === "competences").imageUrl.split("?")[0]
+    assert.ok(await page.locator('section[aria-roledescription="carrousel"] img').evaluateAll((images, expected) =>
+      images.some((image) => decodeURI(image.src).includes(expected)), configuredImage), "Built-in slides retain their configured images")
     assert.deepEqual(errors, [])
-    console.log("PASS home: managed banner text and image")
+    console.log("PASS home: managed banner text and preserved built-in image")
     await context.close()
   }
 
   {
     const { context, page, errors } = await createPage({ width: 390, height: 844 }, { closed: true })
     await page.getByRole("heading", { level: 1, name: new RegExp(campaignTitle) }).waitFor()
-    const action = page.getByRole("link", { name: "Candidatures fermées", exact: true })
-    assert.equal(await action.getAttribute("href"), "/candidatures/fermees")
+    const action = page.locator('section[aria-roledescription="carrousel"]').getByRole("button", { name: "Candidatures fermées", exact: true })
+    assert.equal(await action.isDisabled(), true)
     assert.equal(await page.getByRole("button", { name: "Postuler", exact: true }).count(), 0)
     assert.deepEqual(errors, [])
     console.log("PASS home: closed campaign does not offer an active application link")

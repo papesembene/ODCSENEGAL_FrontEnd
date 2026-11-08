@@ -1,0 +1,26 @@
+.notice {
+  --countdown-line: #fed7aa;
+  --countdown-surface: #fff7ed;
+  --countdown-text: #9a3412;
+  width: 100%;
+  max-width: 29rem;
+  margin: 1.25rem auto 0;
+  color: var(--countdown-text);
+}
+
+.notice[data-variant="hero"] {
+  --countdown-line: #ffffff45;
+  --countdown-surface: #171717b3;
+  --countdown-text: #fff;
+  margin-inline: 0;
+}
+
+.date { display: flex; align-items: flex-start; justify-content: center; gap: .5rem; font-size: .85rem; line-height: 1.6; }
+.date svg { flex-shrink: 0; margin-top: .15rem; color: #ea580c; }
+.notice[data-variant="hero"] .date { justify-content: flex-start; }
+.notice[data-variant="hero"] .date svg { color: #ffb16d; }
+.countdown { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: .8rem; }
+.unit { display: flex; flex-direction: column-reverse; gap: .25rem; min-width: 0; padding: .75rem .25rem; border: 1px solid var(--countdown-line); border-radius: .4rem; background: var(--countdown-surface); text-align: center; }
+.unit dt { font-size: .7rem; }
+.unit dd { margin: 0; font-size: clamp(1.35rem, 4vw, 1.8rem); font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.pending { margin-top: .75rem; font-size: .85rem; }

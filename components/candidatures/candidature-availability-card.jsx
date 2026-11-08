@@ -5,6 +5,7 @@ import { CalendarClock, Loader2, Lock, RefreshCw } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import CandidatureButton from "./candidature-button"
+import CandidatureOpeningNotice from "./candidature-opening-notice"
 import { useCandidatureStatus } from "./candidature-status-provider"
 
 export default function CandidatureAvailabilityCard() {
@@ -18,6 +19,7 @@ export default function CandidatureAvailabilityCard() {
           <Icon className={`mx-auto h-8 w-8 text-orange-600 ${availability.key === "loading" ? "animate-spin" : ""}`} aria-hidden="true" />
           <h1 className="text-2xl font-bold">{availability.title}</h1>
           <p className="text-sm leading-7 text-gray-600 dark:text-gray-300">{availability.message}</p>
+          <CandidatureOpeningNotice />
           <div className="flex flex-wrap justify-center gap-3">
             {availability.canApply ? (
               <CandidatureButton label="Déposer ma candidature" className={buttonVariants()} />

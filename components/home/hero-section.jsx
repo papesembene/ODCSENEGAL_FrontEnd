@@ -9,7 +9,7 @@ import HeroTitle from "./hero-title"
 import useHeroFrame from "./use-hero-frame"
 import HeroSignature from "./hero-signature"
 import CandidatureButton from "@/components/candidatures/candidature-button"
-import { isFormationApplicationLink } from "@/lib/candidature-availability"
+import CandidatureOpeningNotice from "@/components/candidatures/candidature-opening-notice"
 import styles from "./hero-section.module.css"
 
 export default function HeroSection() {
@@ -55,8 +55,9 @@ export default function HeroSection() {
             <p className={styles.category}><span aria-hidden="true" />{slide.category}</p>
             <HeroTitle>{slide.title}</HeroTitle>
             <p className={styles.description}>{slide.description}</p>
+            {slide.application && <CandidatureOpeningNotice variant="hero" />}
             <div className={styles.actions}>
-              {isFormationApplicationLink(slide.cta.link) ? (
+              {slide.application ? (
                 <CandidatureButton label={slide.cta.text} className={styles.primaryAction} />
               ) : (
                 <Link href={slide.cta.link} className={styles.primaryAction}>

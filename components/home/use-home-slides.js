@@ -3,6 +3,7 @@
 import { getPublicMediaUrl } from "@/lib/public-api"
 import { applyCandidatureStatusToSlides, buildHomeSlides } from "@/lib/home-content-defaults"
 import { useCandidatureStatus } from "@/components/candidatures/candidature-status-provider"
+import { isFormationApplicationLink } from "@/lib/candidature-availability"
 import useHomeContent from "./use-home-content"
 
 function mapSlide(content) {
@@ -14,6 +15,7 @@ function mapSlide(content) {
     description: content.summary || content.body || "",
     category: content.category || "À la une",
     image: getPublicMediaUrl(content.imageUrl) || "/odc1Accueil.jpg",
+    application: !pendingCampaign && (content.slotKey === "candidature" || content.category === "Candidature" || isFormationApplicationLink(content.linkUrl)),
     cta: {
       text: pendingCampaign ? "Découvrir les formations" : content.linkLabel || "En savoir plus",
       link: pendingCampaign ? "/competences" : content.linkUrl || "/actualites",
