@@ -1,6 +1,7 @@
 import { CheckCircle } from "lucide-react"
 import { FormSubmissionError } from "@/components/ui/form-feedback"
 import CandidatureSection from "../candidature-section"
+import { phoneCountry } from "../../form-model"
 
 export default function OdcValidationSection({ manager }) {
   return <CandidatureSection id="validation-candidature" title="Vérifiez et envoyez" icon={CheckCircle}
@@ -10,6 +11,7 @@ export default function OdcValidationSection({ manager }) {
       <div><dt className="text-xs text-gray-500">Région / localité de résidence</dt><dd className="mt-1 font-medium text-gray-900">{manager.values.region || "À renseigner"}</dd></div>
       <div><dt className="text-xs text-gray-500">Formation</dt><dd className="mt-1 font-medium text-gray-900">{manager.selectedTraining?.title || "À choisir"}</dd></div>
       <div className="min-w-0 sm:col-span-2"><dt className="text-xs text-gray-500">Email de contact</dt><dd className="mt-1 break-all font-medium text-gray-900">{manager.values.email || "À renseigner"}</dd></div>
+      <div className="min-w-0 sm:col-span-2"><dt className="text-xs text-gray-500">Téléphone de contact</dt><dd className="mt-1 font-medium text-gray-900">{manager.values.phone ? `${phoneCountry(manager.values).code} ${manager.values.phone}` : "À renseigner"}</dd></div>
     </dl>
     <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-gray-700">
       <input id="acceptTerms" name="acceptTerms" type="checkbox" checked={manager.values.acceptTerms}
