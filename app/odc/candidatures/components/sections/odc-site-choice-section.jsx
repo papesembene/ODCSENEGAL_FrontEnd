@@ -1,6 +1,7 @@
-import { Building2, MapPin } from "lucide-react"
+import { Building2, CalendarDays, CircleAlert, MapPin } from "lucide-react"
 import CandidatureChoiceCard from "../candidature-choice-card"
 import styles from "../candidature-choices.module.css"
+import { formatSiteDeadline } from "@/lib/training-eligibility"
 
 export default function OdcSiteChoiceSection({ manager }) {
   const sites = manager.sitesWithOffers
@@ -13,9 +14,20 @@ export default function OdcSiteChoiceSection({ manager }) {
     <fieldset className="min-w-0 border-0 p-0"><legend className="sr-only">Site de formation souhaité</legend>
       <div className={`${styles.choices} ${styles.sites}`}>{sites.map((site, index) => {
         const count = site.trainingCount
+        const deadline = formatSiteDeadline(site.applicationDeadline)
         return <CandidatureChoiceCard key={site.code} manager={manager} name="trainingSite" value={site.code}
-          title={site.name} index={index} icon={site.code === "diamniadio-uam" ? Building2 : MapPin}>
+          title={site.name} index={index} disabled={!site.applicationOpen} icon={site.code === "diamniadio-uam" ? Building2 : MapPin}>
           <span className="block font-medium">{count} formation{count > 1 ? "s" : ""} disponible{count > 1 ? "s" : ""}</span>
+          {deadline && site.applicationOpen && <span className={styles.deadlineNotice}>
+            <CalendarDays aria-hidden="true" size={18} />
+            <span><span className={styles.deadlineLabel}>Date limite d’inscription</span>
+              <strong className={styles.deadlineDate}>Jusqu’au {deadline}</strong>
+              <span className={styles.deadlineTimezone}>Heure du Sénégal</span></span>
+          </span>}
+          {!site.applicationOpen && <span className={styles.deadlineClosed} role="status">
+            <CircleAlert aria-hidden="true" size={18} />
+            <span><strong>Inscriptions terminées</strong><span>Ce site n’accepte plus de candidatures. Choisissez un autre site.</span></span>
+          </span>}
           {site.description && <span className="mt-1 block">{site.description}</span>}
         </CandidatureChoiceCard>
       })}</div>

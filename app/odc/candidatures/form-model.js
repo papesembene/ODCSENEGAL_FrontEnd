@@ -41,9 +41,12 @@ export function candidatureErrors(values, trainings, duplicates = {}, residenceL
     if (error) errors[name] = error
   }
   if (!["cni", "passport"].includes(values.idType)) errors.idType = "Choisissez votre type de pièce d'identité."
-  if (!sites.some((site) => site.code === values.trainingSite && site.status === "active")
+  const selectedSite = sites.find((site) => site.code === values.trainingSite && site.status === "active")
+  if (!selectedSite || selectedSite.applicationOpen === false
     || !eligibleTrainings(trainings, values.trainingSite, values.gender).length) {
-    errors.trainingSite = "Choisissez un site de formation disponible."
+    errors.trainingSite = selectedSite?.applicationOpen === false
+      ? "Les inscriptions pour ce site sont clôturées. Choisissez un autre site encore ouvert."
+      : "Choisissez un site de formation disponible."
   }
   if (values.formation && !eligibleTrainings(trainings, values.trainingSite, values.gender)
     .some((item) => item.code === values.formation)) {

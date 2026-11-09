@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import defaults from "../data/training-defaults.js"
-import { eligibleTrainings, eligibleTrainingSites, validateTrainingSites, withSiteAssignments, DEFAULT_TRAINING_SITES as sites, RESIDENCE_LOCATIONS } from "../lib/training-eligibility.js"
+import { eligibleTrainings, eligibleTrainingSites, validateTrainingSites, withSiteAssignments, formatSiteDeadline, DEFAULT_TRAINING_SITES as sites, RESIDENCE_LOCATIONS } from "../lib/training-eligibility.js"
 import { trainingForm, trainingPayload } from "../app/astrodmin/competences/referentiels/training-form.js"
 import { candidatureErrors, candidaturePayload, changeCandidature, initialCandidature } from "../app/odc/candidatures/form-model.js"
 
@@ -34,6 +34,17 @@ test("Registration shows only active sites with a published eligible formation a
   assert.deepEqual(result.map(({ code, trainingCount }) => ({ code, trainingCount })), [{ code: "open", trainingCount: 2 }])
   assert.deepEqual(places, before)
   assert.deepEqual(eligibleTrainingSites(places, []), [])
+})
+
+test("A site-specific deadline is shown and a closed site cannot be selected", () => {
+  const tamba = { ...sites.find((site) => site.code === "tambacounda"), applicationDeadline: "2026-11-09T12:00", applicationOpen: false }
+  const closed = eligibleTrainingSites([tamba], defaults, "female")
+  assert.equal(closed[0].applicationOpen, false)
+  assert.equal(formatSiteDeadline(tamba.applicationDeadline), "09/11/2026 à 12:00")
+  const errorsForClosedSite = candidatureErrors({ ...valid, trainingSite: "tambacounda", formation: "referent-digital" },
+    defaults, {}, RESIDENCE_LOCATIONS, [tamba])
+  assert.match(errorsForClosedSite.trainingSite, /inscriptions.*clôturées/i)
+  assert.equal(formatSiteDeadline("not-a-date"), "")
 })
 
 test("A site with only women-only courses disappears for a male profile, not other profiles", () => {

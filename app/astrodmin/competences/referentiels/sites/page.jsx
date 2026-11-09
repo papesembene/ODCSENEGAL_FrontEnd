@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import Link from "@/components/ui/interactive-link"
 import { useAdminApi } from "@/app/hooks/useAdminApi"
 import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import { formatSiteDeadline } from "@/lib/training-eligibility"
 import CatalogFeedback from "@/components/trainings/catalog-feedback"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +21,7 @@ export default function TrainingSitesPage() {
   const [allowed, setAllowed] = useState(null)
   const [editing, setEditing] = useState(null)
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ name: "", description: "", status: "active", displayOrder: "0" })
+  const [form, setForm] = useState({ name: "", description: "", status: "active", displayOrder: "0", applicationDeadline: "" })
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const lock = useRef(false)
@@ -33,7 +34,7 @@ export default function TrainingSitesPage() {
   }, [])
   function begin(site) {
     setEditing(site || null)
-    setForm({ name: site?.name || "", description: site?.description || "", status: site?.status || "active", displayOrder: String(site?.displayOrder ?? 0) })
+    setForm({ name: site?.name || "", description: site?.description || "", status: site?.status || "active", displayOrder: String(site?.displayOrder ?? 0), applicationDeadline: site?.applicationDeadline || "" })
     setError("")
     setOpen(true)
   }
@@ -64,19 +65,21 @@ export default function TrainingSitesPage() {
       <Button onClick={() => begin()} disabled={catalog.phase !== "ready"}><Plus size={16} className="mr-2" />Ajouter un site</Button></div>
     <CatalogFeedback />
     <div className="overflow-hidden rounded-lg border bg-card"><Table><TableHeader><TableRow>
-      <TableHead>Site</TableHead><TableHead>Formations publiées</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Action</TableHead>
+      <TableHead>Site</TableHead><TableHead>Formations publiées</TableHead><TableHead>Date limite</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Action</TableHead>
     </TableRow></TableHeader><TableBody>{catalog.sites.map((site) => <TableRow key={site.code}>
       <TableCell><p className="font-medium">{site.name}</p><p className="mt-1 max-w-lg text-sm text-muted-foreground">{site.description}</p></TableCell>
       <TableCell>{catalog.items.filter((item) => item.status === "published" && item.siteIds.includes(site.code)).length}</TableCell>
+      <TableCell>{site.applicationDeadline ? `${formatSiteDeadline(site.applicationDeadline)} (Dakar)` : "Selon la campagne"}</TableCell>
       <TableCell>{site.status === "active" ? "Actif" : "Archivé"}</TableCell>
       <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => begin(site)} aria-label={`Modifier ${site.name}`}><Pencil size={14} className="mr-2" />Modifier</Button></TableCell>
     </TableRow>)}</TableBody></Table></div>
     <Dialog open={open} onOpenChange={(value) => { if (!busy) setOpen(value) }}><DialogContent>
       <DialogHeader><DialogTitle>{editing ? "Modifier le site" : "Ajouter un site"}</DialogTitle>
-        <DialogDescription>Un site archivé n'est plus proposé aux nouveaux candidats. Les dossiers existants sont conservés.</DialogDescription></DialogHeader>
+        <DialogDescription>Définissez une échéance propre à ce site. Sans échéance, la date générale de la campagne s’applique.</DialogDescription></DialogHeader>
       <form onSubmit={save} className="space-y-4"><fieldset disabled={busy} className="space-y-4">
         <div className="space-y-2"><Label htmlFor="site-name">Nom du site *</Label><Input id="site-name" value={form.name} required maxLength={120} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
         <div className="space-y-2"><Label htmlFor="site-description">Description courte</Label><Textarea id="site-description" value={form.description} maxLength={500} rows={3} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+        <div className="space-y-2"><Label htmlFor="site-deadline">Date limite d’inscription (heure de Dakar)</Label><Input id="site-deadline" type="datetime-local" value={form.applicationDeadline} onChange={(e) => setForm({ ...form, applicationDeadline: e.target.value })} /><p className="text-xs text-muted-foreground">Laissez vide pour utiliser uniquement la date de clôture générale de la campagne.</p></div>
         <div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label htmlFor="site-order">Ordre d'affichage</Label><Input id="site-order" type="number" min={0} max={10000} required value={form.displayOrder} onChange={(e) => setForm({ ...form, displayOrder: e.target.value })} /></div>
           <div className="space-y-2"><Label htmlFor="site-status">Statut</Label><select id="site-status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value="active">Actif</option><option value="archived">Archivé</option></select></div></div>
       </fieldset>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
