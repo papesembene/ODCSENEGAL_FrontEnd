@@ -3,7 +3,7 @@ import SectionHeading from "./section-heading"
 import styles from "./home-sections.module.css"
 
 const PARTNERS = [
-  { name: "Sonatel", logo: "/logoSonatel.jpg" },
+  { name: "Digital NISA", logo: "/logo-digital-nisa.png" },
   { name: "Ministère du Numérique", logo: "/logoministereNumerique.webp" },
   { name: "Université Cheikh Anta Diop", logo: "/logoUniversitecheik.png" },
   { name: "GIZ", logo: "/giz.jpg" },
