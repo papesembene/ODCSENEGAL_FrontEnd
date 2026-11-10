@@ -15,6 +15,7 @@ export const PROFILE_LABELS = {
 }
 
 export const EDUCATION_LEVEL_OPTIONS = [
+  { value: "bfem", label: "BFEM" },
   { value: "bac", label: "Bac" },
   { value: "bac+1", label: "Bac+1" },
   { value: "bac+2", label: "Bac+2" },

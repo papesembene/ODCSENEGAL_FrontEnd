@@ -10,7 +10,8 @@ export default function OdcAvailabilitySection({ manager }) {
     description="Indiquez votre niveau d'études et votre situation actuelle.">
     <div className="grid gap-5 sm:grid-cols-2">
       <CandidatureField manager={manager} name="education" label="Niveau d'études"
-        options={educationOptions(manager.values.formation)} />
+        hint={manager.selectedTraining?.level ? `Niveau requis : ${manager.selectedTraining.level}` : undefined}
+        options={educationOptions(manager.selectedTraining)} />
       <CandidatureField manager={manager} name="currentStructure" label="Structure actuelle" required={false}
         options={structureOptions(manager.values.formation)} />
       <div className="sm:col-span-2"><CandidatureField manager={manager} name="speciality" label="Spécialité" required={false}
