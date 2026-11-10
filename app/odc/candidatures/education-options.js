@@ -13,6 +13,8 @@ const BASE_EDUCATION = [
 
 const ALL_EDUCATION = [...LOWER_EDUCATION, ...BASE_EDUCATION]
 const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+const FROM_THIRD_GRADE = [...LOWER_EDUCATION.filter((item) => ["3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
+const FROM_FOURTH_GRADE = [...LOWER_EDUCATION.filter((item) => ["4ème", "3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
 const hasThirdGradeRequirement = (training) => {
   const identity = normalize(`${training?.code || ""} ${training?.title || ""} ${training?.value || ""}`)
   return identity.includes("tech broadband") || identity.includes("fibre") || identity.includes("audiovisuel")
@@ -30,22 +32,22 @@ export function educationOptions(training) {
   const requirement = normalize(educationRequirement(training))
 
   if (hasThirdGradeRequirement(training)) {
-    return [...LOWER_EDUCATION.filter((item) => ["3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
+    return FROM_THIRD_GRADE
   }
-  if (/pas de niveau requis|aucun niveau requis/.test(requirement)) return ALL_EDUCATION
-  if (/troisieme|3eme|bfem/.test(requirement)) {
-    return [...LOWER_EDUCATION.filter((item) => ["3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
-  }
-  if (/bac\s*\+\s*2|bts/.test(requirement)) {
+  if (/pas de niveau requis|aucun niveau requis|sans niveau requis|pas de prerequis|aucun prerequis|sans prerequis/.test(requirement)) return ALL_EDUCATION
+  if (/cm2/.test(requirement)) return ALL_EDUCATION
+  if (/troisieme|3eme|bfem/.test(requirement)) return FROM_THIRD_GRADE
+  if (/4eme|quatrieme/.test(requirement)) return FROM_FOURTH_GRADE
+  if (/bac\s*2|bts/.test(requirement)) {
     return BASE_EDUCATION.filter((item) => ["bts", "licence2", "licence3", "master1", "master2"].includes(item.value))
   }
-  if (/licence/.test(requirement)) {
+  if (/licence|bac\s*3/.test(requirement)) {
     return BASE_EDUCATION.filter((item) => ["licence3", "master1", "master2"].includes(item.value))
   }
-  if (/terminal/.test(requirement)) return BASE_EDUCATION
+  if (/terminal|bac|baccalaureat/.test(requirement)) return BASE_EDUCATION
 
-  // An unknown or empty catalogue requirement must not hide valid education levels.
-  return ALL_EDUCATION
+  // Unknown requirements must not expose school levels below the BAC by default.
+  return BASE_EDUCATION
 }
 
 export function structureOptions(formation) {
