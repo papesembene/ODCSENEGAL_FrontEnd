@@ -52,8 +52,7 @@ export const useAdminApi = () => {
       })
     } catch (error) {
       if (error.name === "AbortError") throw error
-      const baseUrl = requestUrl.split("/api/")[0] || API_BASE_URL || "le backend"
-      throw new Error(`Impossible de joindre le backend sur ${baseUrl}`)
+      throw new Error("Impossible de charger les données. Veuillez réessayer dans quelques instants.")
     }
 
     if (!response.ok) {
