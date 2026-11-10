@@ -15,38 +15,30 @@ const ALL_EDUCATION = [...LOWER_EDUCATION, ...BASE_EDUCATION]
 const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
 const FROM_THIRD_GRADE = [...LOWER_EDUCATION.filter((item) => ["3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
 const FROM_FOURTH_GRADE = [...LOWER_EDUCATION.filter((item) => ["4ème", "3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
-const hasThirdGradeRequirement = (training) => {
-  const identity = normalize(`${training?.code || ""} ${training?.title || ""} ${training?.value || ""}`)
-  return identity.includes("tech broadband") || identity.includes("fibre") || identity.includes("audiovisuel")
-}
+const FROM_BFEM = [...LOWER_EDUCATION.filter((item) => item.value === "bfem"), ...BASE_EDUCATION]
+const fromBase = (values) => BASE_EDUCATION.filter((item) => values.includes(item.value))
 
 export function educationRequirement(training) {
-  const requirement = String(training?.level || "")
-  if (hasThirdGradeRequirement(training) && !/troisi[eè]me|3[eè]me|bfem/i.test(requirement)) {
-    return "Troisième (avec ou sans le BFEM)"
-  }
-  return requirement
+  return String(training?.level || "")
 }
 
 export function educationOptions(training) {
   const requirement = normalize(educationRequirement(training))
 
-  if (hasThirdGradeRequirement(training)) {
-    return FROM_THIRD_GRADE
-  }
   if (/pas de niveau requis|aucun niveau requis|sans niveau requis|pas de prerequis|aucun prerequis|sans prerequis/.test(requirement)) return ALL_EDUCATION
   if (/cm2/.test(requirement)) return ALL_EDUCATION
-  if (/troisieme|3eme|bfem/.test(requirement)) return FROM_THIRD_GRADE
   if (/4eme|quatrieme/.test(requirement)) return FROM_FOURTH_GRADE
-  if (/bac\s*2|bts/.test(requirement)) {
-    return BASE_EDUCATION.filter((item) => ["bts", "licence2", "licence3", "master1", "master2"].includes(item.value))
-  }
-  if (/licence|bac\s*3/.test(requirement)) {
-    return BASE_EDUCATION.filter((item) => ["licence3", "master1", "master2"].includes(item.value))
-  }
+  if (/troisieme|3eme/.test(requirement)) return FROM_THIRD_GRADE
+  if (/bfem/.test(requirement)) return FROM_BFEM
+  if (/bac\s*2|bts/.test(requirement)) return fromBase(["bts", "licence2", "licence3", "master1", "master2"])
+  if (/licence\s*1/.test(requirement)) return fromBase(["licence1", "licence2", "licence3", "master1", "master2"])
+  if (/licence\s*2/.test(requirement)) return fromBase(["licence2", "licence3", "master1", "master2"])
+  if (/licence|bac\s*3/.test(requirement)) return fromBase(["licence3", "master1", "master2"])
+  if (/master\s*1|bac\s*4/.test(requirement)) return fromBase(["master1", "master2"])
+  if (/master|bac\s*5/.test(requirement)) return fromBase(["master2"])
   if (/terminal|bac|baccalaureat/.test(requirement)) return BASE_EDUCATION
 
-  // Unknown requirements must not expose school levels below the BAC by default.
+  // Unknown or missing requirements do not expose lower school levels by default.
   return BASE_EDUCATION
 }
 

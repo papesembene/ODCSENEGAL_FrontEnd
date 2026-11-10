@@ -2,7 +2,8 @@ export const TRAINING_STATUSES = { published: "Publié", draft: "Brouillon", arc
 export const TRAINING_FIELDS = [
   { name: "title", label: "Nom du référentiel", max: 200, required: true },
   { name: "durationMonths", label: "Durée (mois)", type: "number", min: 1, max: 36, required: true },
-  { name: "level", label: "Niveau requis", max: 500 },
+  { name: "level", label: "Niveau requis", max: 500, required: true,
+    placeholder: "Ex. Troisième (avec ou sans BFEM), Bac, Licence ou Aucun niveau requis" },
   { name: "location", label: "Lieu ou mode de formation", max: 300 },
   { name: "startDate", label: "Début prévu", max: 100 },
   { name: "endDate", label: "Fin prévue", max: 100 },
@@ -23,6 +24,7 @@ export function trainingForm(item) {
 
 export function trainingPayload(form, version) {
   if (form.status === "published" && !form.siteIds.length) throw new Error("Choisissez au moins un site de formation.")
+  if (!form.level?.trim()) throw new Error("Indiquez le niveau requis, ou précisez « Aucun niveau requis ».")
   for (const [field, min, max] of [["durationMonths", 1, 36], ["displayOrder", 0, 10000]]) {
     if (!/^\d+$/.test(form[field]) || Number(form[field]) < min || Number(form[field]) > max) {
       throw new Error(`${field === "durationMonths" ? "La durée" : "L'ordre"} doit être compris entre ${min} et ${max}.`)

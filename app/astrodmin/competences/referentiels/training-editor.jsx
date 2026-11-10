@@ -28,7 +28,9 @@ export default function TrainingEditor({ manager }) {
               <Input id={`training-${field.name}`} type={field.type || "text"} required={field.required}
                 min={field.min} max={field.type === "number" ? field.max : undefined}
                 maxLength={field.type === "number" ? undefined : field.max}
+                placeholder={field.placeholder}
                 value={form[field.name]} onChange={(event) => update(field.name, event.target.value)} />
+              {field.name === "level" && <p className="text-xs text-muted-foreground">Ce niveau pilote les choix affichés au candidat. Saisissez « Aucun niveau requis » si la formation n’a pas de minimum.</p>}
             </div>)}
           </div>
           <div className="space-y-2"><Label htmlFor="training-description">Description</Label>
