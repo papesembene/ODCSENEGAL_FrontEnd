@@ -2,15 +2,16 @@ import { BookOpen } from "lucide-react"
 import CandidatureSection from "../candidature-section"
 import CandidatureField from "../candidature-field"
 import CandidatureBooleanField from "../candidature-boolean-field"
-import { educationOptions, structureOptions } from "../../education-options"
+import { educationOptions, educationRequirement, structureOptions } from "../../education-options"
 
 export default function OdcAvailabilitySection({ manager }) {
   const months = manager.selectedTraining?.durationMonths
+  const educationLevel = educationRequirement(manager.selectedTraining)
   return <CandidatureSection id="parcours-disponibilites" title="Votre parcours et vos disponibilités" icon={BookOpen}
     description="Indiquez votre niveau d'études et votre situation actuelle.">
     <div className="grid gap-5 sm:grid-cols-2">
       <CandidatureField manager={manager} name="education" label="Niveau d'études"
-        hint={manager.selectedTraining?.level ? `Niveau requis : ${manager.selectedTraining.level}` : undefined}
+        hint={educationLevel ? `Niveau requis : ${educationLevel}` : undefined}
         options={educationOptions(manager.selectedTraining)} />
       <CandidatureField manager={manager} name="currentStructure" label="Structure actuelle" required={false}
         options={structureOptions(manager.values.formation)} />

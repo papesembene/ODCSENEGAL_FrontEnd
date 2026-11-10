@@ -12,11 +12,26 @@ const BASE_EDUCATION = [
 ]
 
 const ALL_EDUCATION = [...LOWER_EDUCATION, ...BASE_EDUCATION]
-const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+const hasThirdGradeRequirement = (training) => {
+  const identity = normalize(`${training?.code || ""} ${training?.title || ""} ${training?.value || ""}`)
+  return identity.includes("tech broadband") || identity.includes("fibre") || identity.includes("audiovisuel")
+}
+
+export function educationRequirement(training) {
+  const requirement = String(training?.level || "")
+  if (hasThirdGradeRequirement(training) && !/troisi[eè]me|3[eè]me|bfem/i.test(requirement)) {
+    return "Troisième (avec ou sans le BFEM)"
+  }
+  return requirement
+}
 
 export function educationOptions(training) {
-  const requirement = normalize(typeof training === "object" ? training?.level : "")
+  const requirement = normalize(educationRequirement(training))
 
+  if (hasThirdGradeRequirement(training)) {
+    return [...LOWER_EDUCATION.filter((item) => ["3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
+  }
   if (/pas de niveau requis|aucun niveau requis/.test(requirement)) return ALL_EDUCATION
   if (/troisieme|3eme|bfem/.test(requirement)) {
     return [...LOWER_EDUCATION.filter((item) => ["3ème", "bfem"].includes(item.value)), ...BASE_EDUCATION]
