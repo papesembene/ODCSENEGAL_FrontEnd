@@ -226,7 +226,7 @@ const trainingDefaults = [
       "Pentest et détection d'incidents",
       "Forensique et gouvernance"
     ],
-    "level": "Pour professionnels en activité",
+    "level": "À partir du BTS / Bac+2",
     "duration": "3 mois",
     "startDate": "Février",
     "endDate": "Avril",
