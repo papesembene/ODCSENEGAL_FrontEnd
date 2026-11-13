@@ -3,6 +3,8 @@
  * Évite les erreurs "failed to fetch" lors de requêtes longues
  */
 
+const SERVICE_UNAVAILABLE_MESSAGE = "Le service est temporairement indisponible. Veuillez réessayer."
+
 /**
  * Crée un AbortController avec timeout
  * @param {number} timeout - Timeout en millisecondes (défaut: 30000)
@@ -84,9 +86,7 @@ export async function fetchWithTimeout(url, options = {}) {
 
         // Si c'est une erreur d'abort (timeout), propager immédiatement
         if (fetchError.name === 'AbortError') {
-          throw new Error(
-            `Timeout: La requête a pris plus de ${timeout / 1000} secondes`
-          )
+          throw new Error("Le service met trop de temps à répondre. Veuillez réessayer.")
         }
 
         throw fetchError
@@ -104,22 +104,9 @@ export async function fetchWithTimeout(url, options = {}) {
 
   // Si toutes les tentatives ont échoué
   if (lastError) {
-    // Améliorer le message d'erreur selon le type
-    if (lastError.message && lastError.message.includes('Timeout')) {
-      throw new Error(
-        `La requête a expiré après ${retries + 1} tentative(s). Le serveur prend trop de temps à répondre.`
-      )
-    } else if (lastError.name === 'TypeError' && (lastError.message.includes('fetch') || lastError.message.includes('Failed to fetch') || lastError.message.includes('network'))) {
-      const baseUrl = url.split('/api/')[0] || 'http://localhost:5000'
-      const errorMessage = `Impossible de joindre le serveur (${baseUrl}). Vérifiez votre connexion, puis réessayez.`
-      throw new Error(errorMessage)
-    } else if (lastError.message) {
-      throw lastError
-    }
-    throw new Error(`Erreur de connexion: ${lastError.toString()}`)
+    throw new Error(SERVICE_UNAVAILABLE_MESSAGE)
   }
-
-  throw new Error('Une erreur inconnue est survenue')
+  throw new Error(SERVICE_UNAVAILABLE_MESSAGE)
 }
 
 /**
@@ -132,13 +119,19 @@ export async function fetchJsonWithTimeout(url, options = {}) {
   const response = await fetchWithTimeout(url, options)
 
   if (!response.ok) {
-    let errorMessage = `Erreur HTTP: ${response.status}`
+    if (response.status >= 500) {
+      throw new Error(SERVICE_UNAVAILABLE_MESSAGE)
+    }
+
+    let errorMessage = SERVICE_UNAVAILABLE_MESSAGE
     try {
       const errorData = await response.json()
-      errorMessage = errorData.error || errorData.message || errorMessage
+      const message = [errorData?.error, errorData?.message].find(
+        (value) => typeof value === "string" && value.trim(),
+      )
+      if (message) errorMessage = message.trim()
     } catch {
-      // Si la réponse n'est pas du JSON, utiliser le status
-      errorMessage = `Erreur HTTP: ${response.status} ${response.statusText}`
+      // Conserver le message générique pour les réponses non lisibles.
     }
 
     if (response.status === 401) {
@@ -151,6 +144,7 @@ export async function fetchJsonWithTimeout(url, options = {}) {
   try {
     return await response.json()
   } catch (error) {
-    throw new Error('Réponse invalide du serveur (pas de JSON)')
+    if (error.name === "AbortError") throw error
+    throw new Error(SERVICE_UNAVAILABLE_MESSAGE)
   }
 }

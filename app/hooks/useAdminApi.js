@@ -3,8 +3,9 @@
 import { useCallback, useMemo } from "react"
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
+const SERVICE_UNAVAILABLE_MESSAGE = "Le service est temporairement indisponible. Veuillez réessayer."
 
-function getApiErrorMessage(errorData, status) {
+function getApiErrorMessage(errorData) {
   const candidates = [
     errorData?.error,
     errorData?.message,
@@ -14,7 +15,7 @@ function getApiErrorMessage(errorData, status) {
     (value) => typeof value === "string" && value.trim(),
   )
 
-  return message || `Erreur HTTP ${status}`
+  return message || SERVICE_UNAVAILABLE_MESSAGE
 }
 
 function queryString(filters = {}) {
@@ -30,7 +31,7 @@ export const useAdminApi = () => {
     const token = localStorage.getItem('admin_token')
 
     if (!token) {
-      throw new Error('Token non trouvé')
+      throw new Error("Veuillez vous connecter pour continuer.")
     }
 
     let response
@@ -59,22 +60,31 @@ export const useAdminApi = () => {
       if (response.status === 401) {
         localStorage.removeItem('admin_token')
         window.location.href = '/astrodmin'
-        throw new Error('Token expiré')
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.")
       }
 
-      let errorMessage = 'Erreur de requête'
+      if (response.status >= 500) {
+        throw new Error(SERVICE_UNAVAILABLE_MESSAGE)
+      }
+
+      let errorMessage = SERVICE_UNAVAILABLE_MESSAGE
 
       try {
         const errorData = await response.json()
-        errorMessage = getApiErrorMessage(errorData, response.status)
+        errorMessage = getApiErrorMessage(errorData)
       } catch (error) {
-        errorMessage = `Erreur HTTP ${response.status}`
+        if (error.name === "AbortError") throw error
       }
 
       throw new Error(errorMessage)
     }
 
-    return responseType === "blob" ? response.blob() : response.json()
+    try {
+      return await (responseType === "blob" ? response.blob() : response.json())
+    } catch (error) {
+      if (error.name === "AbortError") throw error
+      throw new Error(SERVICE_UNAVAILABLE_MESSAGE)
+    }
   }, [])
 
   const candidatures = useMemo(() => ({
