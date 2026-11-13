@@ -42,6 +42,28 @@ export function validateBirthPlace(value) {
   return null
 }
 
+export function validateBirthDate(value, now = new Date()) {
+  if (!value) return "La date de naissance est requise"
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return "Saisissez une date de naissance valide"
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > daysInMonth[month - 1]) {
+    return "Saisissez une date de naissance valide"
+  }
+
+  const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+  if (year > today[0] || (year === today[0] && month > today[1])
+    || (year === today[0] && month === today[1] && day > today[2])) {
+    return "La date de naissance ne peut pas être dans le futur"
+  }
+  return null
+}
+
 export function validateIdNumber(value, idType) {
   if (!value.trim()) return "Le numéro est requis"
 
@@ -69,7 +91,7 @@ export function validateField(name, value, { idType, selectedCountry }) {
     case "birthPlace":
       return validateBirthPlace(value)
     case "birthDate":
-      return !value ? "La date de naissance est requise" : null
+      return validateBirthDate(value)
     case "gender":
       return !value ? "Le genre est requis" : null
     case "idNumber":
