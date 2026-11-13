@@ -6,7 +6,9 @@ const LOWER_EDUCATION = [
 ]
 
 const BASE_EDUCATION = [
-  { value: "terminale", label: "Terminale (avec ou sans le BAC)" }, { value: "bts", label: "BTS / Bac+2" },
+  { value: "terminale_sans_bac", label: "Terminale" },
+  { value: "bac", label: "Baccalauréat" },
+  { value: "bts", label: "BTS / Bac+2" },
   ...[1, 2, 3].map((year) => ({ value: `licence${year}`, label: `Licence ${year} / Bac+${year} ou équivalent` })),
   ...[1, 2].map((year) => ({ value: `master${year}`, label: `Master ${year} / Bac+${year + 3} ou équivalent` })),
 ]

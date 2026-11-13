@@ -8,7 +8,7 @@ import { candidatureErrors, candidaturePayload, changeCandidature, initialCandid
 const valid = { ...initialCandidature(), firstName: "Moussa", lastName: "Ba", email: "moussa@example.org",
   phone: "771234567", birthDate: "2000-01-01", birthPlace: "Dakar", gender: "male", idType: "cni",
   idNumber: "1234567890123", nationality: "Sénégalaise", region: "Diourbel", trainingSite: "dakar", formation: "dev-web-mobile",
-  education: "terminale", computer_skills: true, isWorking: false, isAvailable: true, acceptTerms: true }
+  education: "terminale_sans_bac", computer_skills: true, isWorking: false, isAvailable: true, acceptTerms: true }
 const errors = (values, rows = defaults, locations = sites) => candidatureErrors(values, rows, {}, RESIDENCE_LOCATIONS, locations)
 
 test("Site offerings are explicit and do not depend on residence", () => {

@@ -89,7 +89,7 @@ async function validForm(page) {
   await page.locator("#phone").fill("771234567")
   await page.locator("#region").selectOption("Diourbel")
   await next(page)
-  await page.locator("#education").selectOption("terminale")
+  await page.locator("#education").selectOption("terminale_sans_bac")
   await radio(page, "computer_skills", "no").check()
   await radio(page, "isWorking", "no").check()
   await radio(page, "isAvailable", "yes").check()
