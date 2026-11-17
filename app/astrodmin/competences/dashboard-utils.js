@@ -41,17 +41,22 @@ export function getGenderLabel(gender) {
   }
 }
 
-export function calculateAge(dateOfBirth) {
-  if (!dateOfBirth) return null
+export function calculateAge(dateOfBirth, today = new Date()) {
+  if (typeof dateOfBirth !== "string" || !(today instanceof Date) || !Number.isFinite(today.getTime())) return null
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth)
+  if (!parts) return null
 
-  const today = new Date()
-  const birthDate = new Date(dateOfBirth)
-  let age = today.getFullYear() - birthDate.getFullYear()
-  const monthDiff = today.getMonth() - birthDate.getMonth()
+  const [year, month, day] = parts.slice(1).map(Number)
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > daysInMonth[month - 1]) return null
 
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--
-  }
+  const currentYear = today.getUTCFullYear()
+  const currentMonth = today.getUTCMonth() + 1
+  const currentDay = today.getUTCDate()
+  if (year > currentYear || (year === currentYear && month > currentMonth)
+    || (year === currentYear && month === currentMonth && day > currentDay)) return null
 
-  return age
+  const birthdayPending = month > currentMonth || (month === currentMonth && day > currentDay)
+  return currentYear - year - (birthdayPending ? 1 : 0)
 }

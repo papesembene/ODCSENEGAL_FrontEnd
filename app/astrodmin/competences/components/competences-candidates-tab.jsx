@@ -35,6 +35,8 @@ export default function CompetencesCandidatesTab({
   setSelectedStatus,
   selectedGender,
   setSelectedGender,
+  selectedEligibility,
+  setSelectedEligibility,
   formationData,
   getGenderLabel,
   getStatusColor,
@@ -46,7 +48,7 @@ export default function CompetencesCandidatesTab({
     <Card className="col-span-3">
       <CardHeader>
         <CardTitle>Liste des candidats</CardTitle>
-        <CardDescription>Gérez les candidatures et suivez leur statut</CardDescription>
+        <CardDescription>Éligibilité par âge uniquement, calculée à la date du jour.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -81,6 +83,17 @@ export default function CompetencesCandidatesTab({
             <Input type="search" aria-label="Rechercher un candidat" placeholder="Nom, email, téléphone ou nationalité" maxLength={200} className="w-full pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Select value={selectedEligibility} onValueChange={setSelectedEligibility}>
+              <SelectTrigger className="w-full sm:w-[230px]" aria-label="Éligibilité par âge">
+                <SelectValue placeholder="Éligibilité par âge" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les candidats</SelectItem>
+                <SelectItem value="eligible">Éligibles (&lt; 30 ans)</SelectItem>
+                <SelectItem value="ineligible">Non éligibles (30 ans et plus)</SelectItem>
+                <SelectItem value="unknown">À vérifier</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={selectedSite} onValueChange={setSelectedSite}><SelectTrigger className="w-full sm:w-[180px]" aria-label="Site de formation"><SelectValue placeholder="Site de formation" /></SelectTrigger>
               <SelectContent><SelectItem value="all">Tous les sites</SelectItem>{catalog.sites.map((site) => <SelectItem key={site.code} value={site.code}>{site.name}{site.status === "archived" ? " (archivé)" : ""}</SelectItem>)}</SelectContent></Select>
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>

@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +26,12 @@ import useCompetencesAdminDashboard from "./hooks/use-competences-admin-dashboar
 const CompetencesOverviewTab = dynamic(() => import("./components/competences-overview-tab"), { loading: SectionLoading })
 const CompetencesStatisticsTab = dynamic(() => import("./components/competences-statistics-tab"), { loading: SectionLoading })
 const CompetencesCampaignsTab = dynamic(() => import("./components/competences-campaigns-tab"), { loading: SectionLoading })
+const AGE_EXPORT_LABELS = {
+  eligible: "Export : moins de 30 ans",
+  ineligible: "Export : 30 ans et plus",
+  unknown: "Export : âge à vérifier",
+  all: "Export : tous les candidats",
+}
 
 export default function CompetencesAdminDashboard() {
   const dashboard = useCompetencesAdminDashboard()
@@ -54,6 +61,7 @@ export default function CompetencesAdminDashboard() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{AGE_EXPORT_LABELS[dashboard.selectedEligibility] || AGE_EXPORT_LABELS.all}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={dashboard.handleExportCSV}>
                   <FileText className="mr-2 h-4 w-4" />
                   Exporter en CSV
@@ -118,6 +126,8 @@ export default function CompetencesAdminDashboard() {
               setSelectedStatus={dashboard.setSelectedStatus}
               selectedGender={dashboard.selectedGender}
               setSelectedGender={dashboard.setSelectedGender}
+              selectedEligibility={dashboard.selectedEligibility}
+              setSelectedEligibility={dashboard.setSelectedEligibility}
               formationData={dashboard.formationData}
               getGenderLabel={getGenderLabel}
               getStatusColor={getStatusColor}

@@ -32,3 +32,6 @@ jobs:
       - run: npm run test:admin
         env:
           ODC_BROWSER_START_SERVER: "1"
+      - run: npm run test:candidates
+        env:
+          ODC_BROWSER_START_SERVER: "1"

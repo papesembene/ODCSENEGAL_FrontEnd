@@ -26,6 +26,8 @@ export default function CompetencesFormationCandidatesDialog({
   const totalPages = Math.ceil(eligibleCandidates.length / eligibleItemsPerPage)
   const visibleEligibleCandidates = eligibleCandidates.slice((eligiblePage - 1) * eligibleItemsPerPage, eligiblePage * eligibleItemsPerPage)
   const unassignedEligibleCount = eligibleCandidates.filter((candidate) => !assignedCandidateIds.includes(candidate.id)).length
+  const unknownAgeCount = ineligibleCandidates.filter((candidate) => candidate.age === "N/A").length
+  const ageIneligibleCount = ineligibleCandidates.length - unknownAgeCount
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -37,7 +39,8 @@ export default function CompetencesFormationCandidatesDialog({
               <p className="mt-1 text-muted-foreground">
                 {formationCandidates.length} candidat(s) au total -
                 <span className="ml-2 font-medium text-green-600">{eligibleCandidates.length} éligible(s) (&lt; 30 ans)</span> -
-                <span className="ml-2 font-medium text-red-600">{ineligibleCandidates.length} inéligible(s) (≥ 30 ans)</span>
+                <span className="ml-2 font-medium text-red-600">{ageIneligibleCount} non éligible(s) (30 ans et plus)</span>
+                {unknownAgeCount > 0 ? <span className="ml-2 font-medium text-amber-700">- {unknownAgeCount} à vérifier</span> : null}
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -48,7 +51,7 @@ export default function CompetencesFormationCandidatesDialog({
           <Tabs defaultValue="eligible" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="eligible">Éligibles pour les tests ({eligibleCandidates.length})</TabsTrigger>
-              <TabsTrigger value="ineligible">Inéligibles ({ineligibleCandidates.length})</TabsTrigger>
+              <TabsTrigger value="ineligible">Non éligibles / à vérifier ({ineligibleCandidates.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="eligible" className="space-y-4">
@@ -213,8 +216,8 @@ export default function CompetencesFormationCandidatesDialog({
             <TabsContent value="ineligible" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Candidats inéligibles (30 ans ou plus)</CardTitle>
-                  <CardDescription>Ces candidats ne sont pas éligibles pour passer les tests en ligne</CardDescription>
+                  <CardTitle>Candidats non éligibles ou à vérifier</CardTitle>
+                  <CardDescription>30 ans ou plus, ou date de naissance manquante, invalide ou future. Les dates à vérifier ne permettent pas de conclure sur l’éligibilité par âge.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {ineligibleCandidates.length === 0 ? (
@@ -244,7 +247,7 @@ export default function CompetencesFormationCandidatesDialog({
                               <TableCell>{candidate.phone}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="bg-red-50 text-red-700">
-                                  {candidate.age === "N/A" ? "Non renseigné" : `${candidate.age} ans`}
+                                  {candidate.age === "N/A" ? "À vérifier" : `${candidate.age} ans`}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -254,7 +257,7 @@ export default function CompetencesFormationCandidatesDialog({
                                 {candidate.status === "interview" ? <Badge className="bg-blue-500">Entretien</Badge> : null}
                               </TableCell>
                               <TableCell>
-                                <span className="text-sm text-red-600">{candidate.age === "N/A" ? "Date de naissance manquante" : "Âge ≥ 30 ans"}</span>
+                                <span className="text-sm text-red-600">{candidate.age === "N/A" ? "Date de naissance manquante, invalide ou future" : "Âge ≥ 30 ans"}</span>
                               </TableCell>
                             </TableRow>
                           ))}
