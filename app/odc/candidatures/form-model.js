@@ -3,6 +3,7 @@ import { sanitizeFieldValue, buildNextFormData } from "./input-helpers.js"
 import { validateField } from "./validation.js"
 import { eligibleTrainings, RESIDENCE_LOCATIONS } from "../../../lib/training-eligibility.js"
 import { FORM_FEEDBACK_MESSAGES } from "../../../lib/form-feedback.js"
+import { classifyCandidateAge } from "../../../lib/training-age-eligibility.js"
 
 export function initialCandidature() {
   return {
@@ -33,11 +34,23 @@ export function changeCandidature(values, name, value, trainings, residenceLocat
   return next
 }
 
-export function candidatureErrors(values, trainings, duplicates = {}, residenceLocations = RESIDENCE_LOCATIONS, sites = []) {
+export function candidatureAgeError(values, trainings, today = new Date()) {
+  const training = trainings.find((item) => item.code === values.formation)
+  if (!training) return null
+  const result = classifyCandidateAge(values.birthDate, training.level, today)
+  if (result.eligibility !== "ineligible") return null
+  const title = typeof training.title === "string" ? training.title.trim() : ""
+  const prefix = title ? `Pour la formation « ${title} »,` : "Pour cette formation,"
+  return result.rule.kind === "range"
+    ? `${prefix} vous devez avoir entre ${result.rule.minAge} et ${result.rule.maxAge} ans inclus à la date d'inscription.`
+    : `${prefix} vous devez avoir plus de ${result.rule.minAge} ans à la date d'inscription.`
+}
+
+export function candidatureErrors(values, trainings, duplicates = {}, residenceLocations = RESIDENCE_LOCATIONS, sites = [], today = new Date()) {
   const errors = {}
   for (const name of ["firstName", "lastName", "email", "phone", "birthDate", "birthPlace", "gender",
     "idNumber", "nationality", "region", "education", "formation", "isWorking"]) {
-    const error = validateField(name, values[name], { idType: values.idType, selectedCountry: phoneCountry(values) })
+    const error = validateField(name, values[name], { idType: values.idType, selectedCountry: phoneCountry(values), today })
     if (error) errors[name] = error
   }
   if (!["cni", "passport"].includes(values.idType)) errors.idType = "Choisissez votre type de pièce d'identité."
@@ -51,6 +64,10 @@ export function candidatureErrors(values, trainings, duplicates = {}, residenceL
   if (values.formation && !eligibleTrainings(trainings, values.trainingSite, values.gender)
     .some((item) => item.code === values.formation)) {
     errors.formation = "Choisissez une formation proposée sur ce site et adaptée à votre profil."
+  }
+  if (!errors.birthDate) {
+    const ageError = candidatureAgeError(values, trainings, today)
+    if (ageError) errors.birthDate = ageError
   }
   for (const name of ["computer_skills", "isWorking", "isAvailable"]) {
     if (typeof values[name] !== "boolean") errors[name] = "Choisissez Oui ou Non."

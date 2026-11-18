@@ -23,12 +23,15 @@ const radio = (page, name, value) => page.locator(`input[name="${name}"][value="
 const next = (page) => page.getByRole("button", { name: "Suivant", exact: true }).click()
 const back = (page) => page.getByRole("button", { name: "Précédent", exact: true }).click()
 
-async function fixture(width = 1440, height = 1000) {
+async function fixture(width = 1440, height = 1000, options = {}) {
   const context = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" })
+  await context.route("**/*", (route) => new URL(route.request().url()).origin === new URL(baseUrl).origin
+    ? route.continue() : route.abort())
   const page = await context.newPage()
+  await page.clock.setFixedTime(new Date("2026-11-18T12:00:00Z"))
   page.setDefaultTimeout(15000)
   const scenario = { posts: [], checks: [], offline: false, catalogFailure: false, removeData: false, archiveSite: false, noTrainings: false,
-    holdEmail: "", releaseEmail: null, duplicateIdentity: false, errors: [] }
+    holdEmail: "", releaseEmail: null, duplicateIdentity: false, errors: [], levelOverrides: {}, includeStartup: false, ...options }
   page.on("pageerror", (error) => scenario.errors.push(error.message))
   page.on("console", (message) => {
     if (message.type() === "error" && /hydrated|NaN|Cannot update a component/.test(message.text())) scenario.errors.push(message.text())
@@ -42,7 +45,11 @@ async function fixture(width = 1440, height = 1000) {
     if (request.method() === "OPTIONS") return route.fulfill({ headers, status: 204 })
     if (url.pathname.endsWith("/trainings")) {
       if (scenario.catalogFailure) return respond({ error: "Catalogue momentanément indisponible" }, 503)
-      return respond({ success: true, data: scenario.noTrainings ? [] : [...defaults.filter((row) => !scenario.removeData || row.code !== "dev-data"), ...unpublishedTrainings],
+      const published = defaults.filter((row) => !scenario.removeData || row.code !== "dev-data")
+        .map((row) => ({ ...row, level: scenario.levelOverrides[row.code] ?? row.level }))
+      if (scenario.includeStartup) published.push({ ...defaults[0], code: "startup-school", id: "startup-school", title: "Startup School", value: "startup-school",
+        aliases: ["startup-school", "Startup School"], level: "Agé(e) de 25 à 40 ans", siteIds: ["dakar"], displayOrder: 0 })
+      return respond({ success: true, data: scenario.noTrainings ? [] : [...published, ...unpublishedTrainings],
         trainingSites: [...DEFAULT_TRAINING_SITES.filter((site) => !scenario.archiveSite || site.code !== "thies"), ...unavailableSites], residenceLocations: RESIDENCE_LOCATIONS })
     }
     if (url.pathname.endsWith("/candidature/status")) return respond({ success: true,
@@ -71,19 +78,20 @@ async function fixture(width = 1440, height = 1000) {
 async function choose(page, site = "thies", formation = "dev-data") {
   await radio(page, "trainingSite", site).check()
   await next(page)
+  if (formation === "startup-school") await page.getByRole("searchbox", { name: "Rechercher une formation", exact: true }).fill("Startup")
   await radio(page, "formation", formation).check()
   await next(page)
 }
-async function identity(page) {
-  for (const [name, value] of Object.entries({ firstName: "Moussa", lastName: "Ba", birthDate: "2000-01-01", birthPlace: "Dakar" })) await page.locator(`#${name}`).fill(value)
+async function identity(page, birthDate = "2000-01-01") {
+  for (const [name, value] of Object.entries({ firstName: "Moussa", lastName: "Ba", birthDate, birthPlace: "Dakar" })) await page.locator(`#${name}`).fill(value)
   await page.locator("#gender").selectOption("male")
   await page.locator("#nationality").selectOption("Sénégalaise")
   await page.locator("#idType").selectOption("cni")
   await page.locator("#idNumber").fill("1234567890123")
 }
-async function validForm(page) {
+async function validForm(page, birthDate = "2000-01-01") {
   await choose(page)
-  await identity(page)
+  await identity(page, birthDate)
   await next(page)
   await page.locator("#email").fill("moussa.recette@example.org")
   await page.locator("#phone").fill("771234567")
@@ -102,6 +110,88 @@ try {
   browser = await chromium.launch({ headless: true,
     ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) })
   if (output) await mkdir(output, { recursive: true })
+  {
+    const { context, page, scenario } = await fixture(1440, 1000, { levelOverrides: { "dev-data": "Agé(e) de 18 à 30 ans" } })
+    await choose(page)
+    await page.locator("#birthDate-hint").filter({ hasText: /De 18 à 30 ans inclus/ }).waitFor()
+    await identity(page, "1995-11-18")
+    await next(page)
+    await page.locator("#birthDate-error").filter({ hasText: /entre 18 et 30 ans inclus/ }).waitFor()
+    assert.ok((await page.locator("#birthDate-error").innerText()).includes(defaults.find((row) => row.code === "dev-data").title))
+    assert.equal(await page.locator("#birthDate").inputValue(), "1995-11-18")
+    assert.equal(await page.locator("#email").count(), 0, "Age 31 must remain on Identity, before contact and submission")
+    assert.equal(scenario.posts.length, 0)
+    await page.locator("#birthDate").fill("1996-11-18")
+    await page.locator("#birthDate-error").waitFor({ state: "detached" })
+    await next(page)
+    await page.locator("#email").waitFor()
+    assert.equal(scenario.posts.length, 0)
+    assert.deepEqual(scenario.errors, [])
+    console.log("PASS candidature age: 31 blocked at Identity, exact age 30 accepted, field values preserved")
+    await context.close()
+  }
+  {
+    const { context, page, scenario } = await fixture(1440, 1000, { includeStartup: true })
+    await choose(page, "dakar", "startup-school")
+    await identity(page, "1986-11-18")
+    await page.locator("#birthDate-hint").filter({ hasText: /De 25 à 40 ans inclus/ }).waitFor()
+    await next(page)
+    await page.locator("#email").waitFor()
+    assert.equal(scenario.posts.length, 0)
+    assert.deepEqual(scenario.errors, [])
+    console.log("PASS candidature age: Startup School accepts exact age 40 according to its own referential")
+    await context.close()
+  }
+  {
+    const { context, page, scenario } = await fixture(1440, 1000, {
+      includeStartup: true, levelOverrides: { "dev-data": "Agé(e) de 18 à 30 ans" },
+    })
+    await choose(page)
+    await identity(page, "1995-11-18")
+    await next(page)
+    await page.locator("#birthDate-error").waitFor()
+    await page.getByRole("button", { name: "Revenir à l'étape 1 : Site", exact: true }).click()
+    await radio(page, "trainingSite", "dakar").check()
+    await next(page)
+    await page.getByRole("searchbox", { name: "Rechercher une formation", exact: true }).fill("Startup")
+    await radio(page, "formation", "startup-school").check()
+    await next(page)
+    assert.equal(await page.locator("#birthDate").inputValue(), "1995-11-18")
+    assert.equal(await page.locator("#firstName").inputValue(), "Moussa")
+    assert.equal(await page.locator("#birthDate-error").count(), 0, "Changing site and formation clears the obsolete age error")
+    await next(page)
+    await page.locator("#email").waitFor()
+    assert.equal(scenario.posts.length, 0)
+    assert.deepEqual(scenario.errors, [])
+    console.log("PASS candidature age: a new formation rechecks its own rule without losing identity")
+    await context.close()
+  }
+  {
+    const { context, page, scenario } = await fixture(1440, 1000, { levelOverrides: { "dev-data": "Agé(e) de 18 à 40 ans" } })
+    await validForm(page, "1991-11-18")
+    scenario.levelOverrides["dev-data"] = "Agé(e) de 18 à 30 ans"
+    await page.getByRole("button", { name: "Envoyer ma candidature", exact: true }).click()
+    await page.locator("#birthDate-error").filter({ hasText: /entre 18 et 30 ans inclus/ }).waitFor()
+    assert.equal(scenario.posts.length, 0, "Refreshed metadata must block an invalid age before any POST")
+    assert.equal(await page.locator("#birthDate").inputValue(), "1991-11-18")
+    assert.equal(await page.locator("#firstName").inputValue(), "Moussa")
+    assert.equal(await page.locator("#idNumber").inputValue(), "1234567890123")
+    await page.locator("#birthDate").fill("1996-11-18")
+    await next(page)
+    assert.equal(await page.locator("#email").inputValue(), "moussa.recette@example.org")
+    assert.equal(await page.locator("#region").inputValue(), "Diourbel")
+    await next(page)
+    assert.equal(await radio(page, "computer_skills", "no").isChecked(), true)
+    await next(page)
+    assert.equal(await page.locator("#acceptTerms").isChecked(), true)
+    await page.getByRole("button", { name: "Envoyer ma candidature", exact: true }).click()
+    await page.getByRole("heading", { name: "Candidature enregistrée !", exact: true }).waitFor()
+    assert.equal(scenario.posts.length, 1)
+    assert.equal(scenario.posts[0].date_of_birth, "1996-11-18")
+    assert.deepEqual(scenario.errors, [])
+    console.log("PASS candidature age: catalogue refresh blocks changed age policy before POST and preserves the complete form")
+    await context.close()
+  }
   for (const [width, height] of [[320, 740], [390, 844], [1366, 768], [1440, 900]]) {
     const { context, page, scenario } = await fixture(width, height)
     assert.equal(await page.locator('input[name="trainingSite"]:focus').count(), 1)

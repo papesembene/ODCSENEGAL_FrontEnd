@@ -2,15 +2,18 @@ import { User } from "lucide-react"
 import { getNationalitiesByLetter } from "../../constants"
 import CandidatureSection from "../candidature-section"
 import CandidatureField from "../candidature-field"
+import { formatTrainingAgeRule, parseTrainingAgeRule } from "@/lib/training-age-eligibility"
 
 export default function OdcIdentitySection({ manager }) {
   const nationalities = getNationalitiesByLetter()
+  const ageRule = parseTrainingAgeRule(manager.selectedTraining?.level)
   return <CandidatureSection id="identite-personnelle" title="Vos informations personnelles" icon={User}
     description="Renseignez vos informations telles qu'elles figurent sur votre pièce d'identité.">
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
       <CandidatureField manager={manager} name="firstName" label="Prénom" autoComplete="given-name" maxLength={100} />
       <CandidatureField manager={manager} name="lastName" label="Nom" autoComplete="family-name" maxLength={100} />
-      <CandidatureField manager={manager} name="birthDate" label="Date de naissance" type="date" autoComplete="bday" />
+      <CandidatureField manager={manager} name="birthDate" label="Date de naissance" type="date" autoComplete="bday"
+        hint={ageRule ? `Âge requis : ${formatTrainingAgeRule(ageRule)} à la date d'inscription.` : undefined} />
       <CandidatureField manager={manager} name="birthPlace" label="Lieu de naissance" maxLength={150} />
       <CandidatureField manager={manager} name="gender" label="Genre" autoComplete="sex" options={[
         { value: "male", label: "Masculin" }, { value: "female", label: "Féminin" },

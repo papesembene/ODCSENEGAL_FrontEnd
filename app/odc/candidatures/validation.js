@@ -56,7 +56,7 @@ export function validateBirthDate(value, now = new Date()) {
     return "Saisissez une date de naissance valide"
   }
 
-  const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+  const today = [now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate()]
   if (year > today[0] || (year === today[0] && month > today[1])
     || (year === today[0] && month === today[1] && day > today[2])) {
     return "La date de naissance ne peut pas être dans le futur"
@@ -78,7 +78,7 @@ export function validateIdNumber(value, idType) {
   return null
 }
 
-export function validateField(name, value, { idType, selectedCountry }) {
+export function validateField(name, value, { idType, selectedCountry, today }) {
   switch (name) {
     case "firstName":
       return validateFirstName(value)
@@ -91,7 +91,7 @@ export function validateField(name, value, { idType, selectedCountry }) {
     case "birthPlace":
       return validateBirthPlace(value)
     case "birthDate":
-      return validateBirthDate(value)
+      return validateBirthDate(value, today)
     case "gender":
       return !value ? "Le genre est requis" : null
     case "idNumber":

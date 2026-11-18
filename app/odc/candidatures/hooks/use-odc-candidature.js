@@ -38,8 +38,8 @@ export default function useOdcCandidature() {
     setValues((previous) => changeCandidature(previous, name, value, catalog.items, residenceLocations))
     setErrors((previous) => {
       const next = { ...previous }
-      const dependent = { trainingSite: ["formation", "education", "currentStructure"], gender: ["formation"],
-        formation: ["education", "currentStructure"], idType: ["idNumber"], phoneCountry: ["phone"] }
+      const dependent = { trainingSite: ["formation", "education", "currentStructure", "birthDate"], gender: ["formation", "birthDate"],
+        formation: ["education", "currentStructure", "birthDate"], idType: ["idNumber"], phoneCountry: ["phone"] }
       for (const field of [name, ...(dependent[name] || [])]) delete next[field]
       return next
     })
