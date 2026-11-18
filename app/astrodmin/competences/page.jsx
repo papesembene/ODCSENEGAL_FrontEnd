@@ -27,9 +27,9 @@ const CompetencesOverviewTab = dynamic(() => import("./components/competences-ov
 const CompetencesStatisticsTab = dynamic(() => import("./components/competences-statistics-tab"), { loading: SectionLoading })
 const CompetencesCampaignsTab = dynamic(() => import("./components/competences-campaigns-tab"), { loading: SectionLoading })
 const AGE_EXPORT_LABELS = {
-  eligible: "Export : moins de 30 ans",
-  ineligible: "Export : 30 ans et plus",
-  unknown: "Export : âge à vérifier",
+  eligible: "Export : âge conforme au référentiel",
+  ineligible: "Export : âge hors critères",
+  unknown: "Export : âge ou règle à vérifier",
   all: "Export : tous les candidats",
 }
 

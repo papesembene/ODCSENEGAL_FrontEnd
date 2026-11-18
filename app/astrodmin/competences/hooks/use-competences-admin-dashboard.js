@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useAdminApi } from "@/app/hooks/useAdminApi"
 import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
-import { calculateAge } from "../dashboard-utils"
+import { classifyCandidateAge } from "../training-age-eligibility"
 import useCandidateDirectory from "./use-candidate-directory"
 
 export default function useCompetencesAdminDashboard() {
@@ -239,16 +239,10 @@ export default function useCompetencesAdminDashboard() {
     const ineligible = []
 
     candidates.forEach((candidate) => {
-      const age = calculateAge(candidate.date_of_birth)
-      if (age !== null) {
-        if (age < 30) {
-          eligible.push({ ...candidate, age })
-        } else {
-          ineligible.push({ ...candidate, age })
-        }
-      } else {
-        ineligible.push({ ...candidate, age: "N/A" })
-      }
+      const result = classifyCandidateAge(candidate.date_of_birth, formation.level)
+      const classified = { ...candidate, age: result.age ?? "N/A", ageEligibility: result.eligibility, ageEligibilityReason: result.reason }
+      if (result.eligibility === "eligible") eligible.push(classified)
+      else ineligible.push(classified)
     })
 
     setSelectedFormationData(formation)

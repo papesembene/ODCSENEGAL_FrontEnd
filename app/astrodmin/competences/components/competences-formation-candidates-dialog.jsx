@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { formatTrainingAgeRule, parseTrainingAgeRule } from "../training-age-eligibility"
 
 export default function CompetencesFormationCandidatesDialog({
   open,
@@ -26,11 +27,12 @@ export default function CompetencesFormationCandidatesDialog({
   const totalPages = Math.ceil(eligibleCandidates.length / eligibleItemsPerPage)
   const visibleEligibleCandidates = eligibleCandidates.slice((eligiblePage - 1) * eligibleItemsPerPage, eligiblePage * eligibleItemsPerPage)
   const unassignedEligibleCount = eligibleCandidates.filter((candidate) => !assignedCandidateIds.includes(candidate.id)).length
-  const unknownAgeCount = ineligibleCandidates.filter((candidate) => candidate.age === "N/A").length
+  const unknownAgeCount = ineligibleCandidates.filter((candidate) => candidate.ageEligibility === "unknown" || candidate.age === "N/A").length
   const ageIneligibleCount = ineligibleCandidates.length - unknownAgeCount
+  const ageRuleLabel = formatTrainingAgeRule(parseTrainingAgeRule(selectedFormationData.level))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-label={`Candidats ${selectedFormationData.name}`}>
       <div className="m-4 max-h-[90vh] w-full max-w-7xl overflow-auto rounded-lg bg-white shadow-lg dark:bg-gray-800">
         <div className="p-6">
           <div className="mb-6 flex items-center justify-between">
@@ -38,27 +40,28 @@ export default function CompetencesFormationCandidatesDialog({
               <h2 className="text-2xl font-bold">{selectedFormationData.name}</h2>
               <p className="mt-1 text-muted-foreground">
                 {formationCandidates.length} candidat(s) au total -
-                <span className="ml-2 font-medium text-green-600">{eligibleCandidates.length} éligible(s) (&lt; 30 ans)</span> -
-                <span className="ml-2 font-medium text-red-600">{ageIneligibleCount} non éligible(s) (30 ans et plus)</span>
+                <span className="ml-2 font-medium text-green-600">{eligibleCandidates.length} âge conforme</span> -
+                <span className="ml-2 font-medium text-red-600">{ageIneligibleCount} âge hors critères</span>
                 {unknownAgeCount > 0 ? <span className="ml-2 font-medium text-amber-700">- {unknownAgeCount} à vérifier</span> : null}
               </p>
+              <p className="mt-1 text-sm text-muted-foreground">Critère d’âge : {ageRuleLabel}</p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer la liste des candidats">
               <X className="h-5 w-5" />
             </Button>
           </div>
 
           <Tabs defaultValue="eligible" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="eligible">Éligibles pour les tests ({eligibleCandidates.length})</TabsTrigger>
-              <TabsTrigger value="ineligible">Non éligibles / à vérifier ({ineligibleCandidates.length})</TabsTrigger>
+              <TabsTrigger value="eligible">Âge conforme ({eligibleCandidates.length})</TabsTrigger>
+              <TabsTrigger value="ineligible">Âge hors critères / à vérifier ({ineligibleCandidates.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="eligible" className="space-y-4">
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>Candidats éligibles (moins de 30 ans)</CardTitle>
+                    <CardTitle>Candidats dont l’âge est conforme au référentiel</CardTitle>
                     <div className="flex gap-2">
                       <Button
                         onClick={() => setShowAutoGroupDialog(true)}
@@ -216,8 +219,8 @@ export default function CompetencesFormationCandidatesDialog({
             <TabsContent value="ineligible" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Candidats non éligibles ou à vérifier</CardTitle>
-                  <CardDescription>30 ans ou plus, ou date de naissance manquante, invalide ou future. Les dates à vérifier ne permettent pas de conclure sur l’éligibilité par âge.</CardDescription>
+                  <CardTitle>Âge hors critères ou à vérifier</CardTitle>
+                  <CardDescription>Âge hors du critère de la formation, ou date de naissance / règle d’âge à vérifier.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {ineligibleCandidates.length === 0 ? (
@@ -257,7 +260,9 @@ export default function CompetencesFormationCandidatesDialog({
                                 {candidate.status === "interview" ? <Badge className="bg-blue-500">Entretien</Badge> : null}
                               </TableCell>
                               <TableCell>
-                                <span className="text-sm text-red-600">{candidate.age === "N/A" ? "Date de naissance manquante, invalide ou future" : "Âge ≥ 30 ans"}</span>
+                                <span className="text-sm text-red-600">{candidate.ageEligibilityReason === "missing_age_rule"
+                                  ? "Règle d’âge à vérifier dans le référentiel"
+                                  : candidate.age === "N/A" ? "Date de naissance manquante, invalide ou future" : "Âge hors du critère de la formation"}</span>
                               </TableCell>
                             </TableRow>
                           ))}

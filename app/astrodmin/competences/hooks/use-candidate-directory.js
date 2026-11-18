@@ -10,7 +10,7 @@ const EMPTY_SUMMARY = {
 }
 
 export default function useCandidateDirectory(api, days, listEnabled = true) {
-  const [query, setQuery] = useState({ page: 1, per_page: 20, search: "", desired_training: "all", status: "all", gender: "all", training_site: "all", eligibility: "eligible" })
+  const [query, setQuery] = useState({ page: 1, per_page: 20, search: "", desired_training: "all", status: "all", gender: "all", training_site: "all", eligibility: "all" })
   const [searchTerm, setSearchTerm] = useState("")
   const [response, setResponse] = useState({ data: [], total: 0 })
   const [summary, setSummary] = useState(EMPTY_SUMMARY)

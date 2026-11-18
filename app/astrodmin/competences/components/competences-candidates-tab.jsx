@@ -48,7 +48,7 @@ export default function CompetencesCandidatesTab({
     <Card className="col-span-3">
       <CardHeader>
         <CardTitle>Liste des candidats</CardTitle>
-        <CardDescription>Éligibilité par âge uniquement, calculée à la date du jour.</CardDescription>
+        <CardDescription>L’âge est évalué selon le référentiel de chaque formation.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -89,8 +89,8 @@ export default function CompetencesCandidatesTab({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les candidats</SelectItem>
-                <SelectItem value="eligible">Éligibles (&lt; 30 ans)</SelectItem>
-                <SelectItem value="ineligible">Non éligibles (30 ans et plus)</SelectItem>
+                <SelectItem value="eligible">Âge : conforme au référentiel</SelectItem>
+                <SelectItem value="ineligible">Âge : hors critères</SelectItem>
                 <SelectItem value="unknown">À vérifier</SelectItem>
               </SelectContent>
             </Select>
