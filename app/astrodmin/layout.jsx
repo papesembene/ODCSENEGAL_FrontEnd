@@ -12,7 +12,6 @@ import {
   Users, 
   GraduationCap,
   Calendar, 
-  FileText, 
   Settings,
   Briefcase,
   Menu,
@@ -21,9 +20,11 @@ import {
   Sun,
   ChevronLeft,
   ChevronRight,
-  Megaphone
+  Megaphone,
+  Rocket
 } from "lucide-react"
 import { useTheme } from "next-themes"
+import ChangePasswordDialog from "./components/change-password-dialog"
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
 
@@ -39,7 +40,7 @@ export default function AdminLayout({ children }) {
   const [adminType, setAdminType] = useState(null)
   const [adminEmail, setAdminEmail] = useState(null)
   const [adminScope, setAdminScope] = useState(null)
-  const [canManageInterviewQuestions, setCanManageInterviewQuestions] = useState(false)
+  const [interviewRoles, setInterviewRoles] = useState([])
 
   useEffect(() => {
     setIsMounted(true)
@@ -54,35 +55,27 @@ export default function AdminLayout({ children }) {
       const email = localStorage.getItem("admin_email")
       const admin = JSON.parse(localStorage.getItem("admin_user") || "{}")
       const scope = admin?.profile_data?.admin_scope || null
-      let canManageQuestions = false
+      const primaryRole = admin?.profile_data?.interview_role
+      const roles = [...new Set([primaryRole, ...(admin?.profile_data?.interview_roles || [])].filter(Boolean))]
+      // A member may be validator and coach at once: each role opens its own workspace.
+      // Every member (coaches included) has "Mes entretiens"; coaches also have "Mes bootcamps".
+      const memberPaths = [
+        "/astrodmin/mes-entretiens",
+        ...(roles.includes("coach") ? ["/astrodmin/mes-bootcamps"] : []),
+      ]
+      const memberHome = roles.length && roles.every((role) => role === "coach") ? "/astrodmin/mes-bootcamps" : "/astrodmin/mes-entretiens"
 
-      if (authenticated && scope === "interview_member") {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/admin/interviews/capabilities`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-          const payload = await response.json()
-          canManageQuestions = Boolean(payload?.data?.can_manage_questions)
-        } catch {
-          canManageQuestions = false
-        }
-      } else {
-        canManageQuestions = type === "competences"
-      }
-      
       setIsAuthenticated(authenticated)
       setAdminType(type)
       setAdminEmail(email)
       setAdminScope(scope)
-      setCanManageInterviewQuestions(canManageQuestions)
+      setInterviewRoles(roles)
 
       const isContentManager = type === "cm"
       const defaultAdminRoute = isContentManager
         ? "/astrodmin/portail"
         : scope === "interview_member"
-          ? "/astrodmin/mes-entretiens"
+          ? memberHome
           : "/astrodmin/dashboard"
 
       // Si l'utilisateur n'est pas authentifié et n'est pas sur la page de connexion, rediriger
@@ -98,17 +91,9 @@ export default function AdminLayout({ children }) {
       } else if (
         authenticated
         && scope === "interview_member"
-        && !pathname.startsWith("/astrodmin/mes-entretiens")
-        && !(canManageQuestions && pathname.startsWith("/astrodmin/entretiens/questions"))
+        && !memberPaths.some((path) => pathname.startsWith(path))
       ) {
-        router.replace("/astrodmin/mes-entretiens")
-      } else if (
-        authenticated
-        && scope === "interview_member"
-        && !canManageQuestions
-        && pathname.startsWith("/astrodmin/entretiens/questions")
-      ) {
-        router.replace("/astrodmin/mes-entretiens")
+        router.replace(memberHome)
       } else if (
         authenticated
         && scope !== "interview_member"
@@ -117,6 +102,8 @@ export default function AdminLayout({ children }) {
         router.replace("/astrodmin/entretiens")
       } else if (authenticated && scope !== "interview_member" && pathname.startsWith("/astrodmin/mes-entretiens")) {
         router.replace("/astrodmin/entretiens")
+      } else if (authenticated && scope !== "interview_member" && pathname.startsWith("/astrodmin/mes-bootcamps")) {
+        router.replace("/astrodmin/bootcamps")
       }
 
       setIsLoading(false)
@@ -147,6 +134,9 @@ export default function AdminLayout({ children }) {
   }
 
   const isInterviewMember = adminScope === "interview_member"
+  const isCoach = isInterviewMember && interviewRoles.includes("coach")
+  const isInterviewer = isInterviewMember
+  const managesCompetences = adminType === "competences" || adminType === "super_admin" || !adminType
   const isContentManager = adminType === "cm"
 
   const menuItems = [
@@ -179,25 +169,25 @@ export default function AdminLayout({ children }) {
       show: !isInterviewMember && (adminType === "competences" || adminType === "super_admin" || !adminType)
     },
     {
-      label: "Questions entretien",
-      icon: FileText,
-      href: "/astrodmin/entretiens/questions",
-      color: "text-emerald-500",
-      show: false,
+      label: "Bootcamps",
+      icon: Rocket,
+      href: "/astrodmin/bootcamps",
+      color: "text-orange-500",
+      show: !isInterviewMember && managesCompetences,
     },
     {
       label: "Mes entretiens",
       icon: Calendar,
       href: "/astrodmin/mes-entretiens",
       color: "text-teal-500",
-      show: isInterviewMember,
+      show: isInterviewer,
     },
     {
-      label: "Questions entretien",
-      icon: FileText,
-      href: "/astrodmin/entretiens/questions",
-      color: "text-emerald-500",
-      show: isInterviewMember && canManageInterviewQuestions,
+      label: "Mes bootcamps",
+      icon: Rocket,
+      href: "/astrodmin/mes-bootcamps",
+      color: "text-orange-500",
+      show: isCoach,
     },
     {
       label: "Startups",
@@ -212,13 +202,6 @@ export default function AdminLayout({ children }) {
       href: "/astrodmin/events",
       color: "text-green-500"
     },*/
-    {
-      label: "Tests en ligne",
-      icon: FileText,
-      href: "/astrodmin/competences/tests",
-      color: "text-indigo-500",
-      show: !isInterviewMember && !isContentManager && (adminType === "competences" || adminType === "super_admin" || !adminType)
-    },
     {
       label: "Portail",
       icon: Megaphone,
@@ -284,6 +267,7 @@ export default function AdminLayout({ children }) {
                 </Link>
               )
             })}
+            {isInterviewMember && <ChangePasswordDialog collapsed={sidebarCollapsed} />}
           </nav>
         </ScrollArea>
 
@@ -359,6 +343,7 @@ export default function AdminLayout({ children }) {
                     </Link>
                   )
                 })}
+                {isInterviewMember && <ChangePasswordDialog />}
               </nav>
             </ScrollArea>
 
