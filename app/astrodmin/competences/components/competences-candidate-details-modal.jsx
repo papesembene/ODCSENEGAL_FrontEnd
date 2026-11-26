@@ -2,7 +2,9 @@
 
 import TrainingName from "@/components/trainings/training-name"
 
-import { Download, FileText, Mail, Phone, UserCheck, UserX, X } from "lucide-react"
+import { useState } from "react"
+import { Download, FileText, Mail, Phone, Trash2, UserCheck, UserX, X } from "lucide-react"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,10 +17,12 @@ export default function CompetencesCandidateDetailsModal({
   onClose,
   onAccept,
   onReject,
+  onDelete,
   getStatusColor,
   getStatusLabel,
   getGenderLabel,
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   if (!candidate) return null
 
   return (
@@ -61,6 +65,12 @@ export default function CompetencesCandidateDetailsModal({
                       Refuser
                     </Button>
                   </div>
+                  {onDelete ? (
+                    <Button variant="outline" className="w-full border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setConfirmDelete(true)}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Supprimer la candidature
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -318,6 +328,21 @@ export default function CompetencesCandidateDetailsModal({
           </div>
         </div>
       </div>
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la candidature de {candidate.first_name} {candidate.last_name} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Suppression définitive : la candidature, son affectation et son évaluation d’entretien, sa place dans la présélection et dans un Bootcamp.
+              Les e-mails non encore envoyés sont annulés. L’adresse e-mail et le numéro de pièce d’identité pourront être réutilisés pour une nouvelle candidature.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { setConfirmDelete(false); onDelete() }}>Supprimer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
