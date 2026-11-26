@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Copy,
+  Download,
   Eye,
   KeyRound,
   Mail,
@@ -35,7 +36,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -45,6 +45,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { useAdminApi } from "@/app/hooks/useAdminApi"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import JuryImportDialog from "./jury-import-dialog"
+import { downloadJuryCredentials, readJuryCredentials } from "./jury-workbooks"
 
 const juryRoles = [
   {
@@ -53,10 +57,11 @@ const juryRoles = [
     description: "Profil par défaut pour les personnes souvent chargées du premier échange.",
   },
   {
-    title: "Validation / coach",
+    title: "Validateur",
     value: "validator",
-    description: "Profil par défaut pour les coachs qui préparent les questions du référentiel.",
+    description: "Réalise les entretiens des candidats qui lui sont affectés.",
   },
+  { title: "Coach", value: "coach", description: "Compte de coach rattaché à un ou plusieurs référentiels." },
   {
     title: "Motivation",
     value: "motivation",
@@ -68,22 +73,69 @@ const initialFormData = {
   firstName: "",
   lastName: "",
   email: "",
+  formations: [],
+  alsoSecondRole: false,
+}
+
+// A validator may also coach a Bootcamp, and a coach may also run interviews.
+const SECOND_ROLE = { validator: "coach", coach: "validator" }
+const roleTitle = (value) => juryRoles.find((role) => role.value === value)?.title || value
+
+function SecondRoleCheckbox({ role, checked, onChange, disabled }) {
+  const second = SECOND_ROLE[role]
+  if (!second) return null
+  return (
+    <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+      <input type="checkbox" className="mt-0.5 accent-orange-600" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
+      <span>
+        <span className="font-medium">Ce compte est aussi {roleTitle(second).toLowerCase()}</span>
+        <span className="block text-xs text-muted-foreground">
+          {second === "coach" ? "Il pourra encadrer des Bootcamps (« Mes bootcamps ») en plus de ses entretiens." : "Il pourra mener des entretiens (« Mes entretiens ») en plus de ses Bootcamps."}
+          {" "}Mêmes référentiels pour les deux rôles.
+        </span>
+      </span>
+    </label>
+  )
+}
+
+const needsFormation = (role) => role === "validator" || role === "coach"
+
+function FormationCheckboxes({ catalog, selected, onChange, disabled }) {
+  const available = new Map(catalog.options.map(({ value, label }) => [value, label]))
+  const selectedArchived = selected.filter((id) => !available.has(id))
+  return <fieldset className="space-y-2" disabled={disabled}>
+    <legend className="text-sm font-medium">Référentiels</legend>
+    {catalog.error ? <p role="alert" className="text-sm text-destructive">Impossible de charger les référentiels.</p> : null}
+    {!catalog.options.length && !catalog.error ? <p className="text-sm text-muted-foreground">{catalog.phase === "loading" ? "Chargement…" : "Aucun référentiel disponible."}</p> : null}
+    <div className="grid max-h-40 gap-2 overflow-auto">
+      {[...available, ...selectedArchived.map((id) => [id, catalog.allOptions.find((item) => item.value === id)?.label || id])].map(([id, label]) => (
+        <Label key={id} className="gap-2 py-0.5">
+          <Checkbox checked={selected.includes(id)} onCheckedChange={(checked) => onChange(checked ? [...selected, id] : selected.filter((value) => value !== id))} />
+          {label}
+        </Label>
+      ))}
+    </div>
+  </fieldset>
 }
 
 export default function JuryRolesRegistrationPage() {
   const { toast } = useToast()
   const { juryMembers } = useAdminApi()
-  const [selectedRole, setSelectedRole] = useState(juryRoles[0].value)
+  const catalog = useTrainingCatalog()
+  const [selectedRole, setSelectedRole] = useState("validator")
   const [formData, setFormData] = useState(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [createdCredentials, setCreatedCredentials] = useState(null)
   const [credentialsModalOpen, setCredentialsModalOpen] = useState(false)
+  const [credentialsDownloading, setCredentialsDownloading] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [members, setMembers] = useState([])
   const [membersLoading, setMembersLoading] = useState(true)
   const [membersError, setMembersError] = useState("")
   const [editingMemberId, setEditingMemberId] = useState("")
   const [memberRoleDraft, setMemberRoleDraft] = useState("")
+  const [memberSecondRoleDraft, setMemberSecondRoleDraft] = useState(false)
+  const [memberFormationsDraft, setMemberFormationsDraft] = useState([])
   const [membersPage, setMembersPage] = useState(1)
   const [membersPageSize, setMembersPageSize] = useState(10)
   const [createError, setCreateError] = useState("")
@@ -156,6 +208,24 @@ export default function JuryRolesRegistrationPage() {
     }
   }, [filteredMembers.length, membersPage, membersPageSize])
 
+  const changeCredentialsOpen = (open) => {
+    if (credentialsDownloading) return
+    setCredentialsModalOpen(open)
+    if (!open) setCreatedCredentials(null)
+  }
+
+  const handleDownloadCredentials = async () => {
+    if (!createdCredentials?.password || credentialsDownloading) return
+    setCredentialsDownloading(true)
+    try {
+      await downloadJuryCredentials([createdCredentials], "identifiants-utilisateur.xlsx")
+    } catch {
+      toast({ title: "Téléchargement impossible", description: "Réessayez avant de fermer cette fenêtre.", variant: "destructive" })
+    } finally {
+      setCredentialsDownloading(false)
+    }
+  }
+
   const handleCopyCredentials = async () => {
     if (!createdCredentials) return
 
@@ -192,20 +262,20 @@ export default function JuryRolesRegistrationPage() {
       setIsSubmitting(true)
       setCreatedCredentials(null)
 
-      const response = await juryMembers.create({
+      const payload = {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         email: formData.email.trim(),
         role: activeRole.value,
-      })
+        formations: formData.formations,
+        additional_roles: formData.alsoSecondRole && SECOND_ROLE[activeRole.value] ? [SECOND_ROLE[activeRole.value]] : [],
+      }
+      const response = await juryMembers.create(payload)
 
-      setCreatedCredentials({
-        email: response.data?.email || response.user?.email || formData.email.trim(),
-        password: response.temporary_password || "",
+      setCreatedCredentials(readJuryCredentials(response, {
+        ...payload,
         roleLabel: response.role_label || activeRole.title,
-        emailSent: Boolean(response.credentials_email_sent),
-        emailMessage: response.credentials_email_message || "",
-      })
+      }))
       setSelectedMemberId(response.data?.id || "")
       setFormData(initialFormData)
       setCreateDialogOpen(false)
@@ -214,7 +284,7 @@ export default function JuryRolesRegistrationPage() {
 
       toast({
         title: "Utilisateur créé",
-        description: `${response.user?.email || "Le compte"} a été ajouté. Le rôle réel se règle ensuite par créneau.`,
+        description: `${response.user?.email || "Le compte"} a été ajouté.`,
       })
     } catch (error) {
       setCreateError(error.message || "Une erreur est survenue pendant la création.")
@@ -231,11 +301,16 @@ export default function JuryRolesRegistrationPage() {
   const handleStartEditRole = (member) => {
     setEditingMemberId(member.id)
     setMemberRoleDraft(member.role || juryRoles[0].value)
+    setMemberSecondRoleDraft(Boolean(SECOND_ROLE[member.role] && member.roles?.includes(SECOND_ROLE[member.role])))
+    setMemberFormationsDraft(member.formations || [])
   }
 
   const handleSaveRole = async (memberId) => {
     try {
-      await juryMembers.update(memberId, { role: memberRoleDraft })
+      await juryMembers.update(memberId, {
+        role: memberRoleDraft, formations: memberFormationsDraft,
+        additional_roles: memberSecondRoleDraft && SECOND_ROLE[memberRoleDraft] ? [SECOND_ROLE[memberRoleDraft]] : [],
+      })
       setEditingMemberId("")
       setMemberRoleDraft("")
       await fetchMembers()
@@ -282,13 +357,7 @@ export default function JuryRolesRegistrationPage() {
     try {
       setPasswordResettingId(member.id)
       const response = await juryMembers.resetPassword(member.id)
-      setCreatedCredentials({
-        email: response.data?.email || member.email,
-        password: response.temporary_password || "",
-        roleLabel: response.data?.role_label || member.role_label,
-        emailSent: Boolean(response.credentials_email_sent),
-        emailMessage: response.credentials_email_message || "",
-      })
+      setCreatedCredentials(readJuryCredentials(response, { ...member, roleLabel: member.role_label }))
       setCredentialsModalOpen(true)
       await fetchMembers()
       toast({
@@ -347,9 +416,9 @@ export default function JuryRolesRegistrationPage() {
               <Users className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Inscription des rôles jury</h1>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Utilisateurs</h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                Créez les comptes des membres du jury. Le rôle par défaut aide l'organisation, mais le rôle réel se décide par créneau et par référentiel.
+                Inscrivez les validateurs et les coachs et choisissez leurs référentiels.
               </p>
             </div>
           </div>
@@ -364,15 +433,18 @@ export default function JuryRolesRegistrationPage() {
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle>Comptes jury créés</CardTitle>
+              <CardTitle>Utilisateurs enregistrés</CardTitle>
               <CardDescription>
             Retrouvez ici les membres d'entretien. Une même personne peut être coach sur un référentiel et filtreur sur un autre selon ses affectations.
               </CardDescription>
             </div>
-            <Button type="button" onClick={() => setCreateDialogOpen(true)} className="gap-2">
-              <UserPlus className="h-4 w-4" />
-              Ajouter un jury
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <JuryImportDialog catalog={catalog} createMember={juryMembers.create} onImported={fetchMembers} />
+              <Button type="button" onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Ajouter un utilisateur
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -426,7 +498,7 @@ export default function JuryRolesRegistrationPage() {
                         </td>
                         <td className="px-4 py-3">
                           {editingMemberId === member.id ? (
-                            <div className="flex items-center gap-2">
+                            <div className="space-y-2">
                               <Select value={memberRoleDraft} onValueChange={setMemberRoleDraft}>
                                 <SelectTrigger className="w-[170px]">
                                   <SelectValue />
@@ -439,12 +511,19 @@ export default function JuryRolesRegistrationPage() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Button size="sm" onClick={() => handleSaveRole(member.id)}>
-                                OK
+                              <SecondRoleCheckbox role={memberRoleDraft} checked={memberSecondRoleDraft} onChange={setMemberSecondRoleDraft} />
+                              {needsFormation(memberRoleDraft) ? <FormationCheckboxes catalog={catalog} selected={memberFormationsDraft} onChange={setMemberFormationsDraft} /> : null}
+                              <Button size="sm" disabled={needsFormation(memberRoleDraft) && !memberFormationsDraft.length} onClick={() => handleSaveRole(member.id)}>
+                                Enregistrer
                               </Button>
                             </div>
                           ) : (
-                            <Badge variant="outline">{member.role_label}</Badge>
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap gap-1">
+                                {(member.roles?.length ? member.roles : [member.role]).map((role) => <Badge key={role} variant="outline">{roleTitle(role)}</Badge>)}
+                              </div>
+                              {needsFormation(member.role) ? <p className="text-xs text-muted-foreground">{member.formations?.length ? member.formations.map((code) => catalog.allOptions.find((item) => item.value === code)?.label || code).join(", ") : "À rattacher à un référentiel"}</p> : null}
+                            </div>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -569,11 +648,11 @@ export default function JuryRolesRegistrationPage() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Ajouter un jury</DialogTitle>
+            <DialogTitle>Ajouter un utilisateur</DialogTitle>
             <DialogDescription>
-              Choisissez un profil par défaut puis renseignez les informations. Le rôle opérationnel sera défini dans les créneaux de chaque référentiel.
+              Choisissez le rôle et les référentiels auxquels l’utilisateur sera rattaché.
             </DialogDescription>
           </DialogHeader>
 
@@ -583,6 +662,7 @@ export default function JuryRolesRegistrationPage() {
                 <button
                   key={role.title}
                   type="button"
+                  aria-pressed={selectedRole === role.value}
                   onClick={() => setSelectedRole(role.value)}
                   className="text-left"
                 >
@@ -666,6 +746,8 @@ export default function JuryRolesRegistrationPage() {
               </div>
             </div>
 
+            <SecondRoleCheckbox role={activeRole.value} checked={formData.alsoSecondRole} onChange={(value) => updateField("alsoSecondRole", value)} disabled={isSubmitting} />
+            {needsFormation(activeRole.value) ? <FormationCheckboxes catalog={catalog} selected={formData.formations} onChange={(value) => updateField("formations", value)} disabled={isSubmitting} /> : null}
             <div className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
               Aucun mot de passe à saisir. Il sera généré automatiquement et affiché après création.
             </div>
@@ -681,17 +763,17 @@ export default function JuryRolesRegistrationPage() {
             <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Annuler
             </Button>
-            <Button type="submit" form="create-jury-form" disabled={isSubmitting}>
+            <Button type="submit" form="create-jury-form" disabled={isSubmitting || (needsFormation(activeRole.value) && !formData.formations.length)}>
               {isSubmitting ? "Création..." : "Enregistrer l'utilisateur"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={credentialsModalOpen} onOpenChange={setCredentialsModalOpen}>
-        <AlertDialogContent>
+      <AlertDialog open={credentialsModalOpen} onOpenChange={changeCredentialsOpen}>
+        <AlertDialogContent className="max-h-[85dvh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Compte créé avec succès</AlertDialogTitle>
+            <AlertDialogTitle>Identifiants du compte</AlertDialogTitle>
             <AlertDialogDescription>
               Transmettez ces identifiants au membre du jury. Le mot de passe est temporaire.
             </AlertDialogDescription>
@@ -725,11 +807,16 @@ export default function JuryRolesRegistrationPage() {
           ) : null}
 
           <AlertDialogFooter>
-            <AlertDialogCancel>Fermer</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCopyCredentials} className="gap-2">
+            <AlertDialogCancel disabled={credentialsDownloading}>Fermer</AlertDialogCancel>
+            <Button type="button" variant="outline" onClick={handleDownloadCredentials}
+              disabled={!createdCredentials?.password || credentialsDownloading} className="gap-2">
+              <Download className="h-4 w-4" />
+              Télécharger Excel
+            </Button>
+            <Button type="button" onClick={handleCopyCredentials} className="gap-2">
               <Copy className="h-4 w-4" />
               Copier
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

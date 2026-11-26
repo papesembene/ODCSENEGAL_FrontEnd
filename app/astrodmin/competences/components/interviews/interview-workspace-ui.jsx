@@ -35,7 +35,7 @@ export function InterviewStats({ items }) {
   )
 }
 
-export function InterviewFilters({ interviews, progress = false, children }) {
+export function InterviewFilters({ interviews, progress = false, showDecision = true, children }) {
   const hasFilters = interviews.searchTerm || interviews.statusFilter !== "all"
     || (progress && (interviews.completionFilter !== "all" || interviews.progressFilter !== "all"))
   const resetFilters = () => {
@@ -48,7 +48,7 @@ export function InterviewFilters({ interviews, progress = false, children }) {
   }
   return (
     <div className="flex shrink-0 flex-col gap-3 rounded-lg border bg-muted/20 p-3">
-      <div className={`grid gap-3 sm:grid-cols-2 ${progress ? "xl:grid-cols-[minmax(200px,1.5fr)_repeat(3,minmax(140px,1fr))]" : "xl:grid-cols-[minmax(200px,1.5fr)_1fr_1fr]"}`}>
+      <div className={`grid gap-3 sm:grid-cols-2 ${progress && showDecision ? "xl:grid-cols-[minmax(200px,1.5fr)_repeat(3,minmax(140px,1fr))]" : "xl:grid-cols-[minmax(200px,1.5fr)_1fr_1fr]"}`}>
         <div className="space-y-1.5">
           <Label htmlFor="interview-search" className="text-xs text-muted-foreground">Rechercher un candidat</Label>
           <div className="relative">
@@ -57,11 +57,11 @@ export function InterviewFilters({ interviews, progress = false, children }) {
               onChange={(event) => interviews.setSearchTerm(event.target.value)} placeholder="Nom, email ou téléphone" />
           </div>
         </div>
-        <InterviewSelect id="interview-status" label="Décision finale" value={interviews.statusFilter}
+        {showDecision ? <InterviewSelect id="interview-status" label="Décision finale" value={interviews.statusFilter}
           onChange={interviews.setStatusFilter} options={[
             { value: "all", label: "Toutes les décisions" },
             ...Object.entries(FINAL_STATUS_LABELS).map(([value, label]) => ({ value, label })),
-          ]} />
+          ]} /> : null}
         {progress ? <>
           <InterviewSelect id="interview-completion" label="Évaluation" value={interviews.completionFilter}
             onChange={interviews.setCompletionFilter} options={[

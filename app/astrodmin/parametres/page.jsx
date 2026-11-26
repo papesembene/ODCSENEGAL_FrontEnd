@@ -22,12 +22,12 @@ const parameterModules = [
     allowedTypes: ["super_admin"],
   },
   {
-    title: "Inscription des rôles jury",
+    title: "Utilisateurs",
     description:
-      "Préparez les personnes qui pourront être affectées aux créneaux d'entretien : filtre, validation et motivation.",
-    noteTitle: "Membres du jury",
+      "Créez les comptes des validateurs et des coachs et rattachez-les à leurs référentiels.",
+    noteTitle: "Validateurs et coachs",
     noteDescription:
-      "Enregistrez uniquement les personnes qui interviennent dans les entretiens : filtreur, validateur ou jury motivation.",
+      "Les validateurs peuvent être sélectionnés dans les entretiens des référentiels auxquels ils sont rattachés.",
     href: "/astrodmin/parametres/inscription-roles-jury",
     badge: "Disponible",
     icon: Users,

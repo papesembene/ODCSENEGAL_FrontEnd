@@ -593,7 +593,7 @@ export default function CompetencesInterviewEvaluationDialog({
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="rounded-lg border bg-muted/30 px-3 py-2 text-right">
+                {evaluation.requires_online_test !== false ? <div className="rounded-lg border bg-muted/30 px-3 py-2 text-right">
                   <p className="text-xs text-muted-foreground">Score test en ligne</p>
                   <p className="font-semibold">{formatTestScore(evaluation.test_score)}</p>
                   {evaluation.test_result_status ? (
@@ -601,7 +601,7 @@ export default function CompetencesInterviewEvaluationDialog({
                       {TEST_RESULT_STATUS_LABELS[evaluation.test_result_status] || evaluation.test_result_status}
                     </p>
                   ) : null}
-                </div>
+                </div> : null}
                 {canManagePlanning ? (
                   <Badge variant="outline">
                     {FINAL_STATUS_OPTIONS.find((option) => option.value === form.final_status)?.label || form.final_status}
@@ -627,7 +627,7 @@ export default function CompetencesInterviewEvaluationDialog({
             ))}
           </div>
 
-          {!canManagePlanning ? <TestDetailsPanel testDetails={evaluation.test_details} /> : null}
+          {!canManagePlanning && evaluation.requires_online_test !== false ? <TestDetailsPanel testDetails={evaluation.test_details} /> : null}
 
           <div className={canManagePlanning ? "space-y-4" : "grid gap-6 lg:grid-cols-2"}>
             {canManagePlanning ? (

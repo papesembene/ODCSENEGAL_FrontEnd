@@ -19,7 +19,7 @@ const EMPTY_EVALUATION_SUMMARY = {
   ready_for_decision: 0,
 }
 
-export default function useCompetencesInterviews({ filterBySelectedCampaign = true } = {}) {
+export default function useCompetencesInterviews({ filterBySelectedCampaign = true, formation = "", validatorView = false } = {}) {
   useTrainingCatalog()
   const { interviews } = useAdminApi()
   const [loading, setLoading] = useState(true)
@@ -38,6 +38,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   const [slotOccupancy, setSlotOccupancy] = useState({})
   const [selectedCampaignId, setSelectedCampaignId] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [directStatusFilter, setDirectStatusFilter] = useState("all")
   const [progressFilter, setProgressFilter] = useState("all")
   const [completionFilter, setCompletionFilter] = useState("all")
   const [formationFilter, setFormationFilter] = useState("all")
@@ -57,7 +58,8 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   const [evaluationSummary, setEvaluationSummary] = useState(EMPTY_EVALUATION_SUMMARY)
   const [campaignForm, setCampaignForm] = useState({
     name: "",
-    formation: "",
+    formation,
+    candidature_campaign_id: "",
     description: "",
     status: "draft",
   })
@@ -71,7 +73,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     const requestId = ++bootstrapRequest.current
     try {
       setLoading(true)
-      const result = await interviews.bootstrap()
+      const result = await interviews.bootstrap(formation)
       if (requestId !== bootstrapRequest.current) return
       if (!result.success) {
         throw new Error(result.error || "Erreur lors du chargement des entretiens")
@@ -93,7 +95,9 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
           (campaign) => campaign.id === currentCampaignId,
         )
 
-        return currentCampaignStillExists ? currentCampaignId : campaigns[0]?.id || ""
+        if (currentCampaignStillExists) return currentCampaignId
+        const preferred = formation && (campaigns.find((campaign) => campaign.status === "active") || campaigns.find((campaign) => campaign.status === "draft"))
+        return preferred?.id || campaigns[0]?.id || ""
       })
     } catch (error) {
       if (requestId !== bootstrapRequest.current) return
@@ -106,7 +110,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
         setInitialLoading(false)
       }
     }
-  }, [interviews])
+  }, [formation, interviews])
 
   useEffect(() => {
     fetchBootstrap()
@@ -139,6 +143,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
         search: deferredSearchTerm.trim(),
         page,
         pageSize,
+        ...(validatorView ? { directSummary: 1, directStatus: directStatusFilter, sort: "schedule" } : {}),
       })
       if (requestId !== evaluationsRequest.current) return
       if (!result.success) {
@@ -170,6 +175,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   }, [
     completionFilter,
     deferredSearchTerm,
+    directStatusFilter,
     filterBySelectedCampaign,
     formationFilter,
     interviews,
@@ -179,6 +185,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     selectedCampaignId,
     slotFilter,
     statusFilter,
+    validatorView,
   ])
 
   useEffect(() => {
@@ -190,6 +197,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
   }, [
     completionFilter,
     deferredSearchTerm,
+    directStatusFilter,
     formationFilter,
     progressFilter,
     selectedCampaignId,
@@ -232,6 +240,7 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
       setCampaignForm({
         name: "",
         formation: campaignForm.formation,
+        candidature_campaign_id: "",
         description: "",
         status: "draft",
       })
@@ -474,6 +483,8 @@ export default function useCompetencesInterviews({ filterBySelectedCampaign = tr
     setSlotFilter,
     statusFilter,
     setStatusFilter,
+    directStatusFilter,
+    setDirectStatusFilter,
     progressFilter,
     setProgressFilter,
     completionFilter,

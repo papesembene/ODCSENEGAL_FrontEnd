@@ -20,6 +20,7 @@ const BULK_OPTIONS = [
 ]
 
 export default function InterviewDecisionsPanel({ interviews, onOpenEvaluation }) {
+  const showTestScore = !interviews.selectedCampaign?.candidature_campaign_id
   const [signal, setSignal] = useState("all")
   const [selectedIds, setSelectedIds] = useState([])
   const [decision, setDecision] = useState("none")
@@ -97,7 +98,7 @@ export default function InterviewDecisionsPanel({ interviews, onOpenEvaluation }
                   onCheckedChange={(checked) => setSelectedIds(checked === true ? rows.map((row) => row.id) : [])} />
               </TableHead>
               <TableHead className="sticky left-12 z-30 min-w-[220px] bg-background">Candidat</TableHead>
-              <TableHead className="min-w-[110px]">Score test</TableHead>
+              {showTestScore ? <TableHead className="min-w-[110px]">Score test</TableHead> : null}
               <TableHead>Filtreur</TableHead><TableHead>Coach</TableHead><TableHead>Motivation</TableHead>
               <TableHead className="min-w-[180px]">Points d'attention</TableHead><TableHead>Synthèse</TableHead>
               <TableHead>Décision finale</TableHead><TableHead className="sticky right-0 z-30 bg-background text-right">Action</TableHead>
@@ -105,7 +106,7 @@ export default function InterviewDecisionsPanel({ interviews, onOpenEvaluation }
           </TableHeader>
           <TableBody>
             {interviews.evaluationsLoading || !rows.length ? (
-              <InterviewTableMessage colSpan={10} loading={interviews.evaluationsLoading}>Aucun candidat pour ces filtres.</InterviewTableMessage>
+              <InterviewTableMessage colSpan={showTestScore ? 10 : 9} loading={interviews.evaluationsLoading}>Aucun candidat pour ces filtres.</InterviewTableMessage>
             ) : rows.map((evaluation) => {
               const aid = getDecisionAid(evaluation)
               const badges = getCoachBadges(evaluation)
@@ -119,10 +120,10 @@ export default function InterviewDecisionsPanel({ interviews, onOpenEvaluation }
                     <p className="font-medium">{getCandidateName(evaluation)}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{evaluation.candidate_snapshot?.email || "-"}</p>
                   </TableCell>
-                  <TableCell className="tabular-nums">
+                  {showTestScore ? <TableCell className="tabular-nums">
                     <p className="font-medium">{formatTestScore(evaluation.test_score)}</p>
                     {evaluation.test_details?.violations?.totalViolations > 0 ? <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{evaluation.test_details.violations.totalViolations} infraction(s)</p> : null}
-                  </TableCell>
+                  </TableCell> : null}
                   {["filter", "validator", "motivation"].map((key) => (
                     <TableCell key={key} className="min-w-[140px] max-w-[200px]">
                       <span className="line-clamp-2" title={getReviewDecision(evaluation, key)}>{getReviewDecision(evaluation, key) || "-"}</span>

@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react"
 import { ClipboardList, Plus } from "lucide-react"
+import { useAdminApi } from "@/app/hooks/useAdminApi"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,13 +11,43 @@ import { InterviewSelect } from "./interview-workspace-ui"
 import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
 import CatalogFeedback from "@/components/trainings/catalog-feedback"
 
-export function InterviewCampaignDialog({ interviews, open, onOpenChange, onCreated }) {
+export function InterviewCampaignDialog({ interviews, formation: selectedFormation, open, onOpenChange, onCreated }) {
   const catalog = useTrainingCatalog()
+  const { candidatures } = useAdminApi()
+  const [sourceCampaigns, setSourceCampaigns] = useState([])
+  const [sourceLoading, setSourceLoading] = useState(false)
+  const [sourceError, setSourceError] = useState("")
   const update = (field, value) => interviews.setCampaignForm((previous) => ({ ...previous, [field]: value }))
+  const formation = interviews.campaignForm.formation
+  const sourceOptions = sourceCampaigns
+    .filter((campaign) => ["published", "archived"].includes(campaign.status)
+      && ["all", formation].includes(campaign.formation))
+    .map((campaign) => ({ value: campaign.id, label: [campaign.title, campaign.promotion].filter(Boolean).join(" · ") }))
+  const canSubmit = !sourceLoading && sourceOptions.some((option) => option.value === interviews.campaignForm.candidature_campaign_id)
+
+  useEffect(() => {
+    if (!open) return
+    let active = true
+    setSourceLoading(true)
+    setSourceError("")
+    candidatures.getCampaigns().then((response) => {
+      if (active) setSourceCampaigns(response.data || [])
+    }).catch((error) => {
+      if (active) {
+        setSourceCampaigns([])
+        setSourceError(error.message || "Impossible de charger les campagnes de candidature.")
+      }
+    }).finally(() => {
+      if (active) setSourceLoading(false)
+    })
+    return () => { active = false }
+  }, [candidatures, open])
+
   return (
     <InterviewFormDialog open={open} onOpenChange={onOpenChange} title="Nouvelle campagne d'entretien"
       description="Une campagne regroupe les entretiens d'un référentiel et sa grille d'évaluation."
-      submitting={interviews.submitting} onSubmit={async () => {
+      submitting={interviews.submitting} submitDisabled={!canSubmit} onSubmit={async () => {
+        if (!canSubmit) return null
         const campaign = await interviews.handleCreateCampaign()
         if (campaign) onCreated?.(campaign)
         return campaign
@@ -26,8 +58,18 @@ export function InterviewCampaignDialog({ interviews, open, onOpenChange, onCrea
           onChange={(event) => update("name", event.target.value)} placeholder="Ex. Entretiens Dev Web Mobile - Promotion 2026" />
       </div>
       <CatalogFeedback />
-      <InterviewSelect id="campaign-formation" label="Référentiel" value={interviews.campaignForm.formation}
-        onChange={(value) => update("formation", value)} options={catalog.options} />
+      <InterviewSelect id="campaign-formation" label="Référentiel" value={formation}
+        onChange={(value) => interviews.setCampaignForm((previous) => ({
+          ...previous, formation: value, candidature_campaign_id: "",
+        }))} options={selectedFormation ? catalog.allOptions : catalog.options} disabled={Boolean(selectedFormation)} />
+      <InterviewSelect id="campaign-source" label="Campagne de candidature" value={interviews.campaignForm.candidature_campaign_id}
+        onChange={(value) => update("candidature_campaign_id", value)} options={sourceOptions}
+        placeholder={sourceLoading ? "Chargement…" : "Choisir une campagne"}
+        disabled={!formation || sourceLoading || !sourceOptions.length} />
+      {sourceError ? <p className="text-sm text-destructive" role="alert">{sourceError}</p> : null}
+      {formation && !sourceLoading && !sourceError && !sourceOptions.length ? (
+        <p className="text-sm text-muted-foreground">Aucune campagne de candidature publiée ou archivée pour ce référentiel.</p>
+      ) : null}
       <div className="space-y-1.5">
         <Label htmlFor="campaign-description">Description <span className="font-normal text-muted-foreground">(facultative)</span></Label>
         <Textarea id="campaign-description" value={interviews.campaignForm.description} rows={3}

@@ -8,7 +8,7 @@ import {
 } from "../interview-helpers"
 
 export default function useMyInterviews() {
-  const interviews = useCompetencesInterviews()
+  const interviews = useCompetencesInterviews({ validatorView: true })
   const [admin, setAdmin] = useState(null)
   const [now, setNow] = useState(0)
   const [inlineDrafts, setInlineDrafts] = useState({})

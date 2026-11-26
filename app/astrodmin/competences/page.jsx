@@ -161,6 +161,7 @@ export default function CompetencesAdminDashboard() {
         onClose={dashboard.closeCandidateDetails}
         onAccept={() => dashboard.selectedCandidate && dashboard.updateCandidateStatus(dashboard.selectedCandidate.id, "accepted")}
         onReject={() => dashboard.selectedCandidate && dashboard.updateCandidateStatus(dashboard.selectedCandidate.id, "rejected")}
+        onDelete={() => dashboard.selectedCandidate && dashboard.deleteCandidate(dashboard.selectedCandidate.id)}
         getStatusColor={getStatusColor}
         getStatusLabel={getStatusLabel}
         getGenderLabel={getGenderLabel}

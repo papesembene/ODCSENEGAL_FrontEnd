@@ -55,3 +55,7 @@ export function structureOptions(formation) {
   return ["aws-cloud", "cyber-security", "intelligence-artificielle"].includes(formation)
     ? [structures[2], structures[0]] : structures
 }
+
+export function educationLabel(value) {
+  return ALL_EDUCATION.find((item) => item.value === value)?.label || value
+}

@@ -273,8 +273,20 @@ export default function useCompetencesAdminDashboard() {
     [candidatures, fetchCandidates],
   )
 
+  const deleteCandidate = useCallback(async (id) => {
+    try {
+      await candidatures.remove(id)
+      toast.success("Candidature supprimée, avec ses entretiens et sa place en Bootcamp.")
+      setSelectedCandidate(null)
+      await fetchCandidates()
+    } catch (deleteError) {
+      toast.error(deleteError.message || "Impossible de supprimer la candidature")
+    }
+  }, [candidatures, fetchCandidates])
+
   return {
     ...directory,
+    deleteCandidate,
     selectedCandidate,
     activeTab,
     setActiveTab,

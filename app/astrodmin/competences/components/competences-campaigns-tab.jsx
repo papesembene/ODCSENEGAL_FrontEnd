@@ -2,7 +2,7 @@
 
 import TrainingName from "@/components/trainings/training-name"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { CalendarClock, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useTrainingCatalog } from "@/components/trainings/training-catalog-provider"
+import { parseCampaignDate } from "@/lib/candidature-availability"
 
 const EMPTY_CAMPAIGN_FORM = {
   title: "",
@@ -40,19 +41,17 @@ const LIFECYCLE_LABELS = {
 }
 
 function toDatetimeLocal(value) {
-  if (!value) return ""
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ""
-  return date.toISOString().slice(0, 16)
+  const timestamp = parseCampaignDate(value)
+  return timestamp === null ? "" : new Date(timestamp).toISOString().slice(0, 16)
 }
 
 function formatDateTime(value) {
-  if (!value) return "-"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "-"
-  return date.toLocaleString("fr-FR", {
+  const timestamp = parseCampaignDate(value)
+  if (timestamp === null) return "-"
+  return new Date(timestamp).toLocaleString("fr-FR", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Africa/Dakar",
   })
 }
 
@@ -64,12 +63,17 @@ export default function CompetencesCampaignsTab() {
   const [editingId, setEditingId] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState("")
+  const titleRef = useRef(null)
 
   const formationOptions = [
     { value: "all", label: "Toutes les formations" },
     ...catalog.allOptions.filter((option) => option.value === formData.formation
       || catalog.options.some((active) => active.value === option.value)),
   ]
+  if (!formationOptions.some((option) => option.value === formData.formation)) {
+    formationOptions.push({ value: formData.formation, label: formData.formation })
+  }
 
   const fetchCampaigns = async () => {
     try {
@@ -93,11 +97,13 @@ export default function CompetencesCampaignsTab() {
   }
 
   const resetForm = () => {
+    setFormError("")
     setEditingId("")
     setFormData(EMPTY_CAMPAIGN_FORM)
   }
 
   const editCampaign = (campaign) => {
+    setFormError("")
     setEditingId(campaign.id)
     setFormData({
       title: campaign.title || "",
@@ -108,16 +114,22 @@ export default function CompetencesCampaignsTab() {
       status: campaign.status || "draft",
       description: campaign.description || "",
     })
+    titleRef.current?.focus()
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!formData.title || !formData.startAt || !formData.endAt) {
-      toast.error("Titre, date d'ouverture et date de fermeture sont requis")
+    if (!formData.title.trim() || !formData.startAt || !formData.endAt) {
+      setFormError("Titre, date d’ouverture et date de fermeture sont requis.")
+      return
+    }
+    if (formData.endAt <= formData.startAt) {
+      setFormError("La fermeture doit être après l’ouverture.")
       return
     }
 
     try {
+      setFormError("")
       setSaving(true)
       if (editingId) {
         await candidatures.updateCampaign(editingId, formData)
@@ -129,7 +141,7 @@ export default function CompetencesCampaignsTab() {
       resetForm()
       await fetchCampaigns()
     } catch (error) {
-      toast.error(error.message || "Enregistrement impossible")
+      setFormError(error.message || "Enregistrement impossible")
     } finally {
       setSaving(false)
     }
@@ -141,18 +153,20 @@ export default function CompetencesCampaignsTab() {
         <CardHeader>
           <CardTitle>{editingId ? "Modifier la campagne" : "Créer une campagne"}</CardTitle>
           <CardDescription>
-            Ces dates ouvrent ou ferment réellement les candidatures côté portail et côté API.
+            Les dates d’ouverture et de fermeture sont en heure de Dakar.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <Field label="Titre" value={formData.title} onChange={(value) => updateField("title", value)} />
-            <Field label="Promotion" value={formData.promotion} placeholder="Ex: Promotion 2026" onChange={(value) => updateField("promotion", value)} />
+            <Field id="campaign-title" inputRef={titleRef} label="Titre" value={formData.title} onChange={(value) => updateField("title", value)} />
+            <Field id="campaign-promotion" label="Promotion" value={formData.promotion} placeholder="Ex: Promotion 2026" onChange={(value) => updateField("promotion", value)} />
 
             <div className="space-y-2">
-              <Label>Formation concernée</Label>
-              <Select value={formData.formation} onValueChange={(value) => updateField("formation", value)}>
-                <SelectTrigger>
+              <Label htmlFor="campaign-formation">Formation concernée</Label>
+              <Select value={formData.formation} onValueChange={(value) => {
+                if (value) updateField("formation", value)
+              }}>
+                <SelectTrigger id="campaign-formation">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -164,14 +178,14 @@ export default function CompetencesCampaignsTab() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Ouverture" type="datetime-local" value={formData.startAt} onChange={(value) => updateField("startAt", value)} />
-              <Field label="Fermeture" type="datetime-local" value={formData.endAt} onChange={(value) => updateField("endAt", value)} />
+              <Field id="campaign-opening" label="Ouverture" type="datetime-local" value={formData.startAt} onChange={(value) => updateField("startAt", value)} />
+              <Field id="campaign-closing" label="Fermeture" type="datetime-local" value={formData.endAt} onChange={(value) => updateField("endAt", value)} />
             </div>
 
             <div className="space-y-2">
-              <Label>Statut</Label>
+              <Label htmlFor="campaign-status">Statut</Label>
               <Select value={formData.status} onValueChange={(value) => updateField("status", value)}>
-                <SelectTrigger>
+                <SelectTrigger id="campaign-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -183,19 +197,23 @@ export default function CompetencesCampaignsTab() {
             </div>
 
             <div className="space-y-2">
-              <Label>Message interne</Label>
+              <Label htmlFor="campaign-description">Message interne</Label>
               <Textarea
+                id="campaign-description"
                 value={formData.description}
                 placeholder="Optionnel"
                 onChange={(event) => updateField("description", event.target.value)}
               />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={saving}>
-                {saving ? "Enregistrement..." : editingId ? "Mettre à jour" : "Créer"}
-              </Button>
-              {editingId ? <Button type="button" variant="outline" onClick={resetForm}>Annuler</Button> : null}
+            <div className="sticky bottom-0 z-10 space-y-2 border-t bg-card py-3">
+              {formError ? <p role="alert" className="text-sm text-destructive">{formError}</p> : null}
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Enregistrement…" : editingId ? "Enregistrer les modifications" : "Créer"}
+                </Button>
+                {editingId ? <Button type="button" variant="outline" disabled={saving} onClick={resetForm}>Annuler</Button> : null}
+              </div>
             </div>
           </form>
         </CardContent>
@@ -238,7 +256,7 @@ export default function CompetencesCampaignsTab() {
                     {formatDateTime(campaign.startAt)} - {formatDateTime(campaign.endAt)}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => editCampaign(campaign)}>
+                <Button variant="outline" size="sm" disabled={saving} onClick={() => editCampaign(campaign)}>
                   Modifier
                 </Button>
               </div>
@@ -250,11 +268,13 @@ export default function CompetencesCampaignsTab() {
   )
 }
 
-function Field({ label, value, onChange, type = "text", placeholder = "" }) {
+function Field({ id, inputRef, label, value, onChange, type = "text", placeholder = "" }) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Input
+        id={id}
+        ref={inputRef}
         type={type}
         value={value}
         placeholder={placeholder}
