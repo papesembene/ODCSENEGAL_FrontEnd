@@ -9,7 +9,7 @@ import { validateTrainingSites, RESIDENCE_LOCATIONS } from "@/lib/training-eligi
 const Context = createContext(null)
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "")
 const PUBLIC_PATHS = new Set(["/competences", "/odc/candidatures"])
-const ADMIN_PATHS = ["/astrodmin/competences", "/astrodmin/entretiens", "/astrodmin/mes-entretiens"]
+const ADMIN_PATHS = ["/astrodmin/competences", "/astrodmin/entretiens", "/astrodmin/mes-entretiens", "/astrodmin/parametres/inscription-roles-jury"]
 
 export default function TrainingCatalogProvider({ children }) {
   const pathname = usePathname()

@@ -65,7 +65,7 @@ function normalizeDecisionText(value) {
 }
 
 export function getDecisionAid(evaluation) {
-  const score = Number(evaluation.test_score)
+  const score = evaluation.test_score == null ? NaN : Number(evaluation.test_score)
   const decisions = ["filter", "validator", "motivation"].map((key) =>
     normalizeDecisionText(getReviewDecision(evaluation, key)),
   )

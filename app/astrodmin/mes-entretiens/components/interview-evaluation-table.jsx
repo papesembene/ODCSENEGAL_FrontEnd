@@ -19,6 +19,7 @@ export default function InterviewEvaluationTable({
   onSave,
   savingEvaluationId,
   scorecardConfig,
+  showTestScore = true,
   setDrafts,
   submitting,
   now,
@@ -34,7 +35,7 @@ export default function InterviewEvaluationTable({
     (total, sectionKey) => total + getVisibleCriteria(sections[sectionKey]).length,
     0,
   )
-  const colSpan = 5 + Math.max(visibleCriteriaCount, 1)
+  const colSpan = (showTestScore ? 5 : 4) + Math.max(visibleCriteriaCount, 1)
 
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border">
@@ -46,7 +47,7 @@ export default function InterviewEvaluationTable({
             </TableHead>
             <TableHead rowSpan={2} className="sticky top-0 z-20 min-w-[150px] bg-background">Rôle</TableHead>
             <TableHead rowSpan={2} className="sticky top-0 z-20 min-w-[150px] bg-background">Traitement</TableHead>
-            <TableHead rowSpan={2} className="sticky top-0 z-20 min-w-[110px] bg-background">Score</TableHead>
+            {showTestScore ? <TableHead rowSpan={2} className="sticky top-0 z-20 min-w-[110px] bg-background">Score test</TableHead> : null}
             {visibleSectionKeys.length === 0 ? (
               <TableHead rowSpan={2} className="sticky top-0 z-20 bg-background">Critères</TableHead>
             ) : (
@@ -130,7 +131,7 @@ export default function InterviewEvaluationTable({
                       ) : null}
                     </div>
                   </TableCell>
-                  <TableCell>{evaluation.test_score ?? "-"} pts</TableCell>
+                  {showTestScore ? <TableCell>{evaluation.test_score == null ? "-" : `${evaluation.test_score} pts`}</TableCell> : null}
                   {visibleSectionKeys.length === 0 ? (
                     <TableCell className="text-sm text-muted-foreground">Aucun critère visible.</TableCell>
                   ) : (

@@ -31,7 +31,7 @@ function CandidateFoundQuestions({ evaluation }) {
   )
 }
 
-export default function InterviewQuestionsSidebar({ questions, selectedEvaluation }) {
+export default function InterviewQuestionsSidebar({ questions, selectedEvaluation, showTestResults = true }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const name = [selectedEvaluation?.candidate_snapshot?.first_name, selectedEvaluation?.candidate_snapshot?.last_name]
     .filter(Boolean).join(" ") || selectedEvaluation?.candidate_snapshot?.email
@@ -39,9 +39,9 @@ export default function InterviewQuestionsSidebar({ questions, selectedEvaluatio
     <div className="min-w-0">
       <Button type="button" variant="outline" className="mb-3 w-full justify-between lg:hidden"
         aria-expanded={mobileOpen} aria-controls="jury-questions" onClick={() => setMobileOpen(!mobileOpen)}>
-        Questions d'entretien et du candidat<ChevronDown className="ml-2 h-4 w-4" />
+        Questions d'entretien<ChevronDown className="ml-2 h-4 w-4" />
       </Button>
-      <div id="jury-questions" className={`${mobileOpen ? "grid" : "hidden"} gap-3 lg:grid lg:h-[min(60dvh,640px)] lg:grid-rows-2`}>
+      <div id="jury-questions" className={`${mobileOpen ? "grid" : "hidden"} gap-3 lg:grid lg:h-[min(60dvh,640px)] ${showTestResults ? "lg:grid-rows-2" : ""}`}>
         <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-orange-200">
           <header className="flex shrink-0 items-center justify-between gap-2 border-b border-orange-200 bg-orange-50/50 px-3 py-2">
             <h2 className="text-sm font-semibold text-orange-950">Questions d'entretien</h2>
@@ -57,7 +57,7 @@ export default function InterviewQuestionsSidebar({ questions, selectedEvaluatio
             ))}
           </div>
         </section>
-        <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-blue-200">
+        {showTestResults ? <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-blue-200">
           <header className="shrink-0 border-b border-blue-200 bg-blue-50/50 px-3 py-2">
             <h2 className="text-sm font-semibold text-blue-950">Questions trouvées au test</h2>
             <p className="mt-1 truncate text-xs text-muted-foreground" title={name}>{name || "Aucun candidat sélectionné"}</p>
@@ -65,7 +65,7 @@ export default function InterviewQuestionsSidebar({ questions, selectedEvaluatio
           <div className="min-h-0 max-h-[40dvh] overflow-y-auto p-3 lg:max-h-none">
             <CandidateFoundQuestions key={selectedEvaluation?.id || "none"} evaluation={selectedEvaluation} />
           </div>
-        </section>
+        </section> : null}
       </div>
     </div>
   )

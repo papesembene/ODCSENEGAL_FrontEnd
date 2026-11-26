@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 export default function InterviewFormDialog({
-  open, onOpenChange, title, description, submitting, onSubmit, submitLabel, children,
+  open, onOpenChange, title, description, submitting, submitDisabled = false, onSubmit, submitLabel, children,
 }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -25,7 +25,7 @@ export default function InterviewFormDialog({
           <div className="min-h-0 space-y-5 overflow-y-auto p-6">{children}</div>
           <DialogFooter className="shrink-0 gap-2 border-t bg-muted/20 px-6 py-4">
             <Button type="button" variant="outline" disabled={submitting} onClick={() => onOpenChange(false)}>Annuler</Button>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting || submitDisabled}>
               {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : null}
               {submitting ? "Enregistrement…" : submitLabel}
             </Button>

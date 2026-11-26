@@ -90,6 +90,7 @@ export const useAdminApi = () => {
   const candidatures = useMemo(() => ({
     getAll: async (filters = {}, options = {}) => makeRequest(`/api/admin/candidatures${queryString(filters)}`, options),
     get: async (id) => makeRequest(`/api/admin/candidatures/${id}`),
+    remove: async (id) => makeRequest(`/api/admin/candidatures/${id}`, { method: "DELETE" }),
     dashboard: async (days, options = {}) => makeRequest(`/api/admin/candidatures/dashboard${queryString({ days })}`, options),
     export: async (filters, options = {}) => makeRequest(`/api/admin/candidatures/export${queryString(filters)}`, options, "blob"),
     update: async (id, payload) =>
@@ -123,6 +124,11 @@ export const useAdminApi = () => {
   }), [makeRequest])
 
   const interviews = useMemo(() => ({
+    overview: (campaignId) => makeRequest(`/api/admin/interviews/overview${queryString({ campaign_id: campaignId })}`),
+    getReferential: (formation, filters, options) => makeRequest(`/api/admin/interviews/referentials/${encodeURIComponent(formation)}${queryString(filters)}`, options),
+    updateReferential: (formation, payload) => makeRequest(`/api/admin/interviews/referentials/${encodeURIComponent(formation)}`, {
+      method: "POST", body: JSON.stringify(payload),
+    }),
     bootstrap: async (formation) => {
       const query = formation ? `?formation=${encodeURIComponent(formation)}` : ""
       return makeRequest(`/api/admin/interviews/bootstrap${query}`)
@@ -141,6 +147,39 @@ export const useAdminApi = () => {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
+    getQuestionBank: (id) => makeRequest(`/api/admin/interviews/campaigns/${id}/question-bank`),
+    checkQuestionBank: (id, questions, mode) => makeRequest(`/api/admin/interviews/campaigns/${id}/question-bank`, {
+      method: "POST", body: JSON.stringify({ questions, mode }),
+    }),
+    saveQuestionBank: (id, questions, revision, mode) => makeRequest(`/api/admin/interviews/campaigns/${id}/question-bank`, {
+      method: "PUT", body: JSON.stringify({ questions, revision, mode }),
+    }),
+    editQuestionBank: (id, payload) => makeRequest(`/api/admin/interviews/campaigns/${id}/question-bank`, {
+      method: "PATCH", body: JSON.stringify(payload),
+    }),
+    getRanking: (formation, filters, options) => makeRequest(`/api/admin/interviews/referentials/${encodeURIComponent(formation)}/ranking${queryString(filters)}`, options),
+    updateRanking: (formation, payload) => makeRequest(`/api/admin/interviews/referentials/${encodeURIComponent(formation)}/ranking`, {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+    importValidators: (payload) => makeRequest("/api/admin/interview-members/import", {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+    updateQuestionnaireConfig: (id, config) => makeRequest(`/api/admin/interviews/campaigns/${id}/questionnaire-config`, {
+      method: "PUT", body: JSON.stringify({ config }),
+    }),
+    getQuestionnaire: (id) => makeRequest(`/api/admin/interviews/evaluations/${id}/questionnaire`),
+    checkInterviewAnswer: (id, payload) => makeRequest(`/api/admin/interviews/evaluations/${id}/questionnaire/check`, {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+    generateQuestionnaire: (id, profile) => makeRequest(`/api/admin/interviews/evaluations/${id}/questionnaire`, {
+      method: "POST", body: JSON.stringify({ profile }),
+    }),
+    updateQuestionnaire: (id, payload, { keepalive = false } = {}) => {
+      const body = JSON.stringify(payload)
+      return makeRequest(`/api/admin/interviews/evaluations/${id}/questionnaire`, {
+        method: "PATCH", body, keepalive: keepalive && new TextEncoder().encode(body).length <= 60 * 1024,
+      })
+    },
     getSlots: async (campaignId) => {
       const query = campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : ""
       return makeRequest(`/api/admin/interviews/slots${query}`)
@@ -277,8 +316,33 @@ export const useAdminApi = () => {
     update: (code, payload) => makeRequest(`/api/admin/training-sites/${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify(payload) }),
   }), [makeRequest])
 
+  const bootcamps = useMemo(() => {
+    const post = (url, payload) => makeRequest(url, { method: "POST", body: JSON.stringify(payload || {}) })
+    return {
+      overview: (campaignId) => makeRequest(`/api/admin/bootcamps/overview${queryString({ campaign_id: campaignId })}`),
+      detail: (formation, campaignId, options) => makeRequest(`/api/admin/bootcamps/referentials/${encodeURIComponent(formation)}${queryString({ campaign_id: campaignId })}`, options),
+      create: (formation, campaignId, payload) => post(`/api/admin/bootcamps/referentials/${encodeURIComponent(formation)}${queryString({ campaign_id: campaignId })}`, payload),
+      update: (id, payload) => makeRequest(`/api/admin/bootcamps/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+      remove: (id) => makeRequest(`/api/admin/bootcamps/${id}`, { method: "DELETE" }),
+      setParticipants: (id, payload) => post(`/api/admin/bootcamps/${id}/participants`, payload),
+      launch: (id, payload) => post(`/api/admin/bootcamps/${id}/launch`, payload),
+      retryInvitations: (id) => post(`/api/admin/bootcamps/${id}/retry-invitations`),
+      reopen: (id, payload) => post(`/api/admin/bootcamps/${id}/reopen`, payload),
+      allResults: (campaignId, options) => makeRequest(`/api/admin/bootcamps/results${queryString({ campaign_id: campaignId })}`, options),
+      results: (formation, campaignId, options) => makeRequest(`/api/admin/bootcamps/referentials/${encodeURIComponent(formation)}/results${queryString({ campaign_id: campaignId })}`, options),
+      resultsAction: (formation, payload) => post(`/api/admin/bootcamps/referentials/${encodeURIComponent(formation)}/results`, payload),
+      coachList: () => makeRequest("/api/admin/coach/bootcamps"),
+      coachGet: (id) => makeRequest(`/api/admin/coach/bootcamps/${id}`),
+      coachDecide: (id, candidateId, payload) => makeRequest(`/api/admin/coach/bootcamps/${id}/participants/${candidateId}`, {
+        method: "PATCH", body: JSON.stringify(payload),
+      }),
+      coachSubmit: (id, payload) => post(`/api/admin/coach/bootcamps/${id}/submit`, payload),
+    }
+  }, [makeRequest])
+
   return {
     makeRequest,
+    bootcamps,
     candidatures,
     testGroups,
     interviews,
